@@ -48,6 +48,14 @@ Hello: main
    0.0007 (100.0%)   0.0007 (100.0%)   0.0005 (100.0%)  Total
 ```
 
+## Obtaining Line Information
+
+We must compile the program with `-g` and `-O0` for the sake of analysis.
+We can use a release build and `-O3` when it comes to validating patches.
+
+See: http://llvm.org/docs/LangRef.html#specialized-metadata-nodes
+
+
 ## Helpful Links
 
 * http://llvm.org/docs/CMake.html
