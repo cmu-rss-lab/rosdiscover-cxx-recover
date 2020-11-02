@@ -53,7 +53,8 @@ Hello: main
 We must compile the program with `-g` and `-O0` for the sake of analysis.
 We can use a release build and `-O3` when it comes to validating patches.
 
-See: http://llvm.org/docs/LangRef.html#specialized-metadata-nodes
+* http://llvm.org/docs/LangRef.html#specialized-metadata-nodes
+* http://jiten-thakkar.com/posts/how-to-read-and-write-metadata-in-llvm
 
 
 ## Helpful Links
