@@ -4,6 +4,9 @@
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 
+#include <llvm/ADT/APFloat.h>
+#include <llvm/IR/DebugInfoMetadata.h>
+
 using namespace llvm;
 
 namespace {
@@ -12,9 +15,23 @@ struct MyHello : public FunctionPass {
   MyHello() : FunctionPass(ID) {}
 
   bool runOnFunction(Function &F) override {
-    errs() << "Hello: ";
-    errs().write_escaped(F.getName()) << '\n';
+    if (MDNode *metadata = F.getMetadata("dbg")) {
+      metadata->dump();
+    }
+
+    for (auto const &block : F) {
+        for (auto const &instruction : block) {
+            analyzeInstruction(instruction);
+        }
+    }
+
     return false;
+  }
+
+  void analyzeInstruction(Instruction const &instruction) {
+      if (MDNode *metadata = instruction.getMetadata("dbg")) {
+          metadata->dump();
+      }
   }
 };  // struct Hello
 }  // anonymous namespace
