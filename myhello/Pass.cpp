@@ -3,9 +3,11 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
+#include <llvm/Analysis/DependenceAnalysis.h>
 
 #include <llvm/ADT/APFloat.h>
 #include <llvm/IR/DebugInfoMetadata.h>
+
 
 using namespace llvm;
 
@@ -14,14 +16,38 @@ struct MyHello : public FunctionPass {
   static char ID;
   MyHello() : FunctionPass(ID) {}
 
+  void getAnalysisUsage(AnalysisUsage &info) const override {
+      info.setPreservesAll();
+      info.addRequired<DependenceAnalysisWrapperPass>();
+  }
+
   bool runOnFunction(Function &F) override {
+    // auto &AA = getAnalysis<AAResultsWrapperPass>().getAAResults();
+    auto &dependencyAnalysis = getAnalysis<DependenceAnalysisWrapperPass>().getDI();
+
     if (MDNode *metadata = F.getMetadata("dbg")) {
       metadata->dump();
     }
 
-    for (auto const &block : F) {
-        for (auto const &instruction : block) {
-            analyzeInstruction(instruction);
+    std::vector<Instruction *> instructions;
+    for (auto &block : F) {
+        for (Instruction &instruction : block) {
+            instructions.push_back(&instruction);
+            // analyzeInstruction(instruction);
+        }
+    }
+
+    // compare all pairs of instructions
+    size_t num_instructions = instructions.size();
+    for (int i = 0; i < num_instructions; ++i) {
+        for (int j = i + 1; j < num_instructions; ++j) {
+            auto src = instructions.at(i);
+            auto dst = instructions.at(j);
+            auto dependence = dependencyAnalysis.depends(src, dst, false);
+            if (dependence != nullptr) {
+                dependence->dump(llvm::errs());
+                errs() << "COOLPIG\n";
+            }
         }
     }
 
