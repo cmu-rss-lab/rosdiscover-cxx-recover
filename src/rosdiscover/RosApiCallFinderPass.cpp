@@ -3,6 +3,7 @@
  */
 
 #include <llvm/IR/Function.h>
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Pass.h>
 #include <llvm/Support/raw_ostream.h>
@@ -24,7 +25,25 @@ struct RosApiCallFinderPass : llvm::FunctionPass {
   bool runOnFunction(llvm::Function &function) override {
     llvm::outs() << "checking: " << function.getName() << "\n";
 
+    for (auto &block : function) {
+      for (auto &instruction : block) {
+        if (auto *call_inst = llvm::dyn_cast<llvm::CallInst>(&instruction)) {
+          runOnCallInst(call_inst);
+        }
+      }
+    }
+
     return false;
+  }
+
+  void runOnCallInst(llvm::CallInst *instruction) {
+    auto *function = instruction->getCalledFunction();
+    if (function == nullptr) {
+      return;
+    }
+
+    // is this a relevant ROS API call?
+    llvm::outs() << "function: " << function->getName() << "\n";
   }
 
 }; // RosApiCallFinderPass
