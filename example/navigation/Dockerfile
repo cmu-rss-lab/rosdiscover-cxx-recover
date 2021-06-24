@@ -1,4 +1,4 @@
-FROM therobotcooperative/autorally
+FROM therobotcooperative/turtlebot3
 
 COPY --from=christimperley/llvm11 /opt/llvm11/ /opt/llvm11/
 ENV PATH "/opt/llvm11/bin:${PATH}"
@@ -17,14 +17,17 @@ RUN apt-get update \
  && apt-get clean \
  && rm -rf /var/lib/apt/lists/*
 
+# fix ambiguous isnan calls
+# https://stackoverflow.com/questions/33770374/why-is-isnan-ambiguous-and-how-to-avoid-it
+RUN sed -i "s#isnan#std::isnan#g" /ros_ws/src/turtlebot3_simulations/turtlebot3_fake/src/turtlebot3_fake.cpp
+
 # rebuild via catkin_make + wllvm
 ENV LLVM_COMPILER clang
 ENV LLVM_COMPILER_PATH /opt/llvm11/bin
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh \
  && rm -rf build \
- && catkin_make \
+ && catkin_make install \
       -DCMAKE_CXX_COMPILER=wllvm++ \
       -DCMAKE_COMPILER=wllvm \
       -DCMAKE_CFLAGS="-g -O0" \
       -DCMAKE_CXXFLAGS="-g -O0" \
- && catkin_make install
