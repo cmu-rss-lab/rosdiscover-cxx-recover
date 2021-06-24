@@ -26,9 +26,7 @@ ENV LLVM_COMPILER clang
 ENV LLVM_COMPILER_PATH /opt/llvm11/bin
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh \
  && rm -rf build \
- && catkin_make install \
+ && CFLAGS="-g -O0" CXXFLAGS="-g -O0" catkin_make install \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
       -DCMAKE_CXX_COMPILER=wllvm++ \
-      -DCMAKE_COMPILER=wllvm \
-      -DCMAKE_CFLAGS="-g -O0" \
-      -DCMAKE_CXXFLAGS="-g -O0" \
+      -DCMAKE_COMPILER=wllvm
