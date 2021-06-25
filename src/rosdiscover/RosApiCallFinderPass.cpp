@@ -39,7 +39,7 @@ struct RosApiCallFinderPass : llvm::FunctionPass {
 
   void runOnCallInst(llvm::CallInst *instruction) {
     // ignore instrinsics
-    if (llvm::isa<llvm::DbgInfoIntrinsic>(instruction)) {
+    if (llvm::isa<llvm::IntrinsicInst>(instruction)) {
       return;
     }
 
