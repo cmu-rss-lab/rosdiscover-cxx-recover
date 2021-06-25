@@ -25,7 +25,9 @@ struct RosApiCallFinderPass : llvm::FunctionPass {
   }
 
   bool runOnFunction(llvm::Function &function) override {
-    llvm::outs() << "checking: " << function.getName() << "\n";
+    std::string demangledName = llvm::demangle(function.getName().str());
+
+    llvm::outs() << "checking: " << demangledName << "\n";
 
     for (auto &block : function) {
       for (auto &instruction : block) {
@@ -49,7 +51,6 @@ struct RosApiCallFinderPass : llvm::FunctionPass {
       return;
     }
 
-    // demangle the function name
     std::string demangledName = llvm::demangle(function->getName().str());
 
     // is this a relevant ROS API call?
