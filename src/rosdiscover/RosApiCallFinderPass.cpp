@@ -25,8 +25,13 @@ struct RosApiCallFinderPass : llvm::FunctionPass {
   }
 
   bool runOnFunction(llvm::Function &function) override {
-    std::string demangledName = llvm::demangle(function.getName().str());
+    // ignore intrinsics
+    if (function.isIntrinsic()) {
+      return false;
+    }
 
+    // note that this also runs on undefined (externally linked) functions
+    std::string demangledName = llvm::demangle(function.getName().str());
     llvm::outs() << "checking: " << demangledName << "\n";
 
     for (auto &block : function) {
