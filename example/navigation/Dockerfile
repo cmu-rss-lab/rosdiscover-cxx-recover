@@ -5,8 +5,10 @@ ENV PATH "/opt/llvm11/bin:${PATH}"
 ENV LIBRARY_PATH "/opt/llvm11/lib:${LIBRARY_PATH}"
 ENV LD_LIBRARY_PATH "/opt/llvm11/lib:${LD_LIBRARY_PATH}"
 
-# TODO add rosdiscover bins + libs to environment
+# install rosdiscover
 COPY --from=rosdiscover /opt/rosdiscover/ /opt/rosdiscover/
+ENV LD_LIBRARY_PATH "/opt/rosdiscover/lib:${LD_LIBRARY_PATH}"
+ENV LIBRARY_PATH "/opt/rosdiscover/lib:${LIBRARY_PATH}"
 
 # TODO provide a portable installation of wllvm
 RUN pip install setuptools==42.0.2 \
