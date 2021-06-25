@@ -5,11 +5,6 @@ ENV PATH "/opt/llvm11/bin:${PATH}"
 ENV LIBRARY_PATH "/opt/llvm11/lib:${LIBRARY_PATH}"
 ENV LD_LIBRARY_PATH "/opt/llvm11/lib:${LD_LIBRARY_PATH}"
 
-# install rosdiscover
-COPY --from=rosdiscover /opt/rosdiscover/ /opt/rosdiscover/
-ENV LD_LIBRARY_PATH "/opt/rosdiscover/lib:${LD_LIBRARY_PATH}"
-ENV LIBRARY_PATH "/opt/rosdiscover/lib:${LIBRARY_PATH}"
-
 # TODO provide a portable installation of wllvm
 RUN pip install setuptools==42.0.2 \
  && pip install wllvm==1.2.8
@@ -32,3 +27,13 @@ RUN . /opt/ros/${ROS_DISTRO}/setup.sh \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
       -DCMAKE_CXX_COMPILER=wllvm++ \
       -DCMAKE_COMPILER=wllvm
+
+# grab the LLVM bitcode and assembly for a C++ node
+WORKDIR /ros_ws/install/lib/turtlebot3_gazebo
+RUN extract-bc turtlebot3_drive \
+ && llvm-dis turtlebot3_drive.bc
+
+# install rosdiscover
+COPY --from=rosdiscover /opt/rosdiscover/ /opt/rosdiscover/
+ENV LD_LIBRARY_PATH "/opt/rosdiscover/lib:${LD_LIBRARY_PATH}"
+ENV LIBRARY_PATH "/opt/rosdiscover/lib:${LIBRARY_PATH}"
