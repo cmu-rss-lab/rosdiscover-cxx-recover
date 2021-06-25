@@ -2,6 +2,7 @@
  * This pass finds all ROS API calls within a given LLVM module.
  */
 
+#include <llvm/Demangle/Demangle.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IntrinsicInst.h>
@@ -48,8 +49,11 @@ struct RosApiCallFinderPass : llvm::FunctionPass {
       return;
     }
 
+    // demangle the function name
+    std::string demangledName = llvm::demangle(function->getName().str());
+
     // is this a relevant ROS API call?
-    llvm::outs() << "function: " << function->getName() << "\n";
+    llvm::outs() << "function: " << demangledName << "\n";
   }
 
 }; // RosApiCallFinderPass
