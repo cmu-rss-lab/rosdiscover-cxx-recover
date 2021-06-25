@@ -4,6 +4,7 @@
 
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/IntrinsicInst.h>
 #include <llvm/IR/LegacyPassManager.h>
 #include <llvm/Pass.h>
 #include <llvm/Support/raw_ostream.h>
@@ -37,6 +38,11 @@ struct RosApiCallFinderPass : llvm::FunctionPass {
   }
 
   void runOnCallInst(llvm::CallInst *instruction) {
+    // ignore instrinsics
+    if (llvm::isa<llvm::DbgInfoIntrinsic>(instruction)) {
+      return;
+    }
+
     auto *function = instruction->getCalledFunction();
     if (function == nullptr) {
       return;
