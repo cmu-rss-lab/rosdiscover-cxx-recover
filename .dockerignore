@@ -1,5 +1,6 @@
 **
 !**/CMakeLists.txt
 !src/
+!include/
 !**/.cpp
 !**/.h

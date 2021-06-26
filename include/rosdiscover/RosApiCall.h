@@ -1,3 +1,7 @@
+#pragma once
+
+#include <llvm/IR/Instruction.h>
+
 namespace rosdiscover {
 
 class RosApiCall { }; // RosApiCall
