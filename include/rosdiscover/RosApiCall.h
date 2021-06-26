@@ -9,13 +9,18 @@ class RosApiCall { }; // RosApiCall
 
 class RosInitCall : public RosApiCall {
 public:
-  RosInitCall(llvm::Instruction *instruction) : instruction(instruction) { }
-
-  llvm::Instruction getInstruction() const {
+  llvm::CallBase* getCall() const {
     return instruction;
   }
+
+  static RosInitCall* create(llvm::CallBase *instruction) {
+    return new RosInitCall(instruction);
+  }
+
 private:
-  llvm::Instruction *instruction;
+  llvm::CallBase *instruction;
+
+  RosInitCall(llvm::CallBase *instruction) : instruction(instruction) { }
 }; // RosInitCall
 
 
