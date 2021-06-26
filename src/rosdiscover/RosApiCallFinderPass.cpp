@@ -36,8 +36,11 @@ struct RosApiCallFinderPass : llvm::FunctionPass {
 
     for (auto &block : function) {
       for (auto &instruction : block) {
+        // TODO check if this is a CallInst or InvokeInst!
         if (auto *call_inst = llvm::dyn_cast<llvm::CallInst>(&instruction)) {
           runOnCallInst(call_inst);
+        } else if (auto *invoke_inst = llvm::dyn_cast<llvm::InvokeInst>(&instruction)) {
+          runOnCallInst(invoke_inst);
         }
       }
     }
@@ -45,7 +48,7 @@ struct RosApiCallFinderPass : llvm::FunctionPass {
     return false;
   }
 
-  void runOnCallInst(llvm::CallInst *instruction) {
+  void runOnCallInst(llvm::CallBase *instruction) {
     // ignore instrinsics
     if (llvm::isa<llvm::IntrinsicInst>(instruction)) {
       return;
