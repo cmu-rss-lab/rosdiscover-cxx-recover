@@ -3,6 +3,7 @@
  */
 
 #include <llvm/Demangle/Demangle.h>
+#include <llvm/IR/DebugInfoMetadata.h>
 #include <llvm/IR/Function.h>
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/IntrinsicInst.h>
@@ -11,7 +12,11 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 
+#include <rosdiscover/RosApiCall.h>
+
+
 using namespace llvm;
+using namespace rosdiscover;
 
 namespace {
 
@@ -32,7 +37,7 @@ struct RosApiCallFinderPass : llvm::FunctionPass {
 
     // note that this also runs on undefined (externally linked) functions
     std::string demangledName = llvm::demangle(function.getName().str());
-    llvm::outs() << "checking: " << demangledName << "\n";
+    // llvm::outs() << "checking: " << demangledName << "\n";
 
     for (auto &block : function) {
       for (auto &instruction : block) {
@@ -59,10 +64,40 @@ struct RosApiCallFinderPass : llvm::FunctionPass {
       return;
     }
 
+    // ignore any called functions that lack debug information
+    // auto *functionDI = function->getSubprogram();
+    // if (functionDI == nullptr) {
+    //   return;
+    // }
+    // functionDI->print(llvm::outs());
+    // llvm::outs() << "\n\n";
+
     std::string demangledName = llvm::demangle(function->getName().str());
 
     // is this a relevant ROS API call?
-    llvm::outs() << "function: " << demangledName << "\n";
+    // llvm::outs() << "function: " << demangledName << "\n";
+
+    // is this a ros::init call?
+    if (demangledName.rfind("ros::init", 0) == 0) {
+      auto *init = RosInitCall::create(instruction);
+      auto *name = init->getName();
+
+      if (auto *nameAlloca = llvm::dyn_cast<llvm::AllocaInst>(name)) {
+        for (auto *user : init->getName()->users()) {
+          // find all of the places where we store to this alloca
+          llvm::outs() << "USER: ";
+          user->print(llvm::outs());
+          llvm::outs() << "\n\n";
+        }
+      }
+
+      llvm::outs() << "NAME: ";
+      init->getName()->print(llvm::outs());
+      llvm::outs() << "\n\n";
+
+      // we need to figure out where we last wrote to the value
+      // - alloca must dominate store
+          }
   }
 
 }; // RosApiCallFinderPass
