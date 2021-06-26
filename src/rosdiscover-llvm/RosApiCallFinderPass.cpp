@@ -12,7 +12,7 @@
 #include <llvm/Support/raw_ostream.h>
 #include <llvm/Transforms/IPO/PassManagerBuilder.h>
 
-#include <rosdiscover/RosApiCall.h>
+#include <rosdiscover-llvm/RosApiCall.h>
 
 
 using namespace llvm;

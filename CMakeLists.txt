@@ -16,4 +16,7 @@ message(STATUS "Found LLVM: ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 message(STATUS "Using LLVM libs: ${LLVM_LIBRARY_DIRS}")
 
+find_package(Clang REQUIRED)
+find_package(Clang REQUIRED clangTooling libClang)
+
 add_subdirectory(src)

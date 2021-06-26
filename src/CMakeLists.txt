@@ -1,1 +1,2 @@
-add_subdirectory(rosdiscover)
+add_subdirectory(rosdiscover-clang)
+add_subdirectory(rosdiscover-llvm)
