@@ -3,8 +3,12 @@ add_executable(rosdiscover
 )
 
 # TODO compile these into a static executable with a static libc++
+llvm_map_components_to_libnames(ROSDISCOVER_LLVM_LIBS
+  Demangle
+)
+
 target_link_libraries(rosdiscover
-  ${LLVM_LIBS}
+  ${ROSDISCOVER_LLVM_LIBS}
   ${CLANG_LIBS}
 )
 target_compile_definitions(rosdiscover
