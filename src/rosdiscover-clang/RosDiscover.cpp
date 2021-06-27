@@ -16,7 +16,7 @@ static llvm::cl::extrahelp CommonHelp(clang::tooling::CommonOptionsParser::HelpM
 
 StatementMatcher InitMatcher = callExpr(
   isExpansionInMainFile(),
-  callee(cxxMethodDecl(hasName("ros::init")))
+  callee(cxxMethodDecl(hasName("init")))
 ).bind("init");
 
 
@@ -25,7 +25,10 @@ class ApiCallFinder : public MatchFinder::MatchCallback
 public:
 
   virtual void run(const MatchFinder::MatchResult &result) override {
-    llvm::outs() << "I found a match!\n";
+    auto *call = result.Nodes.getNodeAs<clang::CallExpr>("init");
+    llvm::outs() << "found ros::init call: ";
+    call->dumpColor();
+    llvm::outs() << "\n";
   }
 
 }; // ApiCallFinder
@@ -45,6 +48,7 @@ int main(int argc, const char **argv) {
 
   // TODO use MatchFinder::matchAST(ASTContext &)
 
+  llvm::outs() << "finding ROS API calls...\n";
   auto res = tool.run(newFrontendActionFactory(&finder).get());
   return res;
 }
