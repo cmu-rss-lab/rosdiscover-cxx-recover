@@ -14,3 +14,7 @@ RUN mkdir build \
       .. \
  && make install \
  && rm -rf /tmp/*
+
+# this step is absolutely necessary in order to run any clang libtooling projects
+# ideally, we should perform this step via CMake
+RUN cp -r /opt/llvm11/lib/clang /opt/rosdiscover/lib/clang
