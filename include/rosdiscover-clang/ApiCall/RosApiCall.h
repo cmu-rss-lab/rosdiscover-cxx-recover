@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <clang/AST/Expr.h>
 
 
@@ -13,6 +15,24 @@ class RosApiCall {
 public:
   clang::CallExpr const * getCallExpr() const { return call; }
 
+  class Finder : public clang::ast_matchers::MatchFinder::MatchCallback {
+  public:
+    void run(const clang::ast_matchers::MatchFinder::MatchResult &result) {
+      if (auto *api_call = build(result)) {
+        found.push_back(api_call);
+      }
+    }
+
+  protected:
+    Finder(std::vector<RosApiCall*> &found) : found(found) {}
+
+    virtual RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) = 0;
+    virtual const clang::ast_matchers::StatementMatcher getPattern() = 0;
+
+  private:
+    std::vector<RosApiCall*> &found;
+  };
+
 protected:
   RosApiCall(clang::CallExpr const *call) : call(call) {}
 
@@ -24,21 +44,24 @@ private:
 // ros::init
 class RosInitCall : public RosApiCall {
 public:
-  // {
-  //   using namespace clang::ast_matchers;
-  //   static constexpr clang::ast_matchers::StatementMatcher PATTERN = callExpr(
-  //     callee(functionDecl(hasName("ros::init")))
-  //   ).bind("call");
-  // }
-
   RosInitCall(clang::CallExpr const *call) : RosApiCall(call) {}
 
-  // class Finder : public MatchFinder::MatchCallback {
-  // public:
-  //   virtual void run(const MatchFinder::MatchResult &result) override;
-  // };
+  class Finder : RosApiCall::Finder {
+  public:
+    Finder(std::vector<RosApiCall*> &found) : RosApiCall::Finder(found) {}
 
-  // static void addFinder(RosApiCallFinder &finder);
+  protected:
+    const clang::ast_matchers::StatementMatcher getPattern() override {
+      using namespace clang::ast_matchers;
+      return callExpr(
+        callee(functionDecl(hasName("ros::init")))
+      ).bind("call");
+    }
+
+    RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
+      return new RosInitCall(result.Nodes.getNodeAs<clang::CallExpr>("call"));
+    }
+  };
 
   // hasKnownName() -> bool
   // getNameExpr() -> Expr
