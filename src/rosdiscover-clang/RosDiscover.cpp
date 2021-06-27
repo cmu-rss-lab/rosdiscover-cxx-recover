@@ -14,6 +14,22 @@ using namespace clang::tooling;
 static llvm::cl::OptionCategory MyToolCategory("rosdiscover options");
 static llvm::cl::extrahelp CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
 
+StatementMatcher InitMatcher = callExpr(
+  isExpansionInMainFile(),
+  callee(cxxMethodDecl(hasName("ros::init")))
+).bind("init");
+
+
+class ApiCallFinder : public MatchFinder::MatchCallback
+{
+public:
+
+  virtual void run(const MatchFinder::MatchResult &result) override {
+    llvm::outs() << "I found a match!\n";
+  }
+
+}; // ApiCallFinder
+
 
 int main(int argc, const char **argv) {
   CommonOptionsParser optionsParser(argc, argv, MyToolCategory);
@@ -22,6 +38,10 @@ int main(int argc, const char **argv) {
   ClangTool tool(optionsParser.getCompilations(), optionsParser.getSourcePathList());
 
   MatchFinder finder;
+
+  // TODO use an anonymous function?
+  auto init_matcher = ApiCallFinder();
+  finder.addMatcher(InitMatcher, &init_matcher);
 
   // TODO use MatchFinder::matchAST(ASTContext &)
 
