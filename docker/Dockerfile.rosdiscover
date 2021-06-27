@@ -6,7 +6,6 @@ RUN mkdir build \
  && cd build \
  && cmake \
       -DCMAKE_PREFIX_PATH=/opt/llvm11 \
-      -DCMAKE_C_COMPILER=/opt/llvm11/bin/clang \
       -DCMAKE_CXX_COMPILER=/opt/llvm11/bin/clang++ \
       -DCMAKE_LINKER=/opt/llvm11/bin/lld \
       -DCMAKE_INSTALL_PREFIX=/opt/rosdiscover \
