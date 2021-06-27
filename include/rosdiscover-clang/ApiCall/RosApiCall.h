@@ -4,6 +4,7 @@
 
 
 namespace rosdiscover {
+namespace api_call {
 
 
 // TODO differentiate between Bare and NodeHandle API calls
@@ -23,6 +24,13 @@ private:
 class RosInitCall : public RosApiCall {
 public:
   RosInitCall(clang::CallExpr *call) : RosApiCall(call) {}
+
+  class Finder : public MatchFinder::MatchCallback {
+  public:
+    virtual void run(const MatchFinder::MatchResult &result) override;
+  };
+
+  static void addFinder(RosApiCallFinder &finder);
 
   // hasKnownName() -> bool
   // getNameExpr() -> Expr
@@ -153,4 +161,5 @@ public:
 };
 
 
+} // rosdiscover::api_call
 } // rosdiscover
