@@ -5,6 +5,7 @@
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/Tooling/Tooling.h>
 
+#include "Calls.h"
 #include "RosApiCall.h"
 
 namespace rosdiscover {
@@ -35,6 +36,12 @@ private:
   }
 
   void build() {
+    addFinder(new BareDeleteParamCall::Finder(calls));
+    addFinder(new BareGetParamCachedCall::Finder(calls));
+    addFinder(new BareGetParamCall::Finder(calls));
+    addFinder(new BareGetParamWithDefaultCall::Finder(calls));
+    addFinder(new BareServiceCall::Finder(calls));
+    addFinder(new BareSetParamCall::Finder(calls));
     addFinder(new RosInitCall::Finder(calls));
   }
 
