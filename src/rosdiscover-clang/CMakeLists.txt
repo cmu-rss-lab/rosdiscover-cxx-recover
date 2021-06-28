@@ -22,3 +22,5 @@ install(
   TARGETS rosdiscover
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
+
+# we need to install clang's headers!
