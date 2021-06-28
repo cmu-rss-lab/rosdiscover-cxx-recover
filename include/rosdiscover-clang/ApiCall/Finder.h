@@ -3,6 +3,9 @@
 #include <vector>
 
 #include <clang/ASTMatchers/ASTMatchFinder.h>
+#include <clang/Tooling/Tooling.h>
+
+#include "RosApiCall.h"
 
 namespace rosdiscover {
 namespace api_call {
@@ -11,39 +14,48 @@ namespace api_call {
 class RosApiCallFinder {
 public:
 
-  static std::vector<RosApiCall*> find(clang::ClangTool &tool) {
-    auto finder = RosApiCallFinder(tool);
+  static std::vector<RosApiCall*> find(clang::tooling::ClangTool &tool) {
+    return RosApiCallFinder(tool).run();
   }
 
 private:
-  RosApiCallFinder() : calls() {}
+  RosApiCallFinder(clang::tooling::ClangTool &tool) :
+    tool(tool),
+    callFinders(),
+    matchFinder(),
+    calls()
+  {
+    build();
+  }
+
+  ~RosApiCallFinder() {
+    for (auto finder : callFinders) {
+      delete finder;
+    }
+  }
 
   void build() {
-    RosInit::addToFinder(this);
-    // matchFinder.addMatcher(RosInit::PATTERN, RosInit::Finder(calls));
+    addFinder(new RosInitCall::Finder(calls));
+  }
+
+  void addFinder(RosApiCall::Finder *finder) {
+    callFinders.push_back(finder);
+    matchFinder.addMatcher(finder->getPattern(), finder);
   }
 
   /** Finds all API calls within a program described by a clang tool. */
-  void run(clang::ClangTool &tool) {
-
-  }
-
-  /** Finds all API calls within a given AST context. */
-  void run(clang::ASTContext &context) {
-    clang::ast_matchers::MatchFinder finder;
-
-    // TODO use an anonymous function?
-    auto init_matcher = ApiCallFinder();
-    finder.addMatcher(InitMatcher, &init_matcher);
-
-    // TODO use MatchFinder::matchAST(ASTContext &)
-
-    llvm::outs() << "finding ROS API calls...\n";
-    auto res = tool.run(newFrontendActionFactory(&finder).get());
-
+  std::vector<RosApiCall*> run() {
+    int result = tool.run(clang::tooling::newFrontendActionFactory(&matchFinder).get());
+    if (result != 0) {
+      llvm::errs() << "ERROR: ROS API call finder failed!\n";
+      abort();
+    }
+    return calls;
   }
 
 private:
+  clang::tooling::ClangTool &tool;
+  std::vector<RosApiCall::Finder*> callFinders;
   clang::ast_matchers::MatchFinder matchFinder;
   std::vector<RosApiCall*> calls;
 };
