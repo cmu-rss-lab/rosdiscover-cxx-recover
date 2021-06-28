@@ -34,23 +34,34 @@ public:
     std::vector<RosApiCall*> &found;
   };
 
+//  virtual void print(llvm::raw_ostream &os, clang::SourceManager const &sourceManager) const {
   virtual void print(llvm::raw_ostream &os) const {
+    auto *callExpr = getCallExpr();
     static clang::LangOptions langOptions;
-    getCallExpr()->printPretty(os, nullptr, clang::PrintingPolicy(langOptions));
-    os << "\n\n";
+    auto location = callExpr->getBeginLoc();
+    callExpr->printPretty(os, nullptr, clang::PrintingPolicy(langOptions));
+    //os << " [";
+    //location.print(os, sourceManager);
+    //os << "]";
   }
 
 protected:
-  RosApiCall(clang::CallExpr const *call) : call(call) {}
+  RosApiCall(clang::CallExpr const *call, clang::ASTContext const *context)
+    : call(call),
+      context(context)
+  {}
 
 private:
   clang::CallExpr const *call;
+  clang::ASTContext const *context;
 }; // RosApiCall
 
 
 class BareRosApiCall : public RosApiCall {
 protected:
-  BareRosApiCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  BareRosApiCall(clang::CallExpr const *call, clang::ASTContext const *context)
+    : RosApiCall(call, context)
+  {}
 }; // BareRosApiCall
 
 

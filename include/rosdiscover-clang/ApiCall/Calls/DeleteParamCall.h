@@ -8,7 +8,9 @@ namespace api_call {
 // ros::NodeParam::deleteParam
 class DeleteParamCall : public RosApiCall {
 public:
-  DeleteParamCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  DeleteParamCall(clang::CallExpr const *call, clang::ASTContext const *context)
+    : RosApiCall(call, context)
+  {}
 };
 
 } // rosdiscover::api_call

@@ -7,7 +7,9 @@ namespace api_call {
 
 class BareServiceCall : public BareRosApiCall {
 public:
-  BareServiceCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
+  BareServiceCall(clang::CallExpr const *call, clang::ASTContext const *context)
+    : BareRosApiCall(call, context)
+  {}
 
   class Finder : public RosApiCall::Finder {
   public:
@@ -22,7 +24,7 @@ public:
 
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
-      return new BareServiceCall(result.Nodes.getNodeAs<clang::CallExpr>("call"));
+      return new BareServiceCall(result.Nodes.getNodeAs<clang::CallExpr>("call"), result.Context);
     }
   };
 };

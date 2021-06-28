@@ -8,7 +8,9 @@ namespace api_call {
 // ros::NodeHandle::advertise
 class AdvertiseTopicCall : public RosApiCall {
 public:
-  AdvertiseTopicCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  AdvertiseTopicCall(clang::CallExpr const *call, clang::ASTContext const *context)
+    : RosApiCall(call, context)
+  {}
 };
 
 } // rosdiscover::api_call

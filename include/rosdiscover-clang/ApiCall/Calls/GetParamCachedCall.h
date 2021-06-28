@@ -7,9 +7,11 @@ namespace api_call {
 
 // ros::NodeHandle::getParamCached
 // ros::NodeHandle::getCached
-class GetParamCachedCall : public BareRosApiCall {
+class GetParamCachedCall : public RosApiCall {
 public:
-  GetParamCachedCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
+  GetParamCachedCall(clang::CallExpr const *call, clang::ASTContext const *context)
+    : RosApiCall(call, context)
+  {}
 };
 
 } // rosdiscover::api_call

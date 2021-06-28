@@ -8,7 +8,9 @@ namespace api_call {
 // ros::NodeHandle::serviceClient
 class ServiceClientCall : public RosApiCall {
 public:
-  ServiceClientCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  ServiceClientCall(clang::CallExpr const *call, clang::ASTContext const *context)
+    : RosApiCall(call, context)
+  {}
 };
 
 } // rosdiscover::api_call

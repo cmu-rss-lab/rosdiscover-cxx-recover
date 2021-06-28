@@ -9,7 +9,9 @@ namespace api_call {
 //
 class SubscribeTopicCall : public RosApiCall {
 public:
-  SubscribeTopicCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  SubscribeTopicCall(clang::CallExpr const *call, clang::ASTContext const *context)
+    : RosApiCall(call, context)
+  {}
 };
 
 } // rosdiscover::api_call
