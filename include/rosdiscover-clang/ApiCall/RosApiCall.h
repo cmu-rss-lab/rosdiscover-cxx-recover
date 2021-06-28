@@ -41,5 +41,11 @@ private:
 }; // RosApiCall
 
 
+class BareRosApiCall : public RosApiCall {
+protected:
+  BareRosApiCall(clang::CallExpr const *call) : RosApiCall(call) {}
+}; // BareRosApiCall
+
+
 } // rosdiscover::api_call
 } // rosdiscover

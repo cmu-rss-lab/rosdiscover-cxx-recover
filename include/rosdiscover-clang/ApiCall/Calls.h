@@ -5,9 +5,9 @@
 namespace rosdiscover {
 namespace api_call {
 
-class RosInitCall : public RosApiCall {
+class RosInitCall : public BareRosApiCall {
 public:
-  RosInitCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  RosInitCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
 
   class Finder : public RosApiCall::Finder {
   public:
@@ -45,9 +45,9 @@ public:
 };
 
 
-class BareServiceCall : public RosApiCall {
+class BareServiceCall : public BareRosApiCall {
 public:
-  BareServiceCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  BareServiceCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
 
   class Finder : public RosApiCall::Finder {
   public:
@@ -97,9 +97,9 @@ public:
 };
 
 
-class BareGetParamCall : public RosApiCall {
+class BareGetParamCall : public BareRosApiCall {
 public:
-  BareGetParamCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  BareGetParamCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
 
   class Finder : public RosApiCall::Finder {
   public:
@@ -120,9 +120,9 @@ public:
 };
 
 
-class BareGetParamWithDefaultCall : public RosApiCall {
+class BareGetParamWithDefaultCall : public BareRosApiCall {
 public:
-  BareGetParamWithDefaultCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  BareGetParamWithDefaultCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
 
   class Finder : public RosApiCall::Finder {
   public:
@@ -143,9 +143,9 @@ public:
 };
 
 
-class BareGetParamCachedCall : public RosApiCall {
+class BareGetParamCachedCall : public BareRosApiCall {
 public:
-  BareGetParamCachedCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  BareGetParamCachedCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
 
   class Finder : public RosApiCall::Finder {
   public:
@@ -168,9 +168,9 @@ public:
 
 // ros::NodeHandle::getParamCached
 // ros::NodeHandle::getCached
-class GetParamCachedCall : public RosApiCall {
+class GetParamCachedCall : public BareRosApiCall {
 public:
-  GetParamCachedCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  GetParamCachedCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
 };
 
 
@@ -183,9 +183,9 @@ public:
 
 
 // ros::param::set
-class BareSetParamCall : public RosApiCall {
+class BareSetParamCall : public BareRosApiCall {
 public:
-  BareSetParamCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  BareSetParamCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
 
   class Finder : public RosApiCall::Finder {
   public:
@@ -213,9 +213,9 @@ public:
 };
 
 
-class BareHasParamCall : public RosApiCall {
+class BareHasParamCall : public BareRosApiCall {
 public:
-  BareHasParamCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  BareHasParamCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
 
   class Finder : public RosApiCall::Finder {
   public:
@@ -243,9 +243,9 @@ public:
 };
 
 
-class BareDeleteParamCall : public RosApiCall {
+class BareDeleteParamCall : public BareRosApiCall {
 public:
-  BareDeleteParamCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  BareDeleteParamCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
 
   class Finder : public RosApiCall::Finder {
   public:
