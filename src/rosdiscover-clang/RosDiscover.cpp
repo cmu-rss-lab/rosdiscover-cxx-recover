@@ -25,8 +25,7 @@ int main(int argc, const char **argv) {
 
   auto calls = rosdiscover::api_call::RosApiCallFinder::find(tool);
   for (auto *call : calls) {
-    call->getCallExpr()->dumpColor();
-    llvm::outs() << "\n\n";
+    call->print(llvm::outs());
   }
 
   return 0;

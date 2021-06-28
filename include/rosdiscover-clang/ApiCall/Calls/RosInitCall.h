@@ -9,6 +9,10 @@ class RosInitCall : public BareRosApiCall {
 public:
   RosInitCall(clang::CallExpr const *call) : BareRosApiCall(call) {}
 
+  clang::Expr const * getNameExpr() const {
+    return getCallExpr()->getArg(0);
+  }
+
   class Finder : public RosApiCall::Finder {
   public:
     Finder(std::vector<RosApiCall*> &found) : RosApiCall::Finder(found) {}

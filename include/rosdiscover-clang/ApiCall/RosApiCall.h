@@ -3,7 +3,8 @@
 #include <vector>
 
 #include <clang/AST/Expr.h>
-
+#include <clang/AST/PrettyPrinter.h>
+#include <llvm/Support/raw_ostream.h>
 
 namespace rosdiscover {
 namespace api_call {
@@ -32,6 +33,12 @@ public:
   private:
     std::vector<RosApiCall*> &found;
   };
+
+  virtual void print(llvm::raw_ostream &os) const {
+    static clang::LangOptions langOptions;
+    getCallExpr()->printPretty(os, nullptr, clang::PrintingPolicy(langOptions));
+    os << "\n\n";
+  }
 
 protected:
   RosApiCall(clang::CallExpr const *call) : call(call) {}
