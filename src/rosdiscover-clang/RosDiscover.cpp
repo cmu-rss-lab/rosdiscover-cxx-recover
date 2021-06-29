@@ -6,6 +6,7 @@
 
 #include <clang/ASTMatchers/ASTMatchers.h>
 #include <clang/ASTMatchers/ASTMatchFinder.h>
+#include <clang/Rewrite/Core/Rewriter.h>
 
 #include <rosdiscover-clang/ApiCall/RosApiCall.h>
 #include <rosdiscover-clang/ApiCall/Finder.h>
@@ -20,8 +21,15 @@ static llvm::cl::extrahelp CommonHelp(clang::tooling::CommonOptionsParser::HelpM
 int main(int argc, const char **argv) {
   CommonOptionsParser optionsParser(argc, argv, MyToolCategory);
 
+  // clang::CompilerInstance compiler;
+  // compiler.createDiagnostics();
+
   // TODO avoid the need to run things via ClangTool
+  // https://eli.thegreenplace.net/2012/06/08/basic-source-to-source-transformation-with-clang
   ClangTool tool(optionsParser.getCompilations(), optionsParser.getSourcePathList());
+
+  //
+  // clang::SourceManager sourceManager(diagnostics, tool.getFiles());
 
   auto calls = rosdiscover::api_call::RosApiCallFinder::find(tool);
   for (auto *call : calls) {

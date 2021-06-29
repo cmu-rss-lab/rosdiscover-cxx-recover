@@ -47,7 +47,8 @@ public:
 
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
-      return new RosInitCall(result.Nodes.getNodeAs<clang::CallExpr>("call"), result.Context);
+      auto *call = result.Nodes.getNodeAs<clang::CallExpr>("call");
+      return new RosInitCall(call, result.Context);
     }
   };
 };

@@ -36,24 +36,23 @@ public:
 
 //  virtual void print(llvm::raw_ostream &os, clang::SourceManager const &sourceManager) const {
   virtual void print(llvm::raw_ostream &os) const {
-    auto *callExpr = getCallExpr();
     static clang::LangOptions langOptions;
-    auto location = callExpr->getBeginLoc();
-    callExpr->printPretty(os, nullptr, clang::PrintingPolicy(langOptions));
-    //os << " [";
-    //location.print(os, sourceManager);
-    //os << "]";
+    static clang::PrintingPolicy printPolicy(langOptions);
+    getCallExpr()->printPretty(os, nullptr, printPolicy);
+    os << " [" << locationString << "]";
   }
 
 protected:
   RosApiCall(clang::CallExpr const *call, clang::ASTContext const *context)
     : call(call),
-      context(context)
+      context(context),
+      locationString(call->getBeginLoc().printToString(context->getSourceManager()))
   {}
 
 private:
   clang::CallExpr const *call;
   clang::ASTContext const *context;
+  std::string const locationString;
 }; // RosApiCall
 
 
