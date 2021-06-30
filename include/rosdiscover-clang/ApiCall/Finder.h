@@ -43,6 +43,7 @@ private:
     addFinder(new BareServiceCall::Finder(calls));
     addFinder(new BareSetParamCall::Finder(calls));
     addFinder(new RosInitCall::Finder(calls));
+    addFinder(new GetParamWithDefaultCall::Finder(calls));
   }
 
   void addFinder(RosApiCall::Finder *finder) {
