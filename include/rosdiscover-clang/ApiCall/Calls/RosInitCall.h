@@ -13,11 +13,8 @@ public:
     : BareRosApiCall(call, context)
   {}
 
-  clang::Expr const * getNameExpr() const {
-    // name expr
-    auto *nameExpr = getCallExpr()->getArg(2);
-    //dynamic_cast<clang::MaterializeTemporaryExpr> nameExpr
-    return nameExpr;
+  clang::Expr const * getNameExpr() const override {
+    return getCallExpr()->getArg(2);
   }
 
   // llvm::Optional<std::string> getLiteralName() const {
@@ -27,12 +24,6 @@ public:
   // llvm::Optional<std::string> getStaticName() const {
   //
   // }
-
-  virtual void print(llvm::raw_ostream &os) const override {
-    RosApiCall::print(os);
-    os << " ";
-    getNameExpr()->dumpColor();
-  }
 
   class Finder : public RosApiCall::Finder {
   public:

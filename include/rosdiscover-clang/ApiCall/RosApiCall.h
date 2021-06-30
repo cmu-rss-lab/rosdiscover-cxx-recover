@@ -15,6 +15,9 @@ class RosApiCall {
 public:
   clang::CallExpr const * getCallExpr() const { return call; }
 
+  /** Returns the expression that provides the name associated with this call. */
+  virtual clang::Expr const * getNameExpr() const = 0;
+
   class Finder : public clang::ast_matchers::MatchFinder::MatchCallback {
   public:
     void run(const clang::ast_matchers::MatchFinder::MatchResult &result) {
@@ -39,7 +42,9 @@ public:
     static clang::LangOptions langOptions;
     static clang::PrintingPolicy printPolicy(langOptions);
     getCallExpr()->printPretty(os, nullptr, printPolicy);
-    os << " [" << locationString << "]";
+    os << " [" << locationString << "]\n";
+    // TODO: write to os
+    getNameExpr()->dumpColor();
   }
 
 protected:

@@ -11,6 +11,10 @@ public:
     : NodeHandleRosApiCall(call, context)
   {}
 
+  clang::Expr const * getNameExpr() const override {
+    return getCallExpr()->getArg(0);
+  }
+
   class Finder : public RosApiCall::Finder {
   public:
     Finder(std::vector<RosApiCall*> &found) : RosApiCall::Finder(found) {}
