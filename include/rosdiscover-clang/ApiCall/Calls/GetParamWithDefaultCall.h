@@ -5,7 +5,6 @@
 namespace rosdiscover {
 namespace api_call {
 
-// ros::NodeHandle::param
 class GetParamWithDefaultCall : public NodeHandleRosApiCall {
 public:
   GetParamWithDefaultCall(clang::CallExpr const *call, clang::ASTContext const *context)
