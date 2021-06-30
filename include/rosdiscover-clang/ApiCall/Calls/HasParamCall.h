@@ -8,7 +8,7 @@ namespace api_call {
 class HasParamCall : public NodeHandleRosApiCall {
 public:
   HasParamCall(clang::CallExpr const *call, clang::ASTContext const *context)
-    : RosApiCall(call, context)
+    : NodeHandleRosApiCall(call, context)
   {}
 
   class Finder : public RosApiCall::Finder {
