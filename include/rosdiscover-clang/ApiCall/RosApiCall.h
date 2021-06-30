@@ -64,5 +64,13 @@ protected:
 }; // BareRosApiCall
 
 
+class NodeHandleRosApiCall : public RosApiCall {
+protected:
+  NodeHandleRosApiCall(clang::CallExpr const *call, clang::ASTContext const *context)
+    : RosApiCall(call, context)
+  {}
+}; // NodeHandleRosApiCall
+
+
 } // rosdiscover::api_call
 } // rosdiscover
