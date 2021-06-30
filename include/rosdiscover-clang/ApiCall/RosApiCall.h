@@ -90,11 +90,16 @@ public:
     static clang::LangOptions langOptions;
     static clang::PrintingPolicy printPolicy(langOptions);
     getCallExpr()->printPretty(os, nullptr, printPolicy);
-    os << " [" << locationString << "]\n";
-    // TODO: write to os
-    getNameExpr()->dumpColor();
-    os << "\n";
-    getConstantName();
+    os << " [" << locationString << "]";
+
+    auto maybeName = getConstantName();
+    if (maybeName.hasValue()) {
+      os << " [\"" << maybeName.getValue() << "\"]";
+    } else {
+      // TODO: write to os
+      os << "\n";
+      getNameExpr()->dumpColor();
+    }
   }
 
 protected:
