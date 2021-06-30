@@ -36,14 +36,24 @@ private:
   }
 
   void build() {
+    addFinder(new AdvertiseServiceCall::Finder(calls));
+    addFinder(new AdvertiseTopicCall::Finder(calls));
     addFinder(new BareDeleteParamCall::Finder(calls));
     addFinder(new BareGetParamCachedCall::Finder(calls));
     addFinder(new BareGetParamCall::Finder(calls));
     addFinder(new BareGetParamWithDefaultCall::Finder(calls));
+    addFinder(new BareHasParamCall::Finder(calls));
     addFinder(new BareServiceCall::Finder(calls));
     addFinder(new BareSetParamCall::Finder(calls));
-    addFinder(new RosInitCall::Finder(calls));
+    addFinder(new DeleteParamCall::Finder(calls));
+    addFinder(new GetParamCachedCall::Finder(calls));
+    addFinder(new GetParamCall::Finder(calls));
     addFinder(new GetParamWithDefaultCall::Finder(calls));
+    addFinder(new HasParamCall::Finder(calls));
+    addFinder(new RosInitCall::Finder(calls));
+    addFinder(new ServiceClientCall::Finder(calls));
+    addFinder(new SetParamCall::Finder(calls));
+    addFinder(new SubscribeTopicCall::Finder(calls));
   }
 
   void addFinder(RosApiCall::Finder *finder) {
