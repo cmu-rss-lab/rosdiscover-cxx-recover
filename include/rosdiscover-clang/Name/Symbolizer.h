@@ -15,6 +15,7 @@ public:
   NameExpr* symbolize(clang::Expr const *nameExpr) const;
 
 private:
+  NameExpr* symbolize(clang::CXXConstructExpr const *constructExpr) const;
   NameExpr* symbolize(clang::ImplicitCastExpr const *castExpr) const;
   NameExpr* symbolize(clang::DeclRefExpr const *nameExpr) const;
   NameExpr* symbolize(clang::StringLiteral const *literal) const;

@@ -11,6 +11,18 @@ rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang:
     return symbolize(literal);
   } else if (auto const *implicitCastExpr = node.get<clang::ImplicitCastExpr>()) {
     return symbolize(implicitCastExpr);
+  } else if (auto const *constructExpr = node.get<clang::CXXConstructExpr>()) {
+    return symbolize(constructExpr);
+  }
+
+  return new Unknown();
+}
+
+rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::CXXConstructExpr const *constructExpr) const {
+   // does this call the std::string constructor?
+  // FIXME this is a bit hacky and may break when other libc++ versions are used
+  if (constructExpr->getConstructor()->getParent()->getQualifiedNameAsString() != "std::__cxx11::basic_string") {
+    return symbolize(constructExpr->getArg(0));
   }
 
   return new Unknown();
@@ -31,6 +43,7 @@ rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang:
   return new rosdiscover::name::StringLiteral(literal->getString().str());
 }
 
+// TODO all of this will get replaced by symbolize methods
 /** Attempts to return the string literal embedded in a given expression */
 llvm::Optional<std::string> rosdiscover::name::NameSymbolizer::getLiteral(clang::Expr const *expr) const {
   using namespace clang;
