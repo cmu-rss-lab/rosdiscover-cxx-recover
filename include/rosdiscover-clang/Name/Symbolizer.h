@@ -9,7 +9,7 @@ namespace name {
 
 class NameSymbolizer {
 public:
-  NameExpr symbolize(clang::Expr const *nameExpr) const;
+  NameExpr* symbolize(clang::Expr const *nameExpr) const;
 
 }; // rosdiscover::name::NameSymbolizer
 

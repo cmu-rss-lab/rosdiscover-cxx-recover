@@ -2,6 +2,8 @@
 
 #include <clang/AST/Expr.h>
 
+#include "../ApiCall/RosApiCall.h"
+
 namespace rosdiscover {
 namespace name {
 
@@ -31,12 +33,12 @@ private:
 
 class FormalExpr : public NameExpr {
 public:
-  FormalExpr(clang::ParmValDecl const *parameter) : parameter(parameter) {}
+  FormalExpr(clang::ParmVarDecl const *parameter) : parameter(parameter) {}
 
- clang::ParmValDecl const * getParameter() const { return parameter; }
+ clang::ParmVarDecl const * getParameter() const { return parameter; }
 
 private:
-  clang::ParmValDecl const *parameter;
+  clang::ParmVarDecl const *parameter;
 };
 
 } // rosdiscover::name

@@ -1,4 +1,6 @@
 add_executable(rosdiscover
+  CallExprFinder.cpp
+  Name/Symbolizer.cpp
   RosDiscover.cpp
 )
 

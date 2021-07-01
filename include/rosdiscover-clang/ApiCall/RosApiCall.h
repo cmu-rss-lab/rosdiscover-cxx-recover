@@ -6,6 +6,7 @@
 #include <clang/AST/ASTTypeTraits.h>
 #include <clang/AST/Expr.h>
 #include <clang/AST/PrettyPrinter.h>
+#include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <llvm/Support/raw_ostream.h>
 
 namespace rosdiscover {

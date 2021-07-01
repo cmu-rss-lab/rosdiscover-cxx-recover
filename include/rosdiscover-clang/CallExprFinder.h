@@ -14,7 +14,8 @@ namespace rosdiscover {
 
 class CallExprFinder {
 public:
-  static std::unordered_map<llvm::FunctionDecl*, std::vector<llvm::CallExpr*>> find(clang::tooling::ClangTool &tool);
+  // static std::unordered_map<llvm::FunctionDecl*, std::vector<llvm::CallExpr*>> find(clang::tooling::ClangTool &tool);
+  static void find(clang::tooling::ClangTool &tool);
 }; // rosdiscover::CallExprFinder
 
 
