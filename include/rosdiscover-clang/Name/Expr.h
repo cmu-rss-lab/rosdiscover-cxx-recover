@@ -5,8 +5,14 @@
 namespace rosdiscover {
 namespace name {
 
-/** Attempts to produce a simple symbolic string expression from a ROS name expr **/
+/** Attempts to produce a simple symbolic string expression from a ROS name expr */
 class NameExpr {};
+
+/** Represents an expression that we are unable to symbolize. */
+class Unknown : public NameExpr {};
+
+// TODO implement!
+class ArgvExpr : public NameExpr {};
 
 class StringLiteral : public NameExpr {
 public:
