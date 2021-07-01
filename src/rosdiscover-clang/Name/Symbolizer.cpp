@@ -3,9 +3,24 @@
 rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::Expr const *nameExpr) const {
   using namespace rosdiscover::name;
 
-  // is this expression a string literal?
+  clang::DynTypedNode const &node = clang::DynTypedNode::create(*nameExpr);
+
+  if (auto const *declRefExpr = node.get<clang::DeclRefExpr>()) {
+    return symbolize(declRefExpr);
+  } else if (auto const *literal = node.get<clang::StringLiteral>()) {
+    return symbolize(literal);
+  }
 
   return new Unknown();
+}
+
+
+rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::DeclRefExpr const *nameExpr) const {
+  abort();
+}
+
+rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::StringLiteral const *literal) const {
+  return new rosdiscover::name::StringLiteral(literal->getString().str());
 }
 
 /** Attempts to return the string literal embedded in a given expression */
