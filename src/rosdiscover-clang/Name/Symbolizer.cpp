@@ -9,13 +9,21 @@ rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang:
     return symbolize(declRefExpr);
   } else if (auto const *literal = node.get<clang::StringLiteral>()) {
     return symbolize(literal);
+  } else if (auto const *implicitCastExpr = node.get<clang::ImplicitCastExpr>()) {
+    return symbolize(implicitCastExpr);
   }
 
   return new Unknown();
 }
 
+rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::ImplicitCastExpr const *castExpr) const {
+  // TODO check that we're dealing with strings or char[]
+  return symbolize(castExpr->getSubExpr());
+}
 
 rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::DeclRefExpr const *nameExpr) const {
+  auto *decl = nameExpr->getFoundDecl();
+  decl->dumpColor();
   abort();
 }
 
