@@ -1,6 +1,9 @@
 #pragma once
 
+#include <string>
+
 #include <clang/AST/Expr.h>
+#include <llvm/ADT/APInt.h>
 
 #include "Expr.h"
 
@@ -11,6 +14,8 @@ class NameSymbolizer {
 public:
   NameExpr* symbolize(clang::Expr const *nameExpr) const;
 
+private:
+  llvm::Optional<std::string> getLiteral(clang::Expr const *expr) const;
 }; // rosdiscover::name::NameSymbolizer
 
 } // rosdiscover::name
