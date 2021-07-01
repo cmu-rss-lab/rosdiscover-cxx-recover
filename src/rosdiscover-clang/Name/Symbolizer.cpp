@@ -1,5 +1,7 @@
 #include <rosdiscover-clang/Name/Symbolizer.h>
 
+#include <clang/AST/ASTTypeTraits.h>
+
 rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::Expr const *nameExpr) const {
   using namespace rosdiscover::name;
 

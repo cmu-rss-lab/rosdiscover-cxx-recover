@@ -9,6 +9,8 @@
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <llvm/Support/raw_ostream.h>
 
+#include "../Name/Symbolizer.h"
+
 namespace rosdiscover {
 namespace api_call {
 

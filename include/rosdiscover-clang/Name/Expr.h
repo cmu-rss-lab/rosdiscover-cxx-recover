@@ -2,9 +2,17 @@
 
 #include <clang/AST/Expr.h>
 
-#include "../ApiCall/RosApiCall.h"
+//#include "../ApiCall/RosApiCall.h"
+
+// forward declaration
+
 
 namespace rosdiscover {
+
+namespace api_call {
+class RosApiCall;
+} // rosdiscover::api_call
+
 namespace name {
 
 /** Attempts to produce a simple symbolic string expression from a ROS name expr */

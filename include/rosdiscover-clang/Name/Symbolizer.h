@@ -3,6 +3,7 @@
 #include <string>
 
 #include <clang/AST/Expr.h>
+#include <clang/AST/ExprCXX.h>
 #include <llvm/ADT/APInt.h>
 
 #include "Expr.h"
