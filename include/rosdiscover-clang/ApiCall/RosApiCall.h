@@ -88,8 +88,11 @@ public:
         // NOTE c++20 provides std::string::ends_with
         // ignore any calls that happen within the ROS language bindings
         std::string filename = clang::FullSourceLoc(callExpr->getBeginLoc(), *result.SourceManager).getFileEntry()->getName().str();
-        if (ends_with(filename, "/include/ros/node_handle.h")) {
-          llvm::outs() << "ignoring API call in file: " << filename << "\n";
+        if (
+             ends_with(filename, "/include/ros/node_handle.h")
+          || ends_with(filename, "/include/ros/param.h")
+          || ends_with(filename, "/include/ros/service.h")
+        ) {
           return;
         }
 
