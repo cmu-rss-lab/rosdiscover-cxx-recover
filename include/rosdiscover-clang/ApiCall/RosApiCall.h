@@ -10,6 +10,7 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include "../Name/Symbolizer.h"
+#include "../utils.h"
 
 namespace rosdiscover {
 namespace api_call {
@@ -20,6 +21,15 @@ public:
 
   /** Returns the expression that provides the name associated with this call. */
   virtual clang::Expr const * getNameExpr() const = 0;
+
+  name::NameExpr* symbolize() const {
+    // this method really needs to go outside of RosApiCall and take place after we've
+    // identified API calls
+    //
+    // this is just here for debugging
+    auto symbolizer = name::NameSymbolizer();
+    return symbolizer.symbolize(getNameExpr());
+  }
 
   /** Returns the string literal name used by this API call, if there is one. */
   llvm::Optional<std::string> getConstantName() const {
@@ -72,8 +82,18 @@ public:
   class Finder : public clang::ast_matchers::MatchFinder::MatchCallback {
   public:
     void run(const clang::ast_matchers::MatchFinder::MatchResult &result) {
-      if (auto *api_call = build(result)) {
-        found.push_back(api_call);
+      if (auto *apiCall = build(result)) {
+        auto const *callExpr = apiCall->getCallExpr();
+
+        // NOTE c++20 provides std::string::ends_with
+        // ignore any calls that happen within the ROS language bindings
+        std::string filename = clang::FullSourceLoc(callExpr->getBeginLoc(), *result.SourceManager).getFileEntry()->getName().str();
+        if (ends_with(filename, "/include/ros/node_handle.h")) {
+          llvm::outs() << "ignoring API call in file: " << filename << "\n";
+          return;
+        }
+
+        found.push_back(apiCall);
       }
     }
 
@@ -103,6 +123,8 @@ public:
       os << "\n";
       getNameExpr()->dumpColor();
     }
+
+    symbolize();
   }
 
 protected:
