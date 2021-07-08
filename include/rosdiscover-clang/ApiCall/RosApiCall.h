@@ -127,6 +127,7 @@ public:
       getNameExpr()->dumpColor();
     }
 
+    // TODO get this working :-)
     symbolize();
   }
 
