@@ -22,6 +22,14 @@ public:
       }
     }
 
+    // find each ROS API call
+    // - possibly use ASTMatcher
+    // - but then use a silly visitor to get a mutable version of the same API call?
+
+    // - write a path condition builder
+    //    - accepts a Clang stmt
+    //    - produces a symbolic path condition in terms of formals
+
   }
 };
 
