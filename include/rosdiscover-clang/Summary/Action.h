@@ -12,7 +12,16 @@ namespace summary {
 class SummaryBuilderASTConsumer : public clang::ASTConsumer {
 public:
   void HandleTranslationUnit(clang::ASTContext &context) override {
+    // build a summary for each (unseen) function definition
+    // NOTE: we may want to limit our attention to specific files
     llvm::outs() << "building summaries\n";
+    auto *tu_decl = context.getTranslationUnitDecl();
+    for (auto *decl : tu_decl->decls()) {
+      if (auto *func_decl = dyn_cast<clang::FunctionDecl>(decl)) {
+        llvm::outs() << "checking function: " << func_decl->getNameInfo().getAsString() << "\n";
+      }
+    }
+
   }
 };
 
