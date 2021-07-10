@@ -5,6 +5,10 @@
 #include <clang/Frontend/FrontendActions.h>
 #include <clang/Tooling/Tooling.h>
 
+#include <rosdiscover-clang/ApiCall/RosApiCall.h>
+#include <rosdiscover-clang/ApiCall/Finder.h>
+#include <rosdiscover-clang/Name/Symbolizer.h>
+
 namespace rosdiscover {
 namespace summary {
 
@@ -22,9 +26,25 @@ public:
       }
     }
 
+    // build a symbolizer
+    auto symbolizer = name::NameSymbolizer(context);
+
     // find each ROS API call
+    // - TODO: find parent function decl
     // - possibly use ASTMatcher
     // - but then use a silly visitor to get a mutable version of the same API call?
+    auto calls = api_call::RosApiCallFinder::find(context);
+    for (auto *call : calls) {
+      call->print(llvm::outs());
+
+      clang::Expr *name_expr = const_cast<clang::Expr*>(call->getNameExpr());
+      name_expr->dumpColor();
+
+      auto symbolicName = symbolizer.symbolize(name_expr);
+
+
+      llvm::outs() << "\n\n";
+    }
 
     // - write a path condition builder
     //    - accepts a Clang stmt

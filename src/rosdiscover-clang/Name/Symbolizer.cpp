@@ -2,25 +2,29 @@
 
 #include <clang/AST/ASTTypeTraits.h>
 
-rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::Expr const *nameExpr) const {
+rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::Expr *nameExpr) {
   using namespace rosdiscover::name;
 
-  clang::DynTypedNode const &node = clang::DynTypedNode::create(*nameExpr);
+  // clang::DynTypedNode const &node = clang::DynTypedNode::create(*nameExpr);
 
-  if (auto const *declRefExpr = node.get<clang::DeclRefExpr>()) {
+  llvm::outs() << "symbolizing: ";
+  nameExpr->dumpColor();
+  llvm::outs() << "\n";
+
+  if (clang::DeclRefExpr *declRefExpr = dyn_cast<clang::DeclRefExpr>(nameExpr)) {
     return symbolize(declRefExpr);
-  } else if (auto const *literal = node.get<clang::StringLiteral>()) {
+  } else if (clang::StringLiteral *literal = dyn_cast<clang::StringLiteral>(nameExpr)) {
     return symbolize(literal);
-  } else if (auto const *implicitCastExpr = node.get<clang::ImplicitCastExpr>()) {
+  } else if (clang::ImplicitCastExpr *implicitCastExpr = dyn_cast<clang::ImplicitCastExpr>(nameExpr)) {
     return symbolize(implicitCastExpr);
-  } else if (auto const *constructExpr = node.get<clang::CXXConstructExpr>()) {
+  } else if (clang::CXXConstructExpr *constructExpr = dyn_cast<clang::CXXConstructExpr>(nameExpr)) {
     return symbolize(constructExpr);
   }
 
   return new Unknown();
 }
 
-rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::CXXConstructExpr const *constructExpr) const {
+rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::CXXConstructExpr *constructExpr) {
    // does this call the std::string constructor?
   // FIXME this is a bit hacky and may break when other libc++ versions are used
   if (constructExpr->getConstructor()->getParent()->getQualifiedNameAsString() != "std::__cxx11::basic_string") {
@@ -30,24 +34,50 @@ rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang:
   return new Unknown();
 }
 
-rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::ImplicitCastExpr const *castExpr) const {
+rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::ImplicitCastExpr *castExpr) {
   // TODO check that we're dealing with strings or char[]
   return symbolize(castExpr->getSubExpr());
 }
 
-rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::DeclRefExpr const *nameExpr) const {
-  auto *decl = nameExpr->getFoundDecl();
-  decl->dumpColor();
-  abort();
+rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::DeclRefExpr *nameExpr) {
+  // FIXME trying to access the decl causes the program to crash :-(
+  auto *decl = nameExpr->getDecl();
+
+  // is this a var decl?
+  if (clang::VarDecl const *var_decl = dyn_cast<clang::VarDecl>(decl)) {
+    llvm::outs() << "VAR DECL!\n";
+
+    // TODO: check isLocalVarDecl?
+    auto const *var_def = var_decl->getDefinition();
+    if (var_def == nullptr) {
+      llvm::outs() << "TRASH PANDA";
+      return new Unknown();
+    }
+
+    llvm::outs() << "DEFINITION: ";
+    var_def->dumpColor();
+    llvm::outs() << "\n";
+
+    return new Unknown();
+  }
+
+  auto *underlying_decl = decl->getUnderlyingDecl();
+  llvm::outs() << "trying to dump the decl\n";
+  underlying_decl->printQualifiedName(llvm::outs());
+  underlying_decl->dump();
+  llvm::outs() << "dumped the decl\n";
+
+  // TODO implement
+  return new Unknown();
 }
 
-rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::StringLiteral const *literal) const {
+rosdiscover::name::NameExpr* rosdiscover::name::NameSymbolizer::symbolize(clang::StringLiteral *literal) {
   return new rosdiscover::name::StringLiteral(literal->getString().str());
 }
 
 // TODO all of this will get replaced by symbolize methods
 /** Attempts to return the string literal embedded in a given expression */
-llvm::Optional<std::string> rosdiscover::name::NameSymbolizer::getLiteral(clang::Expr const *expr) const {
+llvm::Optional<std::string> rosdiscover::name::NameSymbolizer::getLiteral(clang::Expr *expr) {
   using namespace clang;
   using namespace clang::ast_type_traits;
 

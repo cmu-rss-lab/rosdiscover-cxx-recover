@@ -16,12 +16,15 @@ class RosApiCallFinder {
 public:
 
   static std::vector<RosApiCall*> find(clang::tooling::ClangTool &tool) {
-    return RosApiCallFinder(tool).run();
+    return RosApiCallFinder().run(tool);
+  }
+
+  static std::vector<RosApiCall*> find(clang::ASTContext &context) {
+    return RosApiCallFinder().run(context);
   }
 
 private:
-  RosApiCallFinder(clang::tooling::ClangTool &tool) :
-    tool(tool),
+  RosApiCallFinder() :
     callFinders(),
     matchFinder(),
     calls()
@@ -62,9 +65,7 @@ private:
   }
 
   /** Finds all API calls within a program described by a clang tool. */
-  std::vector<RosApiCall*> run() {
-    // TODO remove any existingcalls
-    calls.clear();
+  std::vector<RosApiCall*> run(clang::tooling::ClangTool &tool) {
     int result = tool.run(clang::tooling::newFrontendActionFactory(&matchFinder).get());
     if (result != 0) {
       llvm::errs() << "ERROR: ROS API call finder failed!\n";
@@ -74,16 +75,13 @@ private:
   }
 
   std::vector<RosApiCall*> run(clang::ASTContext &context) {
-    calls.clear();
     matchFinder.matchAST(context);
     return calls;
   }
 
 private:
-  clang::tooling::ClangTool &tool;
   std::vector<RosApiCall::Finder*> callFinders;
   clang::ast_matchers::MatchFinder matchFinder;
-  // TODO use shared_ptr?
   std::vector<RosApiCall*> calls;
 };
 

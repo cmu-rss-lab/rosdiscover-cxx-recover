@@ -22,14 +22,17 @@ public:
   /** Returns the expression that provides the name associated with this call. */
   virtual clang::Expr const * getNameExpr() const = 0;
 
+  /*
   name::NameExpr* symbolize() const {
     // this method really needs to go outside of RosApiCall and take place after we've
     // identified API calls
     //
     // this is just here for debugging
+    // auto symbolizer = name::NameSymbolizer(*context);
     auto symbolizer = name::NameSymbolizer();
     return symbolizer.symbolize(getNameExpr());
   }
+  */
 
   /** Returns the string literal name used by this API call, if there is one. */
   llvm::Optional<std::string> getConstantName() const {
@@ -128,7 +131,7 @@ public:
     }
 
     // TODO get this working :-)
-    symbolize();
+    // symbolize();
   }
 
 protected:
