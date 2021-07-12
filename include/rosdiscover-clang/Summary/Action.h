@@ -1,5 +1,8 @@
 #pragma once
 
+#include <unordered_set>
+
+#include <clang/Analysis/CallGraph.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/FrontendAction.h>
 #include <clang/Frontend/FrontendActions.h>
@@ -13,11 +16,25 @@ namespace rosdiscover {
 namespace summary {
 
 
+//class FunctionSymbolizer {
+//
+//  // find all of the ROS API calls within this function
+//
+//};
+
+
+/**
+ * LIMITATION: this does not CURRENTLY provide CTU results
+ *
+ * NOTES:
+ * * we may want to limit our attention to specific files
+ */
+
 class SummaryBuilderASTConsumer : public clang::ASTConsumer {
 public:
   void HandleTranslationUnit(clang::ASTContext &context) override {
     // build a summary for each (unseen) function definition
-    // NOTE: we may want to limit our attention to specific files
+    /*
     llvm::outs() << "building summaries\n";
     auto *tu_decl = context.getTranslationUnitDecl();
     for (auto *decl : tu_decl->decls()) {
@@ -25,26 +42,76 @@ public:
         llvm::outs() << "checking function: " << func_decl->getNameInfo().getAsString() << "\n";
       }
     }
+    */
+
+    // for now, build a call graph for this single translation unit
+    // - later on we can expand this to support CTU analysis
+    clang::CallGraph callGraph;
+    callGraph.addToCallGraph(context.getTranslationUnitDecl());
+
+    // step one:
+    // - find all FunctionDecls that transitively perform a ROS API call
+    //    - these are the architecturally relevant function calls
+    //    - we need a summary for each of these function calls
+    //
+    //
+    //
+
+    // find all ROS API calls within this translation unit [RawRosApiCall]
+    auto calls = api_call::RosApiCallFinder::find(context);
+
+    // determine the set of functions that contain a ROS API call within this translation unit
+    std::unordered_set<clang::FunctionDecl*> relevantFunctions;
+    for (auto *call : calls) {
+      // relevantFunctions.insert(call->getFunction());
+    }
+
+    // determine the set of functions that transitively call a function with a ROS API call
+
+
+    // UnsymbolizedFunction: API calls + relevant function calls
+    // SymbolizedFunction: API calls [SymbolicRosApiCall] + relevant function calls
+    // FunctionSummary: conditional API calls [SymbolicConditionalRosApiCall] + conditional function calls
 
     // build a symbolizer
-    auto symbolizer = name::NameSymbolizer(context);
+    // - turn this into a FunctionSymbolizer
+    // - first step: find the ROS API calls within this function
+    // - second step: symbolize those ROS API calls
+    // - third step: compute the path condition for each ROS API call
+    // auto symbolizer = name::NameSymbolizer(context);
+
+
+    // BasicFunctionSummary
+    // --------------------
+    // - ApiCall -> ConditionalApiCall
+    // --------------------
+    // - API calls [path condition]
+    // - non-API calls
+
+
+    // - parameter read [w/ default]
+
+
+
+    // - group ROS API calls by their parent function decl
+    // - we need to symbolize the entire group at once
 
     // find each ROS API call
     // - TODO: find parent function decl
     // - possibly use ASTMatcher
     // - but then use a silly visitor to get a mutable version of the same API call?
-    auto calls = api_call::RosApiCallFinder::find(context);
-    for (auto *call : calls) {
-      call->print(llvm::outs());
+    // auto calls = api_call::RosApiCallFinder::find(context);
+    // for (auto *call : calls) {
+    //   call->print(llvm::outs());
 
-      clang::Expr *name_expr = const_cast<clang::Expr*>(call->getNameExpr());
-      name_expr->dumpColor();
+    //   clang::Expr *name_expr = const_cast<clang::Expr*>(call->getNameExpr());
+    //   name_expr->dumpColor();
 
-      auto symbolicName = symbolizer.symbolize(name_expr);
+    //   auto symbolicName = symbolizer.symbolize(name_expr);
 
 
-      llvm::outs() << "\n\n";
-    }
+    //   llvm::outs() << "\n\n";
+    // }
 
     // - write a path condition builder
     //    - accepts a Clang stmt
