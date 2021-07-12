@@ -77,14 +77,9 @@ public:
     }
 
     // determine the set of functions that transitively call a function with a ROS API call
-    std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
-    for (auto *functionDecl : containingFunctions) {
-      auto &callGraphNode = *callGraph.getNode(functionDecl);
-      for (auto calleeRecord : callGraphNode) {
-        auto *callee = dyn_cast<clang::FunctionDecl>(calleeRecord.Callee->getDecl());
-        llvm::outs() << "callee: " << callee->getNameInfo().getAsString() << "\n";
-      }
-      llvm::outs() << "\n";
+    auto relevantFunctions = computeRelevantFunctions(containingFunctions, callGraph);
+    for (auto *functionDecl : relevantFunctions) {
+      llvm::outs() << "relevant function: " << functionDecl->getNameInfo().getAsString() << "\n";
     }
 
     // UnsymbolizedFunction: API calls + relevant function calls
@@ -108,8 +103,6 @@ public:
 
 
     // - parameter read [w/ default]
-
-
 
     // - group ROS API calls by their parent function decl
     // - we need to symbolize the entire group at once
@@ -143,11 +136,25 @@ private:
     std::unordered_set<clang::FunctionDecl const *> &containingFunctions,
     clang::CallGraph &callGraph
   ) {
+    llvm::outs() << "computing relevant functions...\n";
+    llvm::outs() << "determining function callers\n";
     auto functionToCallers = findCallers(callGraph);
+    llvm::outs() << "determined function callers\n";
     std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
     std::queue<clang::FunctionDecl const *> queue;
     for (auto const *function : containingFunctions) {
       queue.push(function);
+    }
+
+    // debugging
+    for (auto entry : functionToCallers) {
+      auto *called = entry.first;
+      auto &callers = entry.second;
+      llvm::outs() << called->getNameInfo().getAsString() << ": ";
+      for (auto const *caller : callers) {
+        llvm::outs() << caller->getNameInfo().getAsString() << ", ";
+      }
+      llvm::outs() << "\n";
     }
 
     while (!queue.empty()) {
@@ -156,6 +163,7 @@ private:
       queue.pop();
 
       for (auto caller : functionToCallers[function]) {
+        llvm::outs() << "checking for transitive calls: " << caller->getNameInfo().getAsString() << "\n";
         if (relevantFunctions.find(function) == relevantFunctions.end()) {
           queue.push(caller);
         }
