@@ -153,8 +153,9 @@ private:
         continue;
       }
 
-      clang::CallGraphNode const &callGraphNode = *callGraphEntry.second.get();
-      for (auto callee : callGraphNode) {
+      clang::CallGraphNode const &callerNode = *callGraphEntry.second.get();
+      for (clang::CallGraphNode::CallRecord const &callRecord : callerNode) {
+        auto const *callee = dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl());
         llvm::outs() << "cool\n";
       }
     }
