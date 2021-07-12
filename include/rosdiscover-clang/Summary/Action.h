@@ -32,6 +32,7 @@ namespace summary {
 
 class SummaryBuilderASTConsumer : public clang::ASTConsumer {
 public:
+
   void HandleTranslationUnit(clang::ASTContext &context) override {
     // build a summary for each (unseen) function definition
     /*
@@ -61,21 +62,29 @@ public:
     auto calls = api_call::RosApiCallFinder::find(context);
 
     // determine the set of functions that contain a ROS API call within this translation unit
-    std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
+    std::unordered_set<clang::FunctionDecl const *> containingFunctions;
     for (auto *call : calls) {
       auto *functionDecl = getParentFunctionDecl(context, call->getCallExpr());
       if (functionDecl == nullptr) {
         llvm::errs() << "failed to determine parent function for ROS API call\n";
       }
-      relevantFunctions.insert(functionDecl);
+      containingFunctions.insert(functionDecl);
     }
 
-    for (auto *functionDecl : relevantFunctions) {
+    for (auto *functionDecl : containingFunctions) {
       llvm::outs() << "ROS API calls found in function: " << functionDecl->getNameInfo().getAsString() << "\n";
     }
 
     // determine the set of functions that transitively call a function with a ROS API call
-
+    std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
+    for (auto *functionDecl : containingFunctions) {
+      auto &callGraphNode = *callGraph.getNode(functionDecl);
+      for (auto calleeRecord : callGraphNode) {
+        auto *callee = dyn_cast<clang::FunctionDecl>(calleeRecord.Callee->getDecl());
+        llvm::outs() << "callee: " << callee->getNameInfo().getAsString() << "\n";
+      }
+      llvm::outs() << "\n";
+    }
 
     // UnsymbolizedFunction: API calls + relevant function calls
     // SymbolizedFunction: API calls [SymbolicRosApiCall] + relevant function calls
@@ -126,6 +135,33 @@ public:
     //    - produces a symbolic path condition in terms of formals
 
   }
+
+private:
+  /** Computes the set of functions that (transitively) make ROS API calls */
+  std::unordered_set<clang::FunctionDecl const *> computeRelevantFunctions(
+    std::unordered_set<clang::FunctionDecl const *> &containingFunctions,
+    clang::CallGraph &callGraph
+  ) {
+    std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
+    for (auto *function : containingFunctions) {
+      relevantFunctions.insert(function);
+    }
+
+    for (auto const &callGraphEntry : callGraph) {
+      clang::FunctionDecl const *caller = dyn_cast<clang::FunctionDecl>(callGraphEntry.first);
+      if (caller == nullptr) {
+        continue;
+      }
+
+      clang::CallGraphNode const &callGraphNode = *callGraphEntry.second.get();
+      for (auto callee : callGraphNode) {
+        llvm::outs() << "cool\n";
+      }
+    }
+
+    return relevantFunctions;
+  };
+
 };
 
 
