@@ -143,16 +143,16 @@ private:
     std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
     std::queue<clang::FunctionDecl const *> queue;
     for (auto const *function : containingFunctions) {
-      queue.push(function);
+      queue.push(function->getCanonicalDecl());
     }
 
     // debugging
     for (auto entry : functionToCallers) {
       auto *called = entry.first;
       auto &callers = entry.second;
-      llvm::outs() << called->getNameInfo().getAsString() << ": ";
+      llvm::outs() << called->getQualifiedNameAsString() << ": ";
       for (auto const *caller : callers) {
-        llvm::outs() << caller->getNameInfo().getAsString() << ", ";
+        llvm::outs() << caller->getQualifiedNameAsString() << ", ";
       }
       llvm::outs() << "\n";
     }
@@ -162,8 +162,9 @@ private:
       relevantFunctions.insert(function);
       queue.pop();
 
+      llvm::outs() << "checking for calls to function: " << function->getQualifiedNameAsString() << "\n";
       for (auto caller : functionToCallers[function]) {
-        llvm::outs() << "checking for transitive calls: " << caller->getNameInfo().getAsString() << "\n";
+        llvm::outs() << "checking for transitive calls: " << caller->getQualifiedNameAsString() << "\n";
         if (relevantFunctions.find(function) == relevantFunctions.end()) {
           queue.push(caller);
         }

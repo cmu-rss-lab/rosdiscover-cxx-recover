@@ -49,19 +49,20 @@ std::unordered_map<clang::FunctionDecl const *, std::unordered_set<clang::Functi
   std::unordered_map<clang::FunctionDecl const *, std::unordered_set<clang::FunctionDecl const *>> functionToCallers;
 
   for (auto const &callGraphEntry : callGraph) {
-    clang::FunctionDecl const *caller = dyn_cast<clang::FunctionDecl>(callGraphEntry.first);
-    if (caller == nullptr) {
+    if (callGraphEntry.first == nullptr || !isa<clang::FunctionDecl>(callGraphEntry.first)) {
       continue;
     }
 
+    clang::FunctionDecl const *caller = dyn_cast<clang::FunctionDecl>(callGraphEntry.first)->getCanonicalDecl();
     clang::CallGraphNode const &callerNode = *callGraphEntry.second.get();
     for (clang::CallGraphNode::CallRecord const &callRecord : callerNode) {
-      auto const *callee = dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl());
+      auto const *callee = dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl())->getCanonicalDecl();
 
       if (functionToCallers.find(callee) != functionToCallers.end()) {
         functionToCallers[callee].insert(caller);
       } else {
-        functionToCallers.emplace(callee, std::unordered_set<clang::FunctionDecl const *>({caller}));
+        functionToCallers.emplace(callee, std::unordered_set<clang::FunctionDecl const *>());
+        functionToCallers[callee].insert(caller);
       }
     }
   }
