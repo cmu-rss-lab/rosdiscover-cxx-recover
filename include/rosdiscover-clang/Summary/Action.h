@@ -61,9 +61,17 @@ public:
     auto calls = api_call::RosApiCallFinder::find(context);
 
     // determine the set of functions that contain a ROS API call within this translation unit
-    std::unordered_set<clang::FunctionDecl*> relevantFunctions;
+    std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
     for (auto *call : calls) {
-      // relevantFunctions.insert(call->getFunction());
+      auto *functionDecl = getParentFunctionDecl(context, call->getCallExpr());
+      if (functionDecl == nullptr) {
+        llvm::errs() << "failed to determine parent function for ROS API call\n";
+      }
+      relevantFunctions.insert(functionDecl);
+    }
+
+    for (auto *functionDecl : relevantFunctions) {
+      llvm::outs() << "ROS API calls found in function: " << functionDecl->getNameInfo().getAsString() << "\n";
     }
 
     // determine the set of functions that transitively call a function with a ROS API call
