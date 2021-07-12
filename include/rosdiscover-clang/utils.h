@@ -13,4 +13,20 @@ bool starts_with(const std::string &str, const std::string &prefix) {
   return str.rfind(prefix, 0) == 0;
 }
 
+clang::FunctionDecl const * getParentFunctionDecl(clang::ASTContext &context, clang::DynTypedNode const &node) {
+  clang::FunctionDecl const *functionDecl = node.get<clang::FunctionDecl>();
+  if (functionDecl != nullptr) {
+    return functionDecl;
+  }
+
+  for (clang::DynTypedNode const parent : context.getParents(node)) {
+    functionDecl = getParentFunctionDecl(context, parent);
+    if (functionDecl != nullptr) {
+      return functionDecl;
+    }
+  }
+
+  return nullptr;
+}
+
 } // rosdiscover
