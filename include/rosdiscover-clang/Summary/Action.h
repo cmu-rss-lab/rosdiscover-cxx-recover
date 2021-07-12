@@ -1,5 +1,6 @@
 #pragma once
 
+#include <queue>
 #include <unordered_set>
 
 #include <clang/Analysis/CallGraph.h>
@@ -142,21 +143,22 @@ private:
     std::unordered_set<clang::FunctionDecl const *> &containingFunctions,
     clang::CallGraph &callGraph
   ) {
+    auto functionToCallers = findCallers(callGraph);
     std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
-    for (auto *function : containingFunctions) {
-      relevantFunctions.insert(function);
+    std::queue<clang::FunctionDecl const *> queue;
+    for (auto const *function : containingFunctions) {
+      queue.push(function);
     }
 
-    for (auto const &callGraphEntry : callGraph) {
-      clang::FunctionDecl const *caller = dyn_cast<clang::FunctionDecl>(callGraphEntry.first);
-      if (caller == nullptr) {
-        continue;
-      }
+    while (!queue.empty()) {
+      auto const *function = queue.front();
+      relevantFunctions.insert(function);
+      queue.pop();
 
-      clang::CallGraphNode const &callerNode = *callGraphEntry.second.get();
-      for (clang::CallGraphNode::CallRecord const &callRecord : callerNode) {
-        auto const *callee = dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl());
-        llvm::outs() << "cool\n";
+      for (auto caller : functionToCallers[function]) {
+        if (relevantFunctions.find(function) == relevantFunctions.end()) {
+          queue.push(caller);
+        }
       }
     }
 
