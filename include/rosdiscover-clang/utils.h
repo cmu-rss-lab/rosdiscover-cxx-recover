@@ -1,5 +1,10 @@
 #pragma once
 
+#include <clang/AST/ASTContext.h>
+#include <clang/AST/ASTTypeTraits.h>
+#include <clang/AST/Decl.h>
+#include <clang/AST/Stmt.h>
+
 namespace rosdiscover {
 
 // https://stackoverflow.com/questions/20446201/how-to-check-if-string-ends-with-txt
@@ -27,6 +32,10 @@ clang::FunctionDecl const * getParentFunctionDecl(clang::ASTContext &context, cl
   }
 
   return nullptr;
+}
+
+clang::FunctionDecl const * getParentFunctionDecl(clang::ASTContext &context, clang::Stmt const *stmt) {
+  return getParentFunctionDecl(context, clang::DynTypedNode::create(*stmt));
 }
 
 } // rosdiscover
