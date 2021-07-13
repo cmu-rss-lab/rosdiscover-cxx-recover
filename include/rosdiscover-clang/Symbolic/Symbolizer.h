@@ -19,13 +19,20 @@ namespace symbolic {
 
 /** limitation: operates over a single translation unit for now */
 class Symbolizer {
-
+public:
   // todo: return SymbolicContext
-  static void symbolize(clang::ASTContext &astContext);
+  static void symbolize(clang::ASTContext &astContext) {
+    Symbolizer(astContext).run();
+  }
 
 private:
   Symbolizer(clang::ASTContext &astContext)
-    : astContext(astContext), callGraph(), apiCalls(), functionToApiCalls(), relevantFunctions()
+    : astContext(astContext),
+      callGraph(),
+      apiCalls(),
+      functionToApiCalls(),
+      relevantFunctions(),
+      relevantFunctionCalls()
   {}
 
   clang::ASTContext &astContext;
@@ -33,6 +40,7 @@ private:
   std::vector<api_call::RosApiCall *> apiCalls;
   std::unordered_map<clang::FunctionDecl const *, std::vector<api_call::RosApiCall *>> functionToApiCalls;
   std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
+  std::unordered_map<clang::FunctionDecl const *, std::vector<clang::CallExpr *>> relevantFunctionCalls;
 
   /** Constructs the call graph */
   void buildCallGraph() {
@@ -90,12 +98,57 @@ private:
     }
   }
 
+  void findRelevantFunctionCalls() {
+    // look at all function calls within the set of relevant functions
+    for (auto const *caller : relevantFunctions) {
+      relevantFunctionCalls.emplace(caller, std::vector<clang::CallExpr *>());
+
+      auto *callerNode = callGraph.getNode(caller);
+      if (callerNode == nullptr) {
+        llvm::outs() << "something bad happened: use of non-canonical decl?\n";
+        abort();
+      }
+
+      for (clang::CallGraphNode::CallRecord const &callRecord : *callerNode) {
+        // is this a call to another relevant function?
+        auto const *callee = dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl())->getCanonicalDecl();
+        llvm::outs()
+          << caller->getQualifiedNameAsString()
+          << ": checking call to "
+          << callee->getQualifiedNameAsString()
+          << "\n";
+        if (relevantFunctions.find(callee) == relevantFunctions.end())
+          continue;
+
+        if (auto *expr = dyn_cast<clang::CallExpr>(callRecord.CallExpr))
+          relevantFunctionCalls[caller].push_back(expr);
+      }
+
+      llvm::outs()
+        << caller->getQualifiedNameAsString()
+        << ": found "
+        << relevantFunctionCalls[caller].size()
+        << " relevant function calls\n";
+
+      for (auto call : relevantFunctionCalls[caller]) {
+        call->dumpColor();
+        llvm::outs() << "\n";
+      }
+    }
+  }
+
   // void symbolize(clang::FunctionDecl const *function, SymbolicContext &symContext);
 
   void run() {
     buildCallGraph();
     findRosApiCalls();
     findRelevantFunctions();
+    findRelevantFunctionCalls();
+
+    // symbolize each relevant function
+    // for (auto const *function : relevantFunctions) {
+
+    // }
   }
 };
 

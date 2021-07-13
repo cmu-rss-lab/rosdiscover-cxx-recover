@@ -36,6 +36,9 @@ class SummaryBuilderASTConsumer : public clang::ASTConsumer {
 public:
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
+    symbolic::Symbolizer::symbolize(context);
+
+    /*
     // for now, build a call graph for this single translation unit
     // - later on we can expand this to support CTU analysis
     clang::CallGraph callGraph;
@@ -63,6 +66,7 @@ public:
     for (auto *functionDecl : relevantFunctions) {
       llvm::outs() << "relevant function: " << functionDecl->getQualifiedNameAsString() << "\n";
     }
+    */
 
     // UnsymbolizedFunction: API calls + relevant function calls
     // SymbolizedFunction: API calls [SymbolicRosApiCall] + relevant function calls
