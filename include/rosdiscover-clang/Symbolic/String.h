@@ -2,8 +2,6 @@
 
 #include <string>
 
-#include <llvm/Support/raw_ostream.h>
-
 #include "Value.h"
 
 namespace rosdiscover {
