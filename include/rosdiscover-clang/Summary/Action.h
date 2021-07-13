@@ -12,6 +12,7 @@
 #include <rosdiscover-clang/ApiCall/RosApiCall.h>
 #include <rosdiscover-clang/ApiCall/Finder.h>
 #include <rosdiscover-clang/Name/Symbolizer.h>
+#include <rosdiscover-clang/Symbolic/Symbolizer.h>
 
 namespace rosdiscover {
 namespace summary {
@@ -35,29 +36,10 @@ class SummaryBuilderASTConsumer : public clang::ASTConsumer {
 public:
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
-    // build a summary for each (unseen) function definition
-    /*
-    llvm::outs() << "building summaries\n";
-    auto *tu_decl = context.getTranslationUnitDecl();
-    for (auto *decl : tu_decl->decls()) {
-      if (auto *func_decl = dyn_cast<clang::FunctionDecl>(decl)) {
-        llvm::outs() << "checking function: " << func_decl->getNameInfo().getAsString() << "\n";
-      }
-    }
-    */
-
     // for now, build a call graph for this single translation unit
     // - later on we can expand this to support CTU analysis
     clang::CallGraph callGraph;
     callGraph.addToCallGraph(context.getTranslationUnitDecl());
-
-    // step one:
-    // - find all FunctionDecls that transitively perform a ROS API call
-    //    - these are the architecturally relevant function calls
-    //    - we need a summary for each of these function calls
-    //
-    //
-    //
 
     // find all ROS API calls within this translation unit [RawRosApiCall]
     auto calls = api_call::RosApiCallFinder::find(context);
@@ -73,13 +55,13 @@ public:
     }
 
     for (auto *functionDecl : containingFunctions) {
-      llvm::outs() << "ROS API calls found in function: " << functionDecl->getNameInfo().getAsString() << "\n";
+      llvm::outs() << "ROS API calls found in function: " << functionDecl->getQualifiedNameAsString() << "\n";
     }
 
     // determine the set of functions that transitively call a function with a ROS API call
     auto relevantFunctions = computeRelevantFunctions(containingFunctions, callGraph);
     for (auto *functionDecl : relevantFunctions) {
-      llvm::outs() << "relevant function: " << functionDecl->getNameInfo().getAsString() << "\n";
+      llvm::outs() << "relevant function: " << functionDecl->getQualifiedNameAsString() << "\n";
     }
 
     // UnsymbolizedFunction: API calls + relevant function calls
@@ -107,23 +89,6 @@ public:
     // - group ROS API calls by their parent function decl
     // - we need to symbolize the entire group at once
 
-    // find each ROS API call
-    // - TODO: find parent function decl
-    // - possibly use ASTMatcher
-    // - but then use a silly visitor to get a mutable version of the same API call?
-    // auto calls = api_call::RosApiCallFinder::find(context);
-    // for (auto *call : calls) {
-    //   call->print(llvm::outs());
-
-    //   clang::Expr *name_expr = const_cast<clang::Expr*>(call->getNameExpr());
-    //   name_expr->dumpColor();
-
-    //   auto symbolicName = symbolizer.symbolize(name_expr);
-
-
-    //   llvm::outs() << "\n\n";
-    // }
-
     // - write a path condition builder
     //    - accepts a Clang stmt
     //    - produces a symbolic path condition in terms of formals
@@ -146,7 +111,7 @@ private:
       queue.push(function->getCanonicalDecl());
     }
 
-    // debugging
+    /** used for debugging of the function->callers map
     for (auto entry : functionToCallers) {
       auto *called = entry.first;
       auto &callers = entry.second;
@@ -156,16 +121,17 @@ private:
       }
       llvm::outs() << "\n";
     }
+    */
 
     while (!queue.empty()) {
       auto const *function = queue.front();
       relevantFunctions.insert(function);
       queue.pop();
 
-      llvm::outs() << "checking for calls to function: " << function->getQualifiedNameAsString() << "\n";
+      // llvm::outs() << "checking for calls to function: " << function->getQualifiedNameAsString() << "\n";
       for (auto caller : functionToCallers[function]) {
-        llvm::outs() << "checking for transitive calls: " << caller->getQualifiedNameAsString() << "\n";
-        if (relevantFunctions.find(function) == relevantFunctions.end()) {
+        // llvm::outs() << "checking for transitive calls: " << caller->getQualifiedNameAsString() << "\n";
+        if (relevantFunctions.find(caller) == relevantFunctions.end()) {
           queue.push(caller);
         }
       }
