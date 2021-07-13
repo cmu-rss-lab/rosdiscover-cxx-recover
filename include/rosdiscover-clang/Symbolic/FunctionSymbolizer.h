@@ -14,11 +14,11 @@ public:
       std::vector<api_call::RosApiCall *> apiCalls,
       std::vector<clang::Expr *> relevantFunctionCalls
   ) {
-
+    FunctionSymbolizer(astContext, apiCalls, relevantFuntionCalls).run();
   }
 
 private:
-  SymbolicFunction symbolize(
+  FunctionSymbolizer(
       clang::ASTContext &astContext,
       std::vector<api_call::RosApiCall *> apiCalls,
       std::vector<clang::Expr *> relevantFunctionCalls
@@ -28,8 +28,10 @@ private:
   {}
 
   clang::ASTContext &astContext;
-  std::vector<api_call::RosApiCall *> apiCalls;
-  std::vector<clang::Expr *> relevantFunctionCalls;
+  std::vector<api_call::RosApiCall *> &apiCalls;
+  std::vector<clang::Expr *> &relevantFunctionCalls;
+
+  void run() {}
 };
 
 } // rosdiscover::symbolic
