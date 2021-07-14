@@ -14,19 +14,15 @@ namespace symbolic {
 class SymbolicContext {
 public:
   SymbolicContext() : nameToFunction() {}
-  // ~SymbolicContext() {
-  //   for (auto &entry : nameToFunction) {
-  //     delete entry.second;
-  //   }
-  // }
 
   SymbolicFunction* declare(clang::FunctionDecl const *function) {
     return declare(function->getQualifiedNameAsString());
   }
 
   SymbolicFunction* declare(std::string const &qualifiedName) {
-    //auto function = std::unique_ptr<SymbolicFunction>(new SymbolicFunction(qualifiedName));
     nameToFunction.emplace(qualifiedName, std::make_unique<SymbolicFunction>(qualifiedName));
+    llvm::outs() << "declared symbolic function: " << qualifiedName << "\n";
+    return getDefinition(qualifiedName);
   }
 
   void define(clang::FunctionDecl const *function, SymbolicCompound &body) {
@@ -44,9 +40,11 @@ public:
 
   void print(llvm::raw_ostream &os) const {
     os << "context {\n";
-    for (auto const &entry : nameToFunction)
-      entry.second.get()->print(os);
-    os << "\n}";
+    for (auto const &entry : nameToFunction) {
+      entry.second->print(os);
+      os << "\n";
+    }
+    os << "}";
   }
 
 private:

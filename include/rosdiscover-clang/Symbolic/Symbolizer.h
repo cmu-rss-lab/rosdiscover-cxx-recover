@@ -137,9 +137,8 @@ private:
 
     // declare all of the relevant functions
     llvm::outs() << "declaring symbolic functions\n";
-    for (auto const *function : relevantFunctions) {
+    for (auto const *function : relevantFunctions)
       symContext.declare(function);
-    }
     llvm::outs() << "declared symbolic functions\n";
 
     symContext.print(llvm::outs());

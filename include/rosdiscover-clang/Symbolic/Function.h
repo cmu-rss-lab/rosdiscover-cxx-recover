@@ -15,7 +15,7 @@ public:
 
   void print(llvm::raw_ostream &os) const {
     os << "function " << qualifiedName << " {\n";
-    body.print(os);
+    // body.print(os);
     os << "\n}";
   }
 
