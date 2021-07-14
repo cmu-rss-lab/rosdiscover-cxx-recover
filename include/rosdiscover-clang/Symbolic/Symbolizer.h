@@ -14,13 +14,15 @@
 #include <rosdiscover-clang/ApiCall/Finder.h>
 #include <rosdiscover-clang/utils.h>
 
+#include "Context.h"
+
 namespace rosdiscover {
 namespace symbolic {
 
 /** limitation: operates over a single translation unit for now */
 class Symbolizer {
 public:
-  // todo: return SymbolicContext
+  // TODO return unique_ptr<SymbolicContext>
   static void symbolize(clang::ASTContext &astContext) {
     Symbolizer(astContext).run();
   }
@@ -28,6 +30,7 @@ public:
 private:
   Symbolizer(clang::ASTContext &astContext)
     : astContext(astContext),
+      symContext(),
       callGraph(),
       apiCalls(),
       functionToApiCalls(),
@@ -35,6 +38,7 @@ private:
       relevantFunctionCalls()
   {}
 
+  SymbolicContext symContext;
   clang::ASTContext &astContext;
   clang::CallGraph callGraph;
   std::vector<api_call::RosApiCall *> apiCalls;
@@ -131,10 +135,20 @@ private:
     findRelevantFunctions();
     findRelevantFunctionCalls();
 
+    // declare all of the relevant functions
+    llvm::outs() << "declaring symbolic functions\n";
+    for (auto const *function : relevantFunctions) {
+      symContext.declare(function);
+    }
+    llvm::outs() << "declared symbolic functions\n";
+
+    symContext.print(llvm::outs());
+
     // symbolize each relevant function
     // for (auto const *function : relevantFunctions) {
 
     // }
+    //
   }
 };
 

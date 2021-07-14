@@ -31,7 +31,25 @@ private:
   std::vector<api_call::RosApiCall *> &apiCalls;
   std::vector<clang::Expr *> &relevantFunctionCalls;
 
-  void run() {}
+  void symbolizeApiCall(api_call::RosApiCall *apiCall) {
+
+  }
+
+  SymbolicFunctionCall* symbolizeFunctionCall(clang::Expr *callExpr) {
+    // get name of target?
+    // or: use context to get SymbolicFunction?
+    auto *function = symContext.getDefinitionForCall(callExpr);
+    return SymbolicFunctionCall::create(function);
+  }
+
+  void run() {
+    // TODO determine correct order for API and function calls
+    for (auto *apiCall : apiCalls)
+      symbolizeApiCall(apiCall);
+
+    for (auto *functionCall : relevantFunctionCalls)
+      symbolizeFunctionCall(functionCall);
+  }
 };
 
 } // rosdiscover::symbolic

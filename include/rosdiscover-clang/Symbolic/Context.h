@@ -13,20 +13,20 @@ namespace symbolic {
 // this is responsible for holding everything in memory
 class SymbolicContext {
 public:
-  SymbolicContext() : functionDefinitions(functionDefinitions) {}
-  ~SymbolicContext() {
-    for (auto function : functionDefinitions) {
-      delete function;
-    }
-  }
+  SymbolicContext() : nameToFunction() {}
+  // ~SymbolicContext() {
+  //   for (auto &entry : nameToFunction) {
+  //     delete entry.second;
+  //   }
+  // }
 
   SymbolicFunction* declare(clang::FunctionDecl const *function) {
     return declare(function->getQualifiedNameAsString());
   }
 
   SymbolicFunction* declare(std::string const &qualifiedName) {
-    auto *function = std::unique_ptr<SymbolicFunction>(SymbolicFunction(qualifiedName));
-    nameToFunction.insert({qualifiedName, function});
+    //auto function = std::unique_ptr<SymbolicFunction>(new SymbolicFunction(qualifiedName));
+    nameToFunction.emplace(qualifiedName, std::make_unique<SymbolicFunction>(qualifiedName));
   }
 
   void define(clang::FunctionDecl const *function, SymbolicCompound &body) {
@@ -35,11 +35,11 @@ public:
 
   void define(std::string const &qualifiedName, SymbolicCompound &body) {
     auto *function = getDefinition(qualifiedName);
-    function.define(body);
+    function->define(body);
   }
 
   SymbolicFunction* getDefinition(std::string const &qualifiedName) {
-    return functionDefinitions[qualifiedName];
+    return nameToFunction[qualifiedName].get();
   }
 
   void print(llvm::raw_ostream &os) const {
@@ -48,7 +48,6 @@ public:
       entry.second.get()->print(os);
     os << "\n}";
   }
-
 
 private:
   std::unordered_map<std::string, std::unique_ptr<SymbolicFunction>> nameToFunction;

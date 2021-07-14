@@ -18,16 +18,4 @@ class SymbolicBool : SymbolicValue {};
 
 class SymbolicInteger : SymbolicValue {};
 
-class SymbolicStmt {
-public:
-  virtual ~SymbolicStmt() = 0;
-
-  virtual void print(llvm::raw_ostream &os) const;
-};
-
-class SymbolicCompound {
-private:
-  std::vector<SymbolicStmt*> statements;
-};
-
 } // rosdiscover
