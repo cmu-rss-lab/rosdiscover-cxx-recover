@@ -6,8 +6,11 @@
 #include <clang/AST/Decl.h>
 #include <clang/AST/DeclCXX.h>
 
+#include "ApiCall.h"
 #include "Context.h"
 #include "Function.h"
+#include "String.h"
+#include "Value.h"
 
 namespace rosdiscover {
 namespace symbolic {
@@ -50,8 +53,8 @@ private:
   std::vector<api_call::RosApiCall *> &apiCalls;
   std::vector<clang::Expr *> &functionCalls;
 
-  void symbolizeApiCall(api_call::RosApiCall *apiCall) {
-
+  SymbolicStmt * symbolizeApiCall(api_call::RosApiCall *apiCall) {
+    return nullptr;
   }
 
   clang::FunctionDecl const * getCallee(clang::Expr *expr) const {
