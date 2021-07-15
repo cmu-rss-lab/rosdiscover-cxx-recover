@@ -12,6 +12,10 @@ public:
   StringLiteral(std::string const &literal) : literal(literal) {}
   ~StringLiteral() {}
 
+  static StringLiteral* create(std::string const &literal) {
+    return new StringLiteral(literal);
+  }
+
   void print(llvm::raw_ostream &os) const override {
     os << "\"" << literal << "\"";
   }

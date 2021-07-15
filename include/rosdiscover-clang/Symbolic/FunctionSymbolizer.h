@@ -54,7 +54,7 @@ private:
   std::vector<clang::Expr *> &functionCalls;
 
   SymbolicStmt * symbolizeApiCall(api_call::RosApiCall *apiCall) {
-    return nullptr;
+    return new Publisher(StringLiteral::create("foobar"));
   }
 
   clang::FunctionDecl const * getCallee(clang::Expr *expr) const {
@@ -93,7 +93,7 @@ private:
     auto compound = SymbolicCompound();
 
     for (auto *apiCall : apiCalls) {
-      symbolizeApiCall(apiCall);
+      compound.append(symbolizeApiCall(apiCall));
     }
 
     for (auto *functionCall : functionCalls) {

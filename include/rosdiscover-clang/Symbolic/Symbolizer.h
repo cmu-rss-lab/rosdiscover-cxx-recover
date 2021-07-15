@@ -138,11 +138,6 @@ private:
         apiCalls,
         functionCalls
     );
-
-    // // create an empty body
-    // auto body = SymbolicCompound();
-
-    // symContext.define(function, body);
   }
 
   void run() {
@@ -167,15 +162,6 @@ private:
     llvm::outs() << "\n";
   }
 };
-
-// find all calls to the relevant functions
-//
-// - list of ROS API calls
-// - list of function calls
-// - convert each to a SymbolicStmt
-// - fold into a SymbolicCompound
-// - emit a SymbolicFunction
-
 
 } // rosdiscover::symbolic
 } // rosdiscover
