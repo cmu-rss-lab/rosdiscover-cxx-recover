@@ -22,6 +22,17 @@ private:
   SymbolicString const *name;
 };
 
+class RosInit : public SymbolicRosApiCall {
+public:
+  RosInit(SymbolicString const *name) : SymbolicRosApiCall(name) {}
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(ros-init ";
+    getName()->print(os);
+    os << ")";
+  }
+};
+
 class Publisher : public SymbolicRosApiCall {
 public:
   Publisher(SymbolicString const *name) : SymbolicRosApiCall(name) {}
@@ -92,6 +103,17 @@ public:
 
 private:
   SymbolicValue const *value;
+};
+
+class DeleteParam : public SymbolicRosApiCall {
+public:
+  WriteParam(SymbolicString const) : SymbolicRosApiCall(name) {}
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(deletes_param ";
+    getName()->print(os);
+    os << ")";
+  }
 };
 
 // also: SymbolicBool
