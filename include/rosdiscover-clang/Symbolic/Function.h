@@ -19,7 +19,7 @@ public:
   }
 
   void define(SymbolicCompound &body) {
-    body = body;
+    this->body = body;
   }
 
   std::string getName() const {
@@ -38,7 +38,7 @@ public:
   ~SymbolicFunctionCall(){}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "call " << callee->getName();
+    os << "call " << callee->getName() << "()";
   }
 
 private:

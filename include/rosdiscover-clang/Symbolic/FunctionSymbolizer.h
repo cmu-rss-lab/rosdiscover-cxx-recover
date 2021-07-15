@@ -80,18 +80,24 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  SymbolicFunctionCall* symbolizeFunctionCall(clang::Expr *callExpr) {
+  SymbolicFunctionCall * symbolizeFunctionCall(clang::Expr *callExpr) {
     auto *function = symContext.getDefinition(getCallee(callExpr));
     return new SymbolicFunctionCall(function);
   }
 
   void run() {
     // TODO determine correct order for API and function calls
-    for (auto *apiCall : apiCalls)
-      symbolizeApiCall(apiCall);
+    auto compound = SymbolicCompound();
 
-    for (auto *functionCall : functionCalls)
-      symbolizeFunctionCall(functionCall);
+    for (auto *apiCall : apiCalls) {
+      symbolizeApiCall(apiCall);
+    }
+
+    for (auto *functionCall : functionCalls) {
+      compound.append(symbolizeFunctionCall(functionCall));
+    }
+
+    symContext.define(function, compound);
   }
 };
 
