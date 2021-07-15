@@ -22,10 +22,18 @@ class SymbolicUnknown :
   public virtual SymbolicBool,
   public virtual SymbolicInteger
 {
+public:
   ~SymbolicUnknown();
   void print(llvm::raw_ostream &os) const {
     os << "UNKNOWN";
   }
+
+  static SymbolicUnknown* create() {
+    return new SymbolicUnknown();
+  }
+
+private:
+  SymbolicUnknown(){}
 };
 
 } // rosdiscover::symbolic
