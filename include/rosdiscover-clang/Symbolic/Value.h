@@ -23,8 +23,8 @@ class SymbolicUnknown :
   public virtual SymbolicInteger
 {
 public:
-  ~SymbolicUnknown();
-  void print(llvm::raw_ostream &os) const {
+  ~SymbolicUnknown(){}
+  void print(llvm::raw_ostream &os) const override {
     os << "UNKNOWN";
   }
 
