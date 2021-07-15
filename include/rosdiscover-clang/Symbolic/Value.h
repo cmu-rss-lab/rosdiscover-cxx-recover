@@ -17,5 +17,16 @@ class SymbolicBool : public virtual SymbolicValue {};
 
 class SymbolicInteger : public virtual SymbolicValue {};
 
+class SymbolicUnknown :
+  public virtual SymbolicString,
+  public virtual SymbolicBool,
+  public virtual SymbolicInteger
+{
+  ~SymbolicUnknown();
+  void print(llvm::raw_ostream &os) const {
+    os << "UNKNOWN";
+  }
+};
+
 } // rosdiscover::symbolic
 } // rosdiscover
