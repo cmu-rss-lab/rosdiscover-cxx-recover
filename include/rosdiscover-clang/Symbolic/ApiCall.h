@@ -107,7 +107,7 @@ private:
 
 class DeleteParam : public SymbolicRosApiCall {
 public:
-  WriteParam(SymbolicString const) : SymbolicRosApiCall(name) {}
+  DeleteParam(SymbolicString const *name) : SymbolicRosApiCall(name) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(deletes_param ";
