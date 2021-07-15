@@ -19,6 +19,10 @@ public:
     return StringLiteral::create("PLACEHOLDER");
   }
 
+  SymbolicString* symbolize(clang::StringLiteral *literal) {
+    return StringLiteral::create(literal->getString().str());
+  }
+
 private:
   clang::ASTContext &astContext;
 };
