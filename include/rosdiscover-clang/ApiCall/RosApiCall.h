@@ -11,6 +11,7 @@
 
 #include "../Name/Symbolizer.h"
 #include "../utils.h"
+#include "Calls/Kind.h"
 
 namespace rosdiscover {
 namespace api_call {
@@ -21,6 +22,9 @@ public:
 
   /** Returns the expression that provides the name associated with this call. */
   virtual clang::Expr const * getNameExpr() const = 0;
+
+  /** Returns the kind of this API call. Used for dynamic dispatch. */
+  virtual RosApiCallKind const getKind() const = 0;
 
   /** Returns the string literal name used by this API call, if there is one. */
   llvm::Optional<std::string> getConstantName() const {

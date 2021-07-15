@@ -53,8 +53,90 @@ private:
   std::vector<api_call::RosApiCall *> &apiCalls;
   std::vector<clang::Expr *> &functionCalls;
 
-  SymbolicStmt * symbolizeApiCall(api_call::RosApiCall *apiCall) {
+  SymbolicRosApiCall * symbolizeApiCall(api_call::RosApiCall *apiCall) {
+    llvm::outs() << "symbolizing ROS API call: ";
+    apiCall->print(llvm::outs());
+    llvm::outs() << "\n";
+
+    // TODO surely this isn't possible?
+    // if (auto advertiseServiceCall = dyn_cast<api_call::AdvertiseServiceCall>(apiCall)) {
+    //   return symbolizeApiCall(advertiseServiceCall);
+    // }
+
+    llvm::errs() << "FATAL ERROR: failed to symbolize ROS API call\n";
+    abort();
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::AdvertiseServiceCall *apiCall) {
+    return new ServiceProvider(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::AdvertiseTopicCall *apiCall) {
     return new Publisher(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::BareDeleteParamCall *apiCall) {
+    return new DeleteParam(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::BareGetParamCachedCall *apiCall) {
+    return new ReadParam(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::BareGetParamCall *apiCall) {
+    return new ReadParam(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::BareGetParamWithDefaultCall *apiCall) {
+    return new ReadParamWithDefault(StringLiteral::create("foobar"), StringLiteral::create("DEFAULT"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::BareHasParamCall *apiCall) {
+    return new HasParam(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::BareServiceCall *apiCall) {
+    return new ServiceCaller(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::BareSetParamCall *apiCall) {
+    return new WriteParam(StringLiteral::create("foobar"), StringLiteral::create("VALUE"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::DeleteParamCall *apiCall) {
+    return new DeleteParam(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::GetParamCachedCall *apiCall) {
+    return new ReadParam(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::GetParamCall *apiCall) {
+    return new ReadParam(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::GetParamWithDefaultCall *apiCall) {
+    return new ReadParamWithDefault(StringLiteral::create("foobar"), StringLiteral::create("DEFAULT"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::HasParamCall *apiCall) {
+    return new HasParam(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::RosInitCall *apiCall) {
+    return new RosInit(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::ServiceClientCall *apiCall) {
+    return new ServiceCaller(StringLiteral::create("foobar"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::SetParamCall *apiCall) {
+    return new WriteParam(StringLiteral::create("foobar"), StringLiteral::create("VALUE"));
+  }
+
+  SymbolicRosApiCall * symbolizeApiCall(api_call::SubscribeTopicCall *apiCall) {
+    return new Subscriber(StringLiteral::create("foobar"));
   }
 
   clang::FunctionDecl const * getCallee(clang::Expr *expr) const {

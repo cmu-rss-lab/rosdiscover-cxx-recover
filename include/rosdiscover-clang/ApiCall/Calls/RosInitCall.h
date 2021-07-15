@@ -13,6 +13,10 @@ public:
     : BareRosApiCall(call, context)
   {}
 
+  RosApiCallKind const getKind() const override {
+    return RosApiCallKind::RosInitCall;
+  }
+
   clang::Expr const * getNameExpr() const override {
     return getCallExpr()->getArg(2);
   }

@@ -14,6 +14,7 @@
 #include "Calls/GetParamCall.h"
 #include "Calls/GetParamWithDefaultCall.h"
 #include "Calls/HasParamCall.h"
+#include "Calls/Kind.h"
 #include "Calls/RosInitCall.h"
 #include "Calls/ServiceClientCall.h"
 #include "Calls/SetParamCall.h"

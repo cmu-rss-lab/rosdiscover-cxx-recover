@@ -13,6 +13,10 @@ public:
     : NodeHandleRosApiCall(call, context)
   {}
 
+  RosApiCallKind const getKind() const override {
+    return RosApiCallKind::GetParamCachedCall;
+  }
+
   clang::Expr const * getNameExpr() const override {
     return getCallExpr()->getArg(0);
   }
