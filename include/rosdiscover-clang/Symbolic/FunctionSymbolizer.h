@@ -54,17 +54,49 @@ private:
   std::vector<clang::Expr *> &functionCalls;
 
   SymbolicRosApiCall * symbolizeApiCall(api_call::RosApiCall *apiCall) {
+    using namespace rosdiscover::api_call;
     llvm::outs() << "symbolizing ROS API call: ";
     apiCall->print(llvm::outs());
     llvm::outs() << "\n";
 
-    // TODO surely this isn't possible?
-    // if (auto advertiseServiceCall = dyn_cast<api_call::AdvertiseServiceCall>(apiCall)) {
-    //   return symbolizeApiCall(advertiseServiceCall);
-    // }
-
-    llvm::errs() << "FATAL ERROR: failed to symbolize ROS API call\n";
-    abort();
+    switch (apiCall->getKind()) {
+      case RosApiCallKind::AdvertiseServiceCall:
+        return symbolizeApiCall((AdvertiseServiceCall*) apiCall);
+      case RosApiCallKind::AdvertiseTopicCall:
+        return symbolizeApiCall((AdvertiseTopicCall*) apiCall);
+      case RosApiCallKind::BareDeleteParamCall:
+        return symbolizeApiCall((BareDeleteParamCall*) apiCall);
+      case RosApiCallKind::BareGetParamCachedCall:
+        return symbolizeApiCall((BareGetParamCachedCall*) apiCall);
+      case RosApiCallKind::BareGetParamCall:
+        return symbolizeApiCall((BareGetParamCall*) apiCall);
+      case RosApiCallKind::BareGetParamWithDefaultCall:
+        return symbolizeApiCall((BareGetParamWithDefaultCall*) apiCall);
+      case RosApiCallKind::BareHasParamCall:
+        return symbolizeApiCall((BareHasParamCall*) apiCall);
+      case RosApiCallKind::BareServiceCall:
+        return symbolizeApiCall((BareServiceCall*) apiCall);
+      case RosApiCallKind::BareSetParamCall:
+        return symbolizeApiCall((BareSetParamCall*) apiCall);
+      case RosApiCallKind::DeleteParamCall:
+        return symbolizeApiCall((DeleteParamCall*) apiCall);
+      case RosApiCallKind::GetParamCachedCall:
+        return symbolizeApiCall((GetParamCachedCall*) apiCall);
+      case RosApiCallKind::GetParamCall:
+        return symbolizeApiCall((GetParamCall*) apiCall);
+      case RosApiCallKind::GetParamWithDefaultCall:
+        return symbolizeApiCall((GetParamWithDefaultCall*) apiCall);
+      case RosApiCallKind::HasParamCall:
+        return symbolizeApiCall((HasParamCall*) apiCall);
+      case RosApiCallKind::RosInitCall:
+        return symbolizeApiCall((RosInitCall*) apiCall);
+      case RosApiCallKind::ServiceClientCall:
+        return symbolizeApiCall((ServiceClientCall*) apiCall);
+      case RosApiCallKind::SetParamCall:
+        return symbolizeApiCall((SetParamCall*) apiCall);
+      case RosApiCallKind::SubscribeTopicCall:
+        return symbolizeApiCall((SubscribeTopicCall*) apiCall);
+    }
   }
 
   SymbolicRosApiCall * symbolizeApiCall(api_call::AdvertiseServiceCall *apiCall) {
