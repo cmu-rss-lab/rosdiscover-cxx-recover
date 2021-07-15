@@ -8,9 +8,8 @@ namespace symbolic {
 
 class SymbolicStmt {
 public:
-  virtual ~SymbolicStmt() = 0;
-
-  virtual void print(llvm::raw_ostream &os) const;
+  virtual ~SymbolicStmt(){};
+  virtual void print(llvm::raw_ostream &os) const = 0;
 };
 
 class SymbolicCompound {

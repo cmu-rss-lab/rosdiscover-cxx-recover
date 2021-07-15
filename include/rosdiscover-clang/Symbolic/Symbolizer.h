@@ -15,6 +15,7 @@
 #include <rosdiscover-clang/utils.h>
 
 #include "Context.h"
+#include "FunctionSymbolizer.h"
 
 namespace rosdiscover {
 namespace symbolic {
@@ -127,7 +128,22 @@ private:
     }
   }
 
-  // void symbolize(clang::FunctionDecl const *function, SymbolicContext &symContext);
+  void symbolize(clang::FunctionDecl const *function) {
+    auto &apiCalls = functionToApiCalls[function];
+    auto &functionCalls = relevantFunctionCalls[function];
+    FunctionSymbolizer::symbolize(
+        astContext,
+        symContext,
+        function,
+        apiCalls,
+        functionCalls
+    );
+
+    // // create an empty body
+    // auto body = SymbolicCompound();
+
+    // symContext.define(function, body);
+  }
 
   void run() {
     buildCallGraph();
@@ -141,13 +157,14 @@ private:
       symContext.declare(function);
     llvm::outs() << "declared symbolic functions\n";
 
+    // produce initial definitions for each function
+    llvm::outs() << "obtaining symbolic function definitions...\n";
+    for (auto const *function : relevantFunctions)
+      symbolize(function);
+    llvm::outs() << "obtained symbolic function definitions...\n";
+
     symContext.print(llvm::outs());
-
-    // symbolize each relevant function
-    // for (auto const *function : relevantFunctions) {
-
-    // }
-    //
+    llvm::outs() << "\n";
   }
 };
 

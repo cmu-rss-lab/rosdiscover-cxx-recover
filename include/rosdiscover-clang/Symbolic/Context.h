@@ -34,6 +34,10 @@ public:
     function->define(body);
   }
 
+  SymbolicFunction* getDefinition(clang::FunctionDecl const *function) {
+    return getDefinition(function->getQualifiedNameAsString());
+  }
+
   SymbolicFunction* getDefinition(std::string const &qualifiedName) {
     return nameToFunction[qualifiedName].get();
   }

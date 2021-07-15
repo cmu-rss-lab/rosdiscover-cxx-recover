@@ -14,13 +14,16 @@ public:
   {}
 
   void print(llvm::raw_ostream &os) const {
-    os << "function " << qualifiedName << " {\n";
-    // body.print(os);
-    os << "\n}";
+    os << "function " << qualifiedName << " ";
+    body.print(os);
   }
 
   void define(SymbolicCompound &body) {
     body = body;
+  }
+
+  std::string getName() const {
+    return qualifiedName;
   }
 
 private:
@@ -29,9 +32,14 @@ private:
 };
 
 // TODO record symbolic function call arguments
-class SymbolicFunctionCall : public SymbolicStmt {
+class SymbolicFunctionCall : public virtual SymbolicStmt {
 public:
   SymbolicFunctionCall(SymbolicFunction *callee) : callee(callee) {}
+  ~SymbolicFunctionCall(){}
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "call " << callee->getName();
+  }
 
 private:
   SymbolicFunction *callee;
