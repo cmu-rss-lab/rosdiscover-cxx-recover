@@ -38,7 +38,7 @@ public:
   ~SymbolicFunctionCall(){}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "call " << callee->getName() << "()";
+    os << "(call " << callee->getName() << ")";
   }
 
 private:
