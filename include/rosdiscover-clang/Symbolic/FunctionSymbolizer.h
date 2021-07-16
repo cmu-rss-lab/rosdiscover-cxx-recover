@@ -240,18 +240,20 @@ private:
     return ordered;
   }
 
+  SymbolicStmt* symbolizeStatement(RawStatement *statement) {
+    switch (statement->getKind()) {
+      case RawStatementKind::RosApiCall:
+        return symbolizeApiCall(((RawRosApiCallStatement*) statement)->getApiCall());
+      case RawStatementKind::FunctionCall:
+        return symbolizeFunctionCall(((RawFunctionCallStatement*) statement)->getCall());
+    }
+  }
+
   void run() {
     auto compound = SymbolicCompound();
 
-    // NOTE use std::variant if we can switch to c++17
-    auto statements = computeStatementOrder();
-
-    for (auto *apiCall : apiCalls) {
-      compound.append(symbolizeApiCall(apiCall));
-    }
-
-    for (auto *functionCall : functionCalls) {
-      compound.append(symbolizeFunctionCall(functionCall));
+    for (auto &statement : computeStatementOrder()) {
+      compound.append(symbolizeStatement(statement.get()));
     }
 
     symContext.define(function, compound);
