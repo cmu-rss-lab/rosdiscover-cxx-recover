@@ -6,6 +6,7 @@
 #include <clang/AST/Decl.h>
 #include <clang/AST/DeclCXX.h>
 
+#include "../StmtOrderingVisitor.h"
 #include "ApiCall.h"
 #include "Context.h"
 #include "Function.h"
@@ -209,9 +210,27 @@ private:
     return new SymbolicFunctionCall(function);
   }
 
+  //std::vector<std::variant<api_call::RosApiCall *, clang::Expr *>> computeStatementOrder() {
+  //  std::vector<std::variant<api_call::RosApiCall *, clang::Expr *>> statements;
+  //  for (auto *apiCall : apiCalls) {
+  //    statements.push_back(apiCall);
+  //  }
+  //  for (auto *functionCall : functionCalls) {
+  //    statements.push_back(functionCall);
+  //  }
+
+  //  // TODO determine correct order for API and function calls
+
+  //  return statements;
+  //}
+
   void run() {
-    // TODO determine correct order for API and function calls
     auto compound = SymbolicCompound();
+
+    // NOTE use std::variant if we can switch to c++17
+    // auto statements = computeStatementOrder();
+    // for (auto *statement : statements) {
+    // }
 
     for (auto *apiCall : apiCalls) {
       compound.append(symbolizeApiCall(apiCall));
