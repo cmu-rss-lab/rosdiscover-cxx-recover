@@ -34,7 +34,7 @@ public:
       std::vector<clang::Stmt *> &statements
   ) {
     auto visitor = StmtOrderingVisitor(astContext, statements);
-    visitor.VisitDecl(const_cast<clang::FunctionDecl*>(function->getDefinition()));
+    visitor.TraverseDecl(const_cast<clang::FunctionDecl*>(function->getDefinition()));
 
     // ensure that we found every statement
     if (!visitor.statementsToFind.empty()) {
