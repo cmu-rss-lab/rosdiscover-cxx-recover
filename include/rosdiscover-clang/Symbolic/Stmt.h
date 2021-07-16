@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../RawStatement.h"
 #include "Value.h"
 #include "Stmt.h"
 
@@ -10,6 +11,40 @@ class SymbolicStmt {
 public:
   virtual ~SymbolicStmt(){};
   virtual void print(llvm::raw_ostream &os) const = 0;
+};
+
+class AnnotatedSymbolicStmt : public SymbolicStmt {
+public:
+  ~AnnotatedSymbolicStmt(){};
+  void print(llvm::raw_ostream &os) const override {
+    os << "(@ ";
+    symbolicStmt->print(os);
+    os << ")";
+  }
+
+  SymbolicStmt* getSymbolicStmt() {
+    return symbolicStmt;
+  }
+
+  clang::Stmt* getClangStmt() {
+    return clangStmt;
+  }
+
+  static AnnotatedSymbolicStmt* create(
+      SymbolicStmt *symbolicStmt,
+      RawStatement *rawStmt
+  ) {
+    return new AnnotatedSymbolicStmt(symbolicStmt, rawStmt->getUnderlyingStmt());
+  }
+
+private:
+  // TODO this probably ought to be const?
+  SymbolicStmt *symbolicStmt;
+  clang::Stmt *clangStmt;
+
+  AnnotatedSymbolicStmt(SymbolicStmt* symbolicStmt, clang::Stmt* clangStmt)
+  : symbolicStmt(symbolicStmt), clangStmt(clangStmt)
+  {}
 };
 
 class SymbolicCompound {
