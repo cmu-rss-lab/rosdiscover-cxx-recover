@@ -241,12 +241,16 @@ private:
   }
 
   SymbolicStmt* symbolizeStatement(RawStatement *statement) {
+    SymbolicStmt *symbolic;
     switch (statement->getKind()) {
       case RawStatementKind::RosApiCall:
-        return symbolizeApiCall(((RawRosApiCallStatement*) statement)->getApiCall());
+        symbolic = symbolizeApiCall(((RawRosApiCallStatement*) statement)->getApiCall());
+        break;
       case RawStatementKind::FunctionCall:
-        return symbolizeFunctionCall(((RawFunctionCallStatement*) statement)->getCall());
+        symbolic = symbolizeFunctionCall(((RawFunctionCallStatement*) statement)->getCall());
+        break;
     }
+    return AnnotatedSymbolicStmt::create(symbolic, statement);
   }
 
   void run() {

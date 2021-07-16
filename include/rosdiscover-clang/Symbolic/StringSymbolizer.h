@@ -28,6 +28,10 @@ public:
       return symbolize(implicitCastExpr);
     } else if (clang::CXXConstructExpr *constructExpr = dyn_cast<clang::CXXConstructExpr>(expr)) {
       return symbolize(constructExpr);
+    } else if (clang::CXXBindTemporaryExpr *bindTempExpr = dyn_cast<clang::CXXBindTemporaryExpr>(expr)) {
+      return symbolize(bindTempExpr);
+    } else if (clang::MaterializeTemporaryExpr *materializeTempExpr = dyn_cast<clang::MaterializeTemporaryExpr>(expr)) {
+      return symbolize(materializeTempExpr);
     }
 
     llvm::outs() << "unable to symbolize expression: treating as unknown\n";
@@ -41,23 +45,34 @@ private:
     return StringLiteral::create(literal->getString().str());
   }
 
-  SymbolicString* symbolize(clang::CXXConstructExpr *constructExpr) {
+  SymbolicString* symbolize(clang::CXXConstructExpr *expr) {
     // does this call the std::string constructor?
     // FIXME this is a bit hacky and may break when other libc++ versions are used
-    if (constructExpr->getConstructor()->getParent()->getQualifiedNameAsString() != "std::__cxx11::basic_string") {
-      return symbolize(constructExpr->getArg(0));
+    //
+    auto constructorName = expr->getConstructor()->getParent()->getQualifiedNameAsString();
+    llvm::outs() << "calling constructor: " << constructorName << "\n";
+    if (constructorName == "std::__cxx11::basic_string") {
+      return symbolize(expr->getArg(0));
     }
 
     return SymbolicUnknown::create();
   }
 
-  SymbolicString* symbolize(clang::ImplicitCastExpr *castExpr) {
+  SymbolicString* symbolize(clang::ImplicitCastExpr *expr) {
     // TODO check that we're dealing with strings or char[]
-    return symbolize(castExpr->getSubExpr());
+    return symbolize(expr->getSubExpr());
   }
 
   SymbolicString* symbolize(clang::DeclRefExpr *nameExpr) {
     return SymbolicUnknown::create();
+  }
+
+  SymbolicString* symbolize(clang::CXXBindTemporaryExpr *expr) {
+    return symbolize(expr->getSubExpr());
+  }
+
+  SymbolicString* symbolize(clang::MaterializeTemporaryExpr *expr) {
+    return symbolize(expr->getSubExpr());
   }
 };
 
