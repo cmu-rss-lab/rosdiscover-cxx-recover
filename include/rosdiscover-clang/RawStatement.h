@@ -15,6 +15,7 @@ class RawStatement {
 public:
   virtual ~RawStatement(){}
   virtual clang::Stmt* getUnderlyingStmt() = 0;
+  virtual RawStatementKind getKind() = 0;
 };
 
 class RawRosApiCallStatement : public RawStatement {
@@ -28,6 +29,10 @@ public:
 
   clang::Stmt* getUnderlyingStmt() override {
     return const_cast<clang::CallExpr*>(apiCall->getCallExpr());
+  }
+
+  RawStatementKind getKind() override {
+    return RawStatementKind::RosApiCall;
   }
 
 private:
@@ -45,6 +50,10 @@ public:
 
   clang::Stmt* getUnderlyingStmt() override {
     return expr;
+  }
+
+  RawStatementKind getKind() override {
+    return RawStatementKind::FunctionCall;
   }
 
 private:
