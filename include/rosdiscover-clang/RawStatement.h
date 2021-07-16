@@ -13,12 +13,14 @@ enum class RawStatementKind {
 
 class RawStatement {
 public:
+  virtual ~RawStatement(){}
   virtual clang::Stmt* getUnderlyingStmt() = 0;
 };
 
 class RawRosApiCallStatement : public RawStatement {
 public:
   RawRosApiCallStatement(api_call::RosApiCall *apiCall) : apiCall(apiCall) {}
+  ~RawRosApiCallStatement(){}
 
   api_call::RosApiCall* getApiCall() {
     return apiCall;
@@ -35,6 +37,7 @@ private:
 class RawFunctionCallStatement : public RawStatement {
 public:
   RawFunctionCallStatement(clang::Expr *expr) : expr(expr) {}
+  ~RawFunctionCallStatement(){}
 
   clang::Expr* getCall() {
     return expr;
