@@ -43,4 +43,5 @@ set(CLANG_LIBS
   clangFormat
 )
 
+add_subdirectory(extern)
 add_subdirectory(src)

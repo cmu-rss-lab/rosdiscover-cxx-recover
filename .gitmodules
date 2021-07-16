@@ -1,0 +1,3 @@
+[submodule "extern/variant"]
+	path = extern/variant
+	url = https://github.com/mapbox/variant
