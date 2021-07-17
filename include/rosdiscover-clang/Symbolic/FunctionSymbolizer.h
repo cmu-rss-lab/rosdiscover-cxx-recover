@@ -250,7 +250,7 @@ private:
         symbolic = symbolizeFunctionCall(((RawFunctionCallStatement*) statement)->getCall());
         break;
     }
-    return AnnotatedSymbolicStmt::create(symbolic, statement);
+    return AnnotatedSymbolicStmt::create(astContext, symbolic, statement);
   }
 
   void run() {

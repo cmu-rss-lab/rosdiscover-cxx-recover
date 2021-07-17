@@ -19,7 +19,7 @@ public:
   void print(llvm::raw_ostream &os) const override {
     os << "(@ ";
     symbolicStmt->print(os);
-    os << ")";
+    os << " " << location << ")";
   }
 
   SymbolicStmt* getSymbolicStmt() {
@@ -31,19 +31,26 @@ public:
   }
 
   static AnnotatedSymbolicStmt* create(
+      clang::ASTContext &context,
       SymbolicStmt *symbolicStmt,
       RawStatement *rawStmt
   ) {
-    return new AnnotatedSymbolicStmt(symbolicStmt, rawStmt->getUnderlyingStmt());
+    auto *clangStmt = rawStmt->getUnderlyingStmt();
+    return new AnnotatedSymbolicStmt(
+        symbolicStmt,
+        rawStmt->getUnderlyingStmt(),
+        clangStmt->getSourceRange().printToString(context.getSourceManager())
+    );
   }
 
 private:
   // TODO this probably ought to be const?
   SymbolicStmt *symbolicStmt;
   clang::Stmt *clangStmt;
+  std::string const location;
 
-  AnnotatedSymbolicStmt(SymbolicStmt* symbolicStmt, clang::Stmt* clangStmt)
-  : symbolicStmt(symbolicStmt), clangStmt(clangStmt)
+  AnnotatedSymbolicStmt(SymbolicStmt* symbolicStmt, clang::Stmt* clangStmt, std::string const &location)
+  : symbolicStmt(symbolicStmt), clangStmt(clangStmt), location(location)
   {}
 };
 
