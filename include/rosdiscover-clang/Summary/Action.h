@@ -11,7 +11,6 @@
 
 #include <rosdiscover-clang/ApiCall/RosApiCall.h>
 #include <rosdiscover-clang/ApiCall/Finder.h>
-#include <rosdiscover-clang/Name/Symbolizer.h>
 #include <rosdiscover-clang/Symbolic/Symbolizer.h>
 
 namespace rosdiscover {
