@@ -10,7 +10,6 @@
 
 #include <rosdiscover-clang/ApiCall/RosApiCall.h>
 #include <rosdiscover-clang/ApiCall/Finder.h>
-#include <rosdiscover-clang/CallExprFinder.h>
 #include <rosdiscover-clang/Summary/Action.h>
 
 using namespace clang;
