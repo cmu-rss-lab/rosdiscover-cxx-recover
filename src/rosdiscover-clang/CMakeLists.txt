@@ -12,12 +12,17 @@ llvm_map_components_to_libnames(ROSDISCOVER_LLVM_LIBS
 target_link_libraries(rosdiscover
   ${ROSDISCOVER_LLVM_LIBS}
   ${CLANG_LIBS}
+  nlohmann_json::nlohmann_json
 )
 target_compile_definitions(rosdiscover
   PUBLIC ${CLANG_DEFINITIONS} ${LLVM_DEFINITIONS}
 )
 target_include_directories(rosdiscover
-  PUBLIC ${CLANG_INCLUDE_DIRS} ${LLVM_INCLUDE_DIRS} ../../include
+  PUBLIC
+    ${CLANG_INCLUDE_DIRS}
+    ${LLVM_INCLUDE_DIRS}
+    nlohmann_json::nlohmann_json
+    ../../include
 )
 
 install(
