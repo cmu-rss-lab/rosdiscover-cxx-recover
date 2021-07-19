@@ -3,7 +3,6 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV LANG C.UTF-8
 ENV LC_ALL C.UTF-8
 
-# note that we need to install a newer version of cmake through a ppa for hifix
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
         apt-transport-https \
