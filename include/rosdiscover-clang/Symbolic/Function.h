@@ -6,11 +6,42 @@
 namespace rosdiscover {
 namespace symbolic {
 
+class SymbolicFunctionParameter {
+public:
+  size_t getIndex() const { return index; }
+  std::string const & getName() const { return name; }
+  SymbolicValueType getType() const { return type; }
+
+  // TODO add support for default values here!
+
+  SymbolicFunctionParameter(size_t index, std::string const &name, SymbolicValueType const type)
+    : index(index), name(name), type(type)
+  {}
+
+  void print(llvm::raw_ostream &os) const {
+    os << index
+      << ":"
+      << name
+      << ":"
+      << SymbolicValue::getSymbolicTypeAsString(type);
+  }
+
+private:
+  size_t const index;
+  std::string const name;
+  SymbolicValueType const type;
+};
+
 // TODO for now, we don't record the arguments provided to the function call!
 class SymbolicFunction {
 public:
   void print(llvm::raw_ostream &os) const {
-    os << "function " << qualifiedName << " ";
+    os << "function " << qualifiedName << " [";
+    for (auto const &paramEntry : parameters) {
+      paramEntry.second.print(os);
+      os << "; ";
+    }
+    os << "] ";
     body.print(os);
   }
 
@@ -25,30 +56,41 @@ public:
   static SymbolicFunction* create(
       clang::FunctionDecl const *function
   ) {
+    auto qualifiedName = function->getQualifiedNameAsString();
+    auto symbolic = new SymbolicFunction(qualifiedName);
+
     // TODO check whether this is the "main" function
     auto numParams = function->getNumParams();
     for (size_t paramIndex = 0; paramIndex < numParams; ++paramIndex) {
-      auto *param = function->getParamDecl(paramIndex);
-
-      // TODO does this have a default?
-
-      // get the name of the underlying unqualified type
-      auto typeName = param->getOriginalType().getUnqualifiedType().getAsString();
-      llvm::outs() << "Parameter type: " << typeName << "\n";
+      symbolic->addParam(paramIndex, function->getParamDecl(paramIndex));
     }
 
-
-    auto qualifiedName = function->getQualifiedNameAsString();
-    return new SymbolicFunction(qualifiedName);
+    return symbolic;
   }
 
 private:
   std::string qualifiedName;
   SymbolicCompound body;
+  std::unordered_map<size_t, SymbolicFunctionParameter> parameters;
 
   SymbolicFunction(std::string const &qualifiedName)
-    : qualifiedName(qualifiedName), body()
+    : qualifiedName(qualifiedName), body(), parameters()
   {}
+
+  void addParam(size_t index, clang::ParmVarDecl const *param) {
+    // TODO does this have a default?
+    auto name = param->getNameAsString();
+    auto type = SymbolicValue::getSymbolicType(param->getOriginalType());
+
+    if (type == SymbolicValueType::Unsupported)
+      return;
+
+    addParam(SymbolicFunctionParameter(index, name, type));
+  }
+
+  void addParam(SymbolicFunctionParameter const &param) {
+    parameters.emplace(param.getIndex(), param);
+  }
 };
 
 // TODO record symbolic function call arguments

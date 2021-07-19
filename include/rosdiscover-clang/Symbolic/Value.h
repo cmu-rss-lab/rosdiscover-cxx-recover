@@ -30,6 +30,19 @@ public:
       return SymbolicValueType::Unsupported;
     }
   }
+
+  static std::string getSymbolicTypeAsString(SymbolicValueType const &type) {
+    switch (type) {
+      case SymbolicValueType::String:
+        return "string";
+      case SymbolicValueType::Bool:
+        return "bool";
+      case SymbolicValueType::Integer:
+        return "integer";
+      case SymbolicValueType::Unsupported:
+        return "unsupported";
+    }
+  }
 }; // SymbolicValue
 
 class SymbolicString : public virtual SymbolicValue {};
