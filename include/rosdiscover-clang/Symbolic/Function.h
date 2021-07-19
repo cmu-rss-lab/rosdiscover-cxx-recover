@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include "Value.h"
 #include "Stmt.h"
 
@@ -43,6 +45,12 @@ public:
     }
     os << "] ";
     body.print(os);
+  }
+
+  nlohmann::json toJson() const {
+    return {
+      {"name", qualifiedName}
+    };
   }
 
   void define(SymbolicCompound &body) {

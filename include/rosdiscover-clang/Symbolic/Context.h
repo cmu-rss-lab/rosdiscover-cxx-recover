@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <nlohmann/json.hpp>
+
 #include "Function.h"
 #include "Stmt.h"
 
@@ -18,13 +20,11 @@ public:
   SymbolicContext() : nameToFunction() {}
 
   SymbolicFunction* declare(clang::FunctionDecl const *function) {
-    return declare(function->getQualifiedNameAsString());
-  }
-
-  SymbolicFunction* declare(std::string const &qualifiedName) {
-    nameToFunction.emplace(qualifiedName, std::make_unique<SymbolicFunction>(qualifiedName));
-    llvm::outs() << "declared symbolic function: " << qualifiedName << "\n";
-    return getDefinition(qualifiedName);
+    auto qualifiedName = function->getQualifiedNameAsString();
+    nameToFunction.emplace(qualifiedName, std::unique_ptr<SymbolicFunction>(SymbolicFunction::create(function)));
+    auto symbolic = getDefinition(qualifiedName);
+    llvm::outs() << "declared symbolic function: " << symbolic->getName() << "\n";
+    return symbolic;
   }
 
   void define(clang::FunctionDecl const *function, SymbolicCompound &body) {
@@ -51,6 +51,14 @@ public:
       os << "\n";
     }
     os << "}";
+  }
+
+  nlohmann::json toJson() const {
+    auto j = nlohmann::json::array();
+    for (auto const &entry : nameToFunction) {
+      j.push_back(entry.second->toJson());
+    }
+    return {{"functions", j}};
   }
 
 private:

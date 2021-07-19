@@ -5,10 +5,10 @@ ENV PATH "/opt/llvm11/bin:${PATH}"
 ENV LIBRARY_PATH "/opt/llvm11/lib:${LIBRARY_PATH}"
 ENV LD_LIBRARY_PATH "/opt/llvm11/lib:${LD_LIBRARY_PATH}"
 
-RUN apt-get update \
- && apt-get install -y file \
- && apt-get clean \
- && rm -rf /var/lib/apt/lists/*
+#RUN apt-get update \
+# && apt-get install -y file \
+# && apt-get clean \
+# && rm -rf /var/lib/apt/lists/*
 
 # fix ambiguous isnan calls
 # https://stackoverflow.com/questions/33770374/why-is-isnan-ambiguous-and-how-to-avoid-it

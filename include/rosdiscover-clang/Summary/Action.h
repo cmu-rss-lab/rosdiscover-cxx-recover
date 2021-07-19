@@ -18,55 +18,11 @@ namespace rosdiscover {
 namespace summary {
 
 
-//class FunctionSymbolizer {
-//
-//  // find all of the ROS API calls within this function
-//
-//};
-
-
-/**
- * LIMITATION: this does not CURRENTLY provide CTU results
- *
- * NOTES:
- * * we may want to limit our attention to specific files
- */
-
 class SummaryBuilderASTConsumer : public clang::ASTConsumer {
 public:
 
   void HandleTranslationUnit(clang::ASTContext &context) override {
     symbolic::Symbolizer::symbolize(context);
-
-    // UnsymbolizedFunction: API calls + relevant function calls
-    // SymbolizedFunction: API calls [SymbolicRosApiCall] + relevant function calls
-    // FunctionSummary: conditional API calls [SymbolicConditionalRosApiCall] + conditional function calls
-
-    // build a symbolizer
-    // - turn this into a FunctionSymbolizer
-    // - first step: find the ROS API calls within this function
-    // - second step: symbolize those ROS API calls
-    // - third step: compute the path condition for each ROS API call
-    // auto symbolizer = name::NameSymbolizer(context);
-
-
-    // BasicFunctionSummary
-    // --------------------
-    // - ApiCall -> ConditionalApiCall
-    // --------------------
-    // - API calls [path condition]
-    // - non-API calls
-
-
-    // - parameter read [w/ default]
-
-    // - group ROS API calls by their parent function decl
-    // - we need to symbolize the entire group at once
-
-    // - write a path condition builder
-    //    - accepts a Clang stmt
-    //    - produces a symbolic path condition in terms of formals
-
   }
 };
 
