@@ -1,6 +1,4 @@
 add_executable(rosdiscover
-  CallExprFinder.cpp
-  Name/Symbolizer.cpp
   RosDiscover.cpp
 )
 
@@ -30,4 +28,4 @@ install(
   DESTINATION "${CMAKE_INSTALL_BINDIR}"
 )
 
-# we need to install clang's headers!
+# TODO we need to install clang's headers!
