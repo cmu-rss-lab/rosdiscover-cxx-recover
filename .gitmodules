@@ -2,5 +2,5 @@
 	path = extern/variant
 	url = https://github.com/mapbox/variant
 [submodule "extern/json"]
-	path = extern/json
+	path = extern/nlohmann_json
 	url = https://github.com/nlohmann/json
