@@ -8,5 +8,5 @@ make -C "${DOCKER_DIR}"
 
 pushd "${HERE_DIR}"
 docker build -t example .
-# docker run --rm -it example
-docker run --rm -it example opt -load librosdiscover.so -find-ros-api-calls turtlebot3_drive.bc
+#docker run --rm -w /ros_ws -it example
+docker run --rm -w /ros_ws -it example rosdiscover -p /ros_ws/build src/turtlebot3_simulations/turtlebot3_gazebo/src/turtlebot3_drive.cpp

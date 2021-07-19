@@ -5,10 +5,6 @@ ENV PATH "/opt/llvm11/bin:${PATH}"
 ENV LIBRARY_PATH "/opt/llvm11/lib:${LIBRARY_PATH}"
 ENV LD_LIBRARY_PATH "/opt/llvm11/lib:${LD_LIBRARY_PATH}"
 
-# TODO provide a portable installation of wllvm
-RUN pip install setuptools==42.0.2 \
- && pip install wllvm==1.2.8
-
 RUN apt-get update \
  && apt-get install -y file \
  && apt-get clean \
@@ -18,22 +14,14 @@ RUN apt-get update \
 # https://stackoverflow.com/questions/33770374/why-is-isnan-ambiguous-and-how-to-avoid-it
 RUN sed -i "s#isnan#std::isnan#g" /ros_ws/src/turtlebot3_simulations/turtlebot3_fake/src/turtlebot3_fake.cpp
 
-# rebuild via catkin_make + wllvm
-ENV LLVM_COMPILER clang
-ENV LLVM_COMPILER_PATH /opt/llvm11/bin
+# rebuild and generate compile_commands.json
 RUN . /opt/ros/${ROS_DISTRO}/setup.sh \
  && rm -rf build \
- && CFLAGS="-g -O0" CXXFLAGS="-g -O0" catkin_make install \
-      -DCMAKE_EXPORT_COMPILE_COMMANDS=1 \
-      -DCMAKE_CXX_COMPILER=wllvm++ \
-      -DCMAKE_COMPILER=wllvm
-
-# grab the LLVM bitcode and assembly for a C++ node
-WORKDIR /ros_ws/install/lib/turtlebot3_gazebo
-RUN extract-bc turtlebot3_drive \
- && llvm-dis turtlebot3_drive.bc
+ && catkin_make install \
+      -DCMAKE_EXPORT_COMPILE_COMMANDS=1
 
 # install rosdiscover
 COPY --from=rosdiscover /opt/rosdiscover/ /opt/rosdiscover/
 ENV LD_LIBRARY_PATH "/opt/rosdiscover/lib:${LD_LIBRARY_PATH}"
 ENV LIBRARY_PATH "/opt/rosdiscover/lib:${LIBRARY_PATH}"
+ENV PATH "/opt/rosdiscover/bin:${PATH}"
