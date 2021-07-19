@@ -1,2 +1,2 @@
-# TODO create a cmake helper for this package
-include_directories(variant/include)
+set(JSON_BuildTests OFF CACHE INTERNAL "")
+add_subdirectory(nlohmann_json)
