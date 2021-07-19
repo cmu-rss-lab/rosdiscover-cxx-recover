@@ -11,6 +11,7 @@
 #include <rosdiscover-clang/ApiCall/RosApiCall.h>
 #include <rosdiscover-clang/ApiCall/Finder.h>
 #include <rosdiscover-clang/Summary/Action.h>
+#include <rosdiscover-clang/Symbolic/ProgramSymbolizer.h>
 
 using namespace clang;
 using namespace clang::ast_matchers;

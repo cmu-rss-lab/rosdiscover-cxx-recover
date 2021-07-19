@@ -1,5 +1,9 @@
 #pragma once
 
+#include <fstream>
+#include <iomanip>
+#include <ostream>
+
 #include <nlohmann/json.hpp>
 
 #include "Context.h"
@@ -12,7 +16,8 @@ public:
   SymbolicProgram() : context() {}
 
   void save(std::string const &filename) const {
-    // convert to JSON and save
+    std::ofstream o(filename);
+    o << std::setw(2) << toJson() << std::endl;
   }
 
   nlohmann::json toJson() const {
