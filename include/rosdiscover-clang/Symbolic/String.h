@@ -20,7 +20,7 @@ public:
     os << "\"" << literal << "\"";
   }
 
-  nlohmann::json toJson() const {
+  nlohmann::json toJson() const override {
     return {
       {"kind", "string-literal"},
       {"literal", literal}

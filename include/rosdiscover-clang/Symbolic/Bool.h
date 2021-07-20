@@ -14,7 +14,7 @@ public:
       os << ("true" ? literal : "false");
   }
 
-  nlohmann::json toJson() const {
+  nlohmann::json toJson() const override {
     return {
       {"kind", "bool-literal"},
       {"literal", literal}
