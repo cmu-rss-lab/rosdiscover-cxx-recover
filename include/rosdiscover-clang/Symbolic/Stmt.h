@@ -16,9 +16,40 @@ public:
   virtual nlohmann::json toJson() const = 0;
 };
 
+class AssignmentStmt : public SymbolicStmt {
+public:
+  AssignmentStmt(
+    std::string const &varName,
+    SymbolicValueType type,
+    SymbolicValue *valueExpr
+  ) : varName(varName), type(type), valueExpr(valueExpr)
+  {}
+  ~AssignmentStmt(){}
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(assign " << varName << " ";
+    valueExpr->print(os);
+    os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "assignment"},
+      {"variable", varName},
+      {"value", valueExpr->toJson()}
+    };
+  }
+
+private:
+  std::string varName;
+  SymbolicValueType type;
+  SymbolicValue *valueExpr; // TODO use unique_ptr!
+};
+
 class AnnotatedSymbolicStmt : public SymbolicStmt {
 public:
   ~AnnotatedSymbolicStmt(){};
+
   void print(llvm::raw_ostream &os) const override {
     os << "(@ ";
     symbolicStmt->print(os);
