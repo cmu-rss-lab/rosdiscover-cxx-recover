@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include <clang/AST/ASTContext.h>
+
 #include <nlohmann/json.hpp>
 
 #include "Function.h"
@@ -19,9 +21,12 @@ class SymbolicContext {
 public:
   SymbolicContext() : nameToFunction() {}
 
-  SymbolicFunction* declare(clang::FunctionDecl const *function) {
+  SymbolicFunction* declare(clang::ASTContext const &astContext, clang::FunctionDecl const *function) {
     auto qualifiedName = function->getQualifiedNameAsString();
-    nameToFunction.emplace(qualifiedName, std::unique_ptr<SymbolicFunction>(SymbolicFunction::create(function)));
+    nameToFunction.emplace(
+        qualifiedName,
+        std::unique_ptr<SymbolicFunction>(SymbolicFunction::create(astContext, function))
+    );
     auto symbolic = getDefinition(qualifiedName);
     llvm::outs() << "declared symbolic function: " << symbolic->getName() << "\n";
     return symbolic;

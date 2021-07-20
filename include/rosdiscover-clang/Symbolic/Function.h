@@ -63,7 +63,7 @@ public:
     return {
       {"name", qualifiedName},
       {"parameters", jsonParams},
-      {"source-location", "TODO: add this info!"},
+      {"source-location", location},
       {"body", body.toJson()}
     };
   }
@@ -77,10 +77,12 @@ public:
   }
 
   static SymbolicFunction* create(
+      clang::ASTContext const &context,
       clang::FunctionDecl const *function
   ) {
     auto qualifiedName = function->getQualifiedNameAsString();
-    auto symbolic = new SymbolicFunction(qualifiedName);
+    auto location = function->getLocation().printToString(context.getSourceManager());
+    auto symbolic = new SymbolicFunction(qualifiedName, location);
 
     // TODO check whether this is the "main" function
     auto numParams = function->getNumParams();
@@ -93,11 +95,12 @@ public:
 
 private:
   std::string qualifiedName;
+  std::string location;
   SymbolicCompound body;
   std::unordered_map<size_t, SymbolicFunctionParameter> parameters;
 
-  SymbolicFunction(std::string const &qualifiedName)
-    : qualifiedName(qualifiedName), body(), parameters()
+  SymbolicFunction(std::string const &qualifiedName, std::string const &location)
+    : qualifiedName(qualifiedName), location(location), body(), parameters()
   {}
 
   void addParam(size_t index, clang::ParmVarDecl const *param) {
