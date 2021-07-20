@@ -18,6 +18,7 @@ public:
       llvm::ArrayRef<std::string> sourcePaths
   ) {
     auto symbolizer = ProgramSymbolizer(compilationDatabase, sourcePaths);
+    symbolizer.run();
     return std::move(symbolizer.program);
   }
 
@@ -38,6 +39,7 @@ private:
     std::vector<std::unique_ptr<clang::ASTUnit>> asts;
     tool.buildASTs(asts);
     size_t numAsts = asts.size();
+    llvm::outs() << "built " << numAsts << " ASTs\n";
     assert(numAsts > 0);
 
     // we're going to merge everything into the first translation unit in our list

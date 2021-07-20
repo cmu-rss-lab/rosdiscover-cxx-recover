@@ -20,6 +20,14 @@ public:
     : index(index), name(name), type(type)
   {}
 
+  nlohmann::json toJson() const {
+    return {
+      {"index", index},
+      {"name", name},
+      {"type", SymbolicValue::getSymbolicTypeAsString(type)}
+    };
+  }
+
   void print(llvm::raw_ostream &os) const {
     os << index
       << ":"
@@ -34,7 +42,6 @@ private:
   SymbolicValueType const type;
 };
 
-// TODO for now, we don't record the arguments provided to the function call!
 class SymbolicFunction {
 public:
   void print(llvm::raw_ostream &os) const {
@@ -48,8 +55,15 @@ public:
   }
 
   nlohmann::json toJson() const {
+    auto jsonParams = nlohmann::json::array();
+    for (auto const &entry : parameters) {
+      jsonParams.push_back(entry.second.toJson());
+    }
+
     return {
-      {"name", qualifiedName}
+      {"name", qualifiedName},
+      {"parameters", jsonParams},
+      {"source-location", "TODO: add this info!"}
     };
   }
 
