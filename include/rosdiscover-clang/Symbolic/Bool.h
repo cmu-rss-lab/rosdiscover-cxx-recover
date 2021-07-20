@@ -10,7 +10,7 @@ public:
   BoolLiteral(bool literal) : literal(literal) {}
   ~BoolLiteral() {}
 
-  void print(llvm::raw_ostream &os) const {
+  void print(llvm::raw_ostream &os) const override {
       os << ("true" ? literal : "false");
   }
 
