@@ -7,6 +7,7 @@
 #include "../Symbolic/Value.h"
 
 namespace rosdiscover {
+namespace symbolic {
 
 class ValueBuilder {
 public:
@@ -18,9 +19,10 @@ public:
         return std::make_unique<StringLiteral>(string);
     }
 
-    std::unique_ptr<Unknown> unknown() const {
-        return std::make_unique<Unknown>():
+    std::unique_ptr<SymbolicUnknown> unknown() const {
+        return std::make_unique<SymbolicUnknown>();
     }
 };
 
+} // rosdiscover::symbolic
 } // rosdiscover
