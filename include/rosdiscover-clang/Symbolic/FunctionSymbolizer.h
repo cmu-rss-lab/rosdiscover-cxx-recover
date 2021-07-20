@@ -121,19 +121,20 @@ private:
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::BareGetParamCachedCall *apiCall) {
-    return new ReadParam(symbolizeApiCallName(apiCall));
+    return createAssignment(new ReadParam(symbolizeApiCallName(apiCall)));
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::BareGetParamCall *apiCall) {
-    return new ReadParam(symbolizeApiCallName(apiCall));
+    return createAssignment(new ReadParam(symbolizeApiCallName(apiCall)));
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::BareGetParamWithDefaultCall *apiCall) {
-    return new ReadParamWithDefault(symbolizeApiCallName(apiCall), StringLiteral::create("DEFAULT"));
+    return createAssignment(new ReadParamWithDefault(symbolizeApiCallName(apiCall), StringLiteral::create("DEFAULT")));
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::BareHasParamCall *apiCall) {
-    return new HasParam(symbolizeApiCallName(apiCall));
+    // TODO we know that this is a bool!
+    return createAssignment(new HasParam(symbolizeApiCallName(apiCall)));
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::BareServiceCall *apiCall) {
@@ -149,19 +150,20 @@ private:
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::GetParamCachedCall *apiCall) {
-    return new ReadParam(symbolizeApiCallName(apiCall));
+    return createAssignment(new ReadParam(symbolizeApiCallName(apiCall)));
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::GetParamCall *apiCall) {
-    return new ReadParam(symbolizeApiCallName(apiCall));
+    return createAssignment(new ReadParam(symbolizeApiCallName(apiCall)));
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::GetParamWithDefaultCall *apiCall) {
-    return new ReadParamWithDefault(symbolizeApiCallName(apiCall), StringLiteral::create("DEFAULT"));
+    return createAssignment(new ReadParamWithDefault(symbolizeApiCallName(apiCall), StringLiteral::create("DEFAULT")));
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::HasParamCall *apiCall) {
-    return new HasParam(symbolizeApiCallName(apiCall));
+    // TODO we know that this is a bool!
+    return createAssignment(new HasParam(symbolizeApiCallName(apiCall)));
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::RosInitCall *apiCall) {
@@ -178,6 +180,12 @@ private:
 
   SymbolicStmt * symbolizeApiCall(api_call::SubscribeTopicCall *apiCall) {
     return new Subscriber(symbolizeApiCallName(apiCall));
+  }
+
+  SymbolicStmt * createAssignment(SymbolicValue *valueExpr) {
+      // TODO determine symbolic value type
+      // TODO assign a fresh local variable name
+     return new AssignmentStmt("TODO-VAR-NAME", SymbolicValueType::Unsupported, valueExpr);   
   }
 
   clang::FunctionDecl const * getCallee(clang::Expr *expr) const {
