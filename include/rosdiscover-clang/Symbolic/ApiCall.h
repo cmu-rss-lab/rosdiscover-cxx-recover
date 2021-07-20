@@ -213,41 +213,14 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "reads-param-with-default"},
-      {"name", getName()->toJson()}
+      {"name", getName()->toJson()},
+      {"default", getDefaultValue()->toJson()}
     };
   }
 
 private:
   SymbolicValue const *defaultValue;
 };
-
-/** Stores a symbolic ROS API call and its underlying corresponding raw call. */
-/*
-class AnnotatedSymbolicRosApiCall {
-public:
-  AnnotatedSymbolicRosApiCall(
-      RosApiCall const *apiCall,
-      SymbolicRosApiCall const *symbolizedCall
-  ) : apiCall(apiCall), symbolizedCall(symbolizedCall)
-  {}
-
-  RosApiCall const * getApiCall() const {
-    return apiCall;
-  }
-
-  SymbolicRosApiCall const * getSymbolized() const {
-    return symbolizedCall;
-  }
-
-  clang::CallExpr const * getCallExpr() const {
-    return getApiCall()->getCallExpr();
-  }
-
-private:
-  RosApiCall const *apiCall;
-  SymbolicRosApiCall const *symbolizedCall;
-};
-*/
 
 } // rosdiscover::symbolic
 } // rosdiscover
