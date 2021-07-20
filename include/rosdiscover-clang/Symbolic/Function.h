@@ -63,7 +63,8 @@ public:
     return {
       {"name", qualifiedName},
       {"parameters", jsonParams},
-      {"source-location", "TODO: add this info!"}
+      {"source-location", "TODO: add this info!"},
+      {"body", body.toJson()}
     };
   }
 
@@ -123,6 +124,13 @@ public:
 
   void print(llvm::raw_ostream &os) const override {
     os << "(call " << callee->getName() << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "call"},
+      {"callee", callee->getName()}
+    };
   }
 
 private:

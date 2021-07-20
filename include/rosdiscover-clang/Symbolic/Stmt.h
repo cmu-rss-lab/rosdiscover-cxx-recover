@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include "../RawStatement.h"
 #include "Value.h"
 #include "Stmt.h"
@@ -11,6 +13,7 @@ class SymbolicStmt {
 public:
   virtual ~SymbolicStmt(){};
   virtual void print(llvm::raw_ostream &os) const = 0;
+  virtual nlohmann::json toJson() const = 0;
 };
 
 class AnnotatedSymbolicStmt : public SymbolicStmt {
@@ -28,6 +31,12 @@ public:
 
   clang::Stmt* getClangStmt() {
     return clangStmt;
+  }
+
+  nlohmann::json toJson() const override {
+    auto j = symbolicStmt->toJson();
+    j["source-location"] = location;
+    return j;
   }
 
   static AnnotatedSymbolicStmt* create(
@@ -71,7 +80,16 @@ public:
     os << "}";
   }
 
+  nlohmann::json toJson() const {
+    auto j = nlohmann::json::array();
+    for (auto const &statement : statements) {
+      j.push_back(statement->toJson());
+    }
+    return j;
+  }
+
 private:
+  // TODO use std::unique_ptr here!
   std::vector<SymbolicStmt*> statements;
 };
 

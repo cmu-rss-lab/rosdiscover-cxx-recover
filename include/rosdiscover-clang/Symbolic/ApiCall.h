@@ -31,6 +31,13 @@ public:
     getName()->print(os);
     os << ")";
   }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "ros-init"},
+      {"name", "TODO"}
+    };
+  }
 };
 
 class Publisher : public SymbolicRosApiCall {
@@ -38,9 +45,16 @@ public:
   Publisher(SymbolicString const *name) : SymbolicRosApiCall(name) {}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(publishes_to ";
+    os << "(publishes-to ";
     getName()->print(os);
     os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "publishes-to"},
+      {"name", "TODO"}
+    };
   }
 };
 
@@ -49,9 +63,16 @@ public:
   Subscriber(SymbolicString const *name) : SymbolicRosApiCall(name) {}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(subscribes_to ";
+    os << "(subscribes-to ";
     getName()->print(os);
     os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "subscribes-to"},
+      {"name", "TODO"}
+    };
   }
 };
 
@@ -60,9 +81,16 @@ public:
   ServiceCaller(SymbolicString const *name) : SymbolicRosApiCall(name) {}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(calls_service ";
+    os << "(calls-service ";
     getName()->print(os);
     os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "calls-service"},
+      {"name", "TODO"}
+    };
   }
 };
 
@@ -71,9 +99,16 @@ public:
   ServiceProvider(SymbolicString const *name) : SymbolicRosApiCall(name) {}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(provides_service ";
+    os << "(provides-service ";
     getName()->print(os);
     os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "provides-service"},
+      {"name", "TODO"}
+    };
   }
 };
 
@@ -83,9 +118,16 @@ public:
   ReadParam(SymbolicString const *name) : SymbolicRosApiCall(name) {}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(reads_param ";
+    os << "(reads-param ";
     getName()->print(os);
     os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "reads-param"},
+      {"name", "TODO"}
+    };
   }
 };
 
@@ -96,9 +138,16 @@ public:
   {}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(writes_to_param ";
+    os << "(writes-to-param ";
     getName()->print(os);
     os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "writes-to-param"},
+      {"name", "TODO"}
+    };
   }
 
 private:
@@ -110,9 +159,16 @@ public:
   DeleteParam(SymbolicString const *name) : SymbolicRosApiCall(name) {}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(deletes_param ";
+    os << "(deletes-param ";
     getName()->print(os);
     os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "deletes-param"},
+      {"name", "TODO"}
+    };
   }
 };
 
@@ -122,9 +178,16 @@ public:
   HasParam(SymbolicString const *name) : SymbolicRosApiCall(name) {}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(checks_for_param ";
+    os << "(checks-for-param ";
     getName()->print(os);
     os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "checks-for-param"},
+      {"name", "TODO"}
+    };
   }
 };
 
@@ -140,11 +203,18 @@ public:
   }
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(reads_param_with_default ";
+    os << "(reads-param-with-default ";
     getName()->print(os);
     os << " ";
     getDefaultValue()->print(os);
     os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "reads-param-with-default"},
+      {"name", "TODO"}
+    };
   }
 
 private:
