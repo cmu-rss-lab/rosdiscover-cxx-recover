@@ -20,6 +20,13 @@ public:
     os << "\"" << literal << "\"";
   }
 
+  nlohmann::json toJson() const {
+    return {
+      {"kind", "string-literal"},
+      {"literal", literal}
+    };
+  }
+
 private:
   std::string const literal;
 };

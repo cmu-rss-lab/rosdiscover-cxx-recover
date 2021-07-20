@@ -14,6 +14,13 @@ public:
       os << ("true" ? literal : "false");
   }
 
+  nlohmann::json toJson() const {
+    return {
+      {"kind", "bool-literal"},
+      {"literal", literal}
+    };
+  }
+
 private:
   bool literal;
 };

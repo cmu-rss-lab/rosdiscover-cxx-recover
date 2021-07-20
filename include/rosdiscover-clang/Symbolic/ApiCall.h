@@ -35,7 +35,7 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "ros-init"},
-      {"name", "TODO"}
+      {"name", getName()->toJson()}
     };
   }
 };
@@ -53,7 +53,7 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "publishes-to"},
-      {"name", "TODO"}
+      {"name", getName()->toJson()}
     };
   }
 };
@@ -71,7 +71,7 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "subscribes-to"},
-      {"name", "TODO"}
+      {"name", getName()->toJson()}
     };
   }
 };
@@ -89,7 +89,7 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "calls-service"},
-      {"name", "TODO"}
+      {"name", getName()->toJson()}
     };
   }
 };
@@ -107,7 +107,7 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "provides-service"},
-      {"name", "TODO"}
+      {"name", getName()->toJson()}
     };
   }
 };
@@ -126,7 +126,7 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "reads-param"},
-      {"name", "TODO"}
+      {"name", getName()->toJson()}
     };
   }
 };
@@ -146,7 +146,7 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "writes-to-param"},
-      {"name", "TODO"}
+      {"name", getName()->toJson()}
     };
   }
 
@@ -167,7 +167,7 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "deletes-param"},
-      {"name", "TODO"}
+      {"name", getName()->toJson()}
     };
   }
 };
@@ -186,7 +186,7 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "checks-for-param"},
-      {"name", "TODO"}
+      {"name", getName()->toJson()}
     };
   }
 };
@@ -213,7 +213,7 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "reads-param-with-default"},
-      {"name", "TODO"}
+      {"name", getName()->toJson()}
     };
   }
 

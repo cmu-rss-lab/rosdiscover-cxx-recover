@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nlohmann/json.hpp>
+
 #include <llvm/Support/raw_ostream.h>
 
 namespace rosdiscover {
@@ -16,6 +18,7 @@ class SymbolicValue {
 public:
   virtual ~SymbolicValue(){};
   virtual void print(llvm::raw_ostream &os) const = 0;
+  virtual nlohmann::json toJson() const = 0;
 
   static SymbolicValueType getSymbolicType(clang::QualType clangType) {
     clangType = clangType.getUnqualifiedType();
@@ -60,6 +63,12 @@ public:
   ~SymbolicUnknown(){}
   void print(llvm::raw_ostream &os) const override {
     os << "UNKNOWN";
+  }
+
+  nlohmann::json toJson() const {
+    return {
+      {"kind", "unknown"}
+    };
   }
 
   static SymbolicUnknown* create() {
