@@ -1,5 +1,6 @@
 #pragma once
 
+#include <queue>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -20,18 +21,16 @@
 namespace rosdiscover {
 namespace symbolic {
 
-/** limitation: operates over a single translation unit for now */
 class Symbolizer {
 public:
-  // TODO return unique_ptr<SymbolicContext>
-  static void symbolize(clang::ASTContext &astContext) {
-    Symbolizer(astContext).run();
+  static void symbolize(clang::ASTContext &astContext, SymbolicContext &symContext) {
+    Symbolizer(astContext, symContext).run();
   }
 
 private:
-  Symbolizer(clang::ASTContext &astContext)
+  Symbolizer(clang::ASTContext &astContext, SymbolicContext &symContext)
     : astContext(astContext),
-      symContext(),
+      symContext(symContext),
       callGraph(),
       apiCalls(),
       functionToApiCalls(),
@@ -39,7 +38,7 @@ private:
       relevantFunctionCalls()
   {}
 
-  SymbolicContext symContext;
+  SymbolicContext &symContext;
   clang::ASTContext &astContext;
   clang::CallGraph callGraph;
   std::vector<api_call::RosApiCall *> apiCalls;

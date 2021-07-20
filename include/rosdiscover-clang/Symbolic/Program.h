@@ -26,6 +26,10 @@ public:
     };
   }
 
+  SymbolicContext& getContext() {
+    return context;
+  }
+
 private:
   SymbolicContext context;
 };
