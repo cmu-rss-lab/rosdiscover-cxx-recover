@@ -65,7 +65,7 @@ public:
     os << "UNKNOWN";
   }
 
-  nlohmann::json toJson() const {
+  nlohmann::json toJson() const override {
     return {
       {"kind", "unknown"}
     };
