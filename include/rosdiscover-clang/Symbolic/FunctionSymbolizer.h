@@ -58,7 +58,7 @@ private:
   std::vector<clang::Expr *> &functionCalls;
   StringSymbolizer stringSymbolizer;
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::RosApiCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::RosApiCall *apiCall) {
     using namespace rosdiscover::api_call;
     llvm::outs() << "symbolizing ROS API call: ";
     apiCall->print(llvm::outs());
@@ -108,75 +108,75 @@ private:
     return stringSymbolizer.symbolize(const_cast<clang::Expr*>(apiCall->getNameExpr()));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::AdvertiseServiceCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::AdvertiseServiceCall *apiCall) {
     return new ServiceProvider(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::AdvertiseTopicCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::AdvertiseTopicCall *apiCall) {
     return new Publisher(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::BareDeleteParamCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::BareDeleteParamCall *apiCall) {
     return new DeleteParam(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::BareGetParamCachedCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::BareGetParamCachedCall *apiCall) {
     return new ReadParam(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::BareGetParamCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::BareGetParamCall *apiCall) {
     return new ReadParam(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::BareGetParamWithDefaultCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::BareGetParamWithDefaultCall *apiCall) {
     return new ReadParamWithDefault(symbolizeApiCallName(apiCall), StringLiteral::create("DEFAULT"));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::BareHasParamCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::BareHasParamCall *apiCall) {
     return new HasParam(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::BareServiceCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::BareServiceCall *apiCall) {
     return new ServiceCaller(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::BareSetParamCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::BareSetParamCall *apiCall) {
     return new WriteParam(symbolizeApiCallName(apiCall), StringLiteral::create("VALUE"));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::DeleteParamCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::DeleteParamCall *apiCall) {
     return new DeleteParam(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::GetParamCachedCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::GetParamCachedCall *apiCall) {
     return new ReadParam(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::GetParamCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::GetParamCall *apiCall) {
     return new ReadParam(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::GetParamWithDefaultCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::GetParamWithDefaultCall *apiCall) {
     return new ReadParamWithDefault(symbolizeApiCallName(apiCall), StringLiteral::create("DEFAULT"));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::HasParamCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::HasParamCall *apiCall) {
     return new HasParam(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::RosInitCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::RosInitCall *apiCall) {
     return new RosInit(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::ServiceClientCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::ServiceClientCall *apiCall) {
     return new ServiceCaller(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::SetParamCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::SetParamCall *apiCall) {
     return new WriteParam(symbolizeApiCallName(apiCall), StringLiteral::create("VALUE"));
   }
 
-  SymbolicRosApiCall * symbolizeApiCall(api_call::SubscribeTopicCall *apiCall) {
+  SymbolicStmt * symbolizeApiCall(api_call::SubscribeTopicCall *apiCall) {
     return new Subscriber(symbolizeApiCallName(apiCall));
   }
 
@@ -206,7 +206,7 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  SymbolicFunctionCall * symbolizeFunctionCall(clang::Expr *callExpr) {
+  SymbolicStmt * symbolizeFunctionCall(clang::Expr *callExpr) {
     auto *function = symContext.getDefinition(getCallee(callExpr));
     return new SymbolicFunctionCall(function);
   }
