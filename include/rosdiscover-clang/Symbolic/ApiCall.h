@@ -112,8 +112,10 @@ public:
   }
 };
 
-// also: SymbolicValue
-class ReadParam : public SymbolicRosApiCall {
+class ReadParam :
+  public SymbolicRosApiCall,
+  public virtual SymbolicValue
+{
 public:
   ReadParam(SymbolicString const *name) : SymbolicRosApiCall(name) {}
 
@@ -172,8 +174,10 @@ public:
   }
 };
 
-// also: SymbolicBool
-class HasParam : public SymbolicRosApiCall {
+class HasParam :
+  public SymbolicRosApiCall,
+  public virtual SymbolicBool
+{
 public:
   HasParam(SymbolicString const *name) : SymbolicRosApiCall(name) {}
 
@@ -191,8 +195,10 @@ public:
   }
 };
 
-// also: SymbolicValue
-class ReadParamWithDefault : public SymbolicRosApiCall {
+class ReadParamWithDefault :
+  public SymbolicRosApiCall,
+  public virtual SymbolicValue
+{
 public:
   ReadParamWithDefault(SymbolicString const *name, SymbolicValue const *defaultValue)
     : SymbolicRosApiCall(name), defaultValue(defaultValue)
