@@ -259,7 +259,11 @@ private:
         symbolic = symbolizeFunctionCall(((RawFunctionCallStatement*) statement)->getCall());
         break;
     }
-    return AnnotatedSymbolicStmt::create(astContext, symbolic, statement);
+    return AnnotatedSymbolicStmt::create(
+      astContext,
+      std::unique_ptr<SymbolicStmt>(symbolic),
+      statement
+    );
   }
 
   void run() {

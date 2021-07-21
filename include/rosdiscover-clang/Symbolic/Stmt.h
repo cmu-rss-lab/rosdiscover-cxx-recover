@@ -55,7 +55,7 @@ public:
   }
 
   SymbolicStmt* getSymbolicStmt() {
-    return symbolicStmt;
+    return symbolicStmt.get();
   }
 
   clang::Stmt* getClangStmt() {
@@ -70,26 +70,29 @@ public:
 
   static AnnotatedSymbolicStmt* create(
       clang::ASTContext &context,
-      SymbolicStmt *symbolicStmt,
+      std::unique_ptr<SymbolicStmt> symbolicStmt,
       RawStatement *rawStmt
   ) {
     auto *clangStmt = rawStmt->getUnderlyingStmt();
     return new AnnotatedSymbolicStmt(
-        symbolicStmt,
+        std::move(symbolicStmt),
         rawStmt->getUnderlyingStmt(),
         clangStmt->getSourceRange().printToString(context.getSourceManager())
     );
   }
 
+  AnnotatedSymbolicStmt(
+    std::unique_ptr<SymbolicStmt> symbolicStmt,
+    clang::Stmt* clangStmt,
+    std::string const &location
+  ) : symbolicStmt(std::move(symbolicStmt)), clangStmt(clangStmt), location(location)
+  {}
+
 private:
   // TODO this probably ought to be const?
-  SymbolicStmt *symbolicStmt;
+  std::unique_ptr<SymbolicStmt> symbolicStmt;
   clang::Stmt *clangStmt;
   std::string const location;
-
-  AnnotatedSymbolicStmt(SymbolicStmt* symbolicStmt, clang::Stmt* clangStmt, std::string const &location)
-  : symbolicStmt(symbolicStmt), clangStmt(clangStmt), location(location)
-  {}
 };
 
 class SymbolicCompound {
@@ -118,7 +121,6 @@ public:
   }
 
 private:
-  // TODO use std::unique_ptr here!
   std::vector<SymbolicStmt*> statements;
 };
 
