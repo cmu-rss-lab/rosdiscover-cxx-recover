@@ -267,13 +267,14 @@ private:
   }
 
   void run() {
-    auto compound = SymbolicCompound();
+    // TODO this should operate on a reference instead!
+    auto compound = std::make_unique<SymbolicCompound>();
 
     for (auto &statement : computeStatementOrder()) {
-      compound.append(symbolizeStatement(statement.get()));
+      compound->append(symbolizeStatement(statement.get()));
     }
 
-    symContext.define(function, compound);
+    symContext.define(function, std::move(compound));
   }
 };
 

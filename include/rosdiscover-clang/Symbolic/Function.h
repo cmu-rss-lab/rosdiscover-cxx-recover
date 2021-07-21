@@ -51,7 +51,7 @@ public:
       os << "; ";
     }
     os << "] ";
-    body.print(os);
+    body->print(os);
   }
 
   nlohmann::json toJson() const {
@@ -64,12 +64,12 @@ public:
       {"name", qualifiedName},
       {"parameters", jsonParams},
       {"source-location", location},
-      {"body", body.toJson()}
+      {"body", body.get()->toJson()}
     };
   }
 
-  void define(SymbolicCompound &body) {
-    this->body = body;
+  void define(std::unique_ptr<SymbolicCompound> body) {
+    this->body = std::move(body);
   }
 
   std::string getName() const {
@@ -96,11 +96,16 @@ public:
 private:
   std::string qualifiedName;
   std::string location;
-  SymbolicCompound body;
+  std::unique_ptr<SymbolicCompound> body;
   std::unordered_map<size_t, SymbolicFunctionParameter> parameters;
 
-  SymbolicFunction(std::string const &qualifiedName, std::string const &location)
-    : qualifiedName(qualifiedName), location(location), body(), parameters()
+  SymbolicFunction(
+    std::string const &qualifiedName,
+    std::string const &location
+  ) : qualifiedName(qualifiedName),
+      location(location),
+      body(std::make_unique<SymbolicCompound>()),
+      parameters()
   {}
 
   void addParam(size_t index, clang::ParmVarDecl const *param) {

@@ -98,9 +98,14 @@ private:
 class SymbolicCompound {
 public:
   SymbolicCompound() : statements() {}
+  ~SymbolicCompound(){}
+
+  SymbolicCompound(SymbolicCompound&& other)
+  : statements(std::move(other.statements))
+  {}
 
   void append(SymbolicStmt *statement) {
-    statements.push_back(statement);
+    statements.emplace_back(statement);
   }
 
   void print(llvm::raw_ostream &os) const {
@@ -121,7 +126,7 @@ public:
   }
 
 private:
-  std::vector<SymbolicStmt*> statements;
+  std::vector<std::unique_ptr<SymbolicStmt>> statements;
 };
 
 } // rosdiscover::symbolic

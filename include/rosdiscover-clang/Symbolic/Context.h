@@ -32,13 +32,13 @@ public:
     return symbolic;
   }
 
-  void define(clang::FunctionDecl const *function, SymbolicCompound &body) {
-    define(function->getQualifiedNameAsString(), body);
+  void define(clang::FunctionDecl const *function, std::unique_ptr<SymbolicCompound> body) {
+    define(function->getQualifiedNameAsString(), std::move(body));
   }
 
-  void define(std::string const &qualifiedName, SymbolicCompound &body) {
+  void define(std::string const &qualifiedName, std::unique_ptr<SymbolicCompound> body) {
     auto *function = getDefinition(qualifiedName);
-    function->define(body);
+    function->define(std::move(body));
   }
 
   SymbolicFunction* getDefinition(clang::FunctionDecl const *function) {
