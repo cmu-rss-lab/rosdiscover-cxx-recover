@@ -67,13 +67,11 @@ public:
 protected:
   RosApiCall(clang::CallExpr const *call, clang::ASTContext const *context)
     : call(call),
-      context(context),
       locationString(call->getBeginLoc().printToString(context->getSourceManager()))
   {}
 
 private:
   clang::CallExpr const *call;
-  clang::ASTContext const *context;
   std::string const locationString;
 }; // RosApiCall
 

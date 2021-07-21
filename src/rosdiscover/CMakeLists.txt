@@ -12,6 +12,9 @@ target_link_libraries(rosdiscover
   ${CLANG_LIBS}
   nlohmann_json::nlohmann_json
 )
+target_compile_options(rosdiscover PRIVATE
+  -Wall -Werror
+)
 target_compile_definitions(rosdiscover
   PUBLIC ${CLANG_DEFINITIONS} ${LLVM_DEFINITIONS}
 )

@@ -20,9 +20,8 @@ class AssignmentStmt : public SymbolicStmt {
 public:
   AssignmentStmt(
     std::string const &varName,
-    SymbolicValueType type,
     SymbolicValue *valueExpr
-  ) : varName(varName), type(type), valueExpr(valueExpr)
+  ) : varName(varName), valueExpr(valueExpr)
   {}
   ~AssignmentStmt(){}
 
@@ -42,7 +41,6 @@ public:
 
 private:
   std::string varName;
-  SymbolicValueType type;
   SymbolicValue *valueExpr; // TODO use unique_ptr!
 };
 

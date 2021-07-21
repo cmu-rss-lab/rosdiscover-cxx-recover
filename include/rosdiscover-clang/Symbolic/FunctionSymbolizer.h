@@ -185,9 +185,8 @@ private:
   }
 
   SymbolicStmt * createAssignment(SymbolicValue *valueExpr) {
-      // TODO determine symbolic value type
       // TODO assign a fresh local variable name
-     return new AssignmentStmt("TODO-VAR-NAME", SymbolicValueType::Unsupported, valueExpr);   
+     return new AssignmentStmt("TODO-VAR-NAME", valueExpr);   
   }
 
   clang::FunctionDecl const * getCallee(clang::Expr *expr) const {

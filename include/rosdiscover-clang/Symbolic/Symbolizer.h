@@ -29,8 +29,8 @@ public:
 
 private:
   Symbolizer(clang::ASTContext &astContext, SymbolicContext &symContext)
-    : astContext(astContext),
-      symContext(symContext),
+    : symContext(symContext),
+      astContext(astContext),
       callGraph(),
       apiCalls(),
       functionToApiCalls(),

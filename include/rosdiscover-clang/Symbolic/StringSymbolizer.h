@@ -41,7 +41,7 @@ public:
   }
 
 private:
-  clang::ASTContext &astContext;
+  [[maybe_unused]] clang::ASTContext &astContext;
   ValueBuilder valueBuilder;
 
   std::unique_ptr<SymbolicString> symbolize(clang::StringLiteral *literal) {
