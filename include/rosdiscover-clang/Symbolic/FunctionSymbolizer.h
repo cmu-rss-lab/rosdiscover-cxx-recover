@@ -8,14 +8,14 @@
 
 #include <fmt/core.h>
 
-#include "../StmtOrderingVisitor.h"
 #include "../RawStatement.h"
+#include "../StmtOrderingVisitor.h"
+#include "../Value/String.h"
+#include "../Value/Value.h"
 #include "ApiCall.h"
 #include "Context.h"
 #include "Function.h"
-#include "String.h"
 #include "StringSymbolizer.h"
-#include "Value.h"
 
 namespace rosdiscover {
 namespace symbolic {
@@ -189,7 +189,7 @@ private:
   }
 
   SymbolicStmt * createAssignment(SymbolicValue *valueExpr) {
-    auto varName = fmt::format("v{:d}", nextVarNumber);
+    auto varName = fmt::format("v{:d}", nextVarNumber++);
     return new AssignmentStmt(varName, valueExpr);   
   }
 

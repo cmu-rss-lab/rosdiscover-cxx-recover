@@ -6,8 +6,8 @@
 #include <clang/AST/ExprCXX.h>
 #include <llvm/ADT/APInt.h>
 
-#include "String.h"
 #include "../Builder/ValueBuilder.h"
+#include "../Value/String.h"
 
 namespace rosdiscover {
 namespace symbolic {

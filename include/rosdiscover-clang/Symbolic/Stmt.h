@@ -3,7 +3,7 @@
 #include <nlohmann/json.hpp>
 
 #include "../RawStatement.h"
-#include "Value.h"
+#include "../Value/Value.h"
 #include "Stmt.h"
 
 namespace rosdiscover {

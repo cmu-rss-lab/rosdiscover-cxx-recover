@@ -2,9 +2,9 @@
 
 #include <string>
 
-#include "../Symbolic/Bool.h"
-#include "../Symbolic/String.h"
-#include "../Symbolic/Value.h"
+#include "../Value/Bool.h"
+#include "../Value/String.h"
+#include "../Value/Value.h"
 
 namespace rosdiscover {
 namespace symbolic {

@@ -1,8 +1,8 @@
 #pragma once
 
 #include "Stmt.h"
-#include "String.h"
-#include "Value.h"
+#include "../Value/String.h"
+#include "../Value/Value.h"
 
 namespace rosdiscover {
 namespace symbolic {
