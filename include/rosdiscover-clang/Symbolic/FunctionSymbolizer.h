@@ -48,7 +48,8 @@ private:
       function(function),
       apiCalls(apiCalls),
       functionCalls(functionCalls),
-      stringSymbolizer(astContext)
+      stringSymbolizer(astContext),
+      valueBuilder()
   {}
 
   clang::ASTContext &astContext;
@@ -57,6 +58,7 @@ private:
   std::vector<api_call::RosApiCall *> &apiCalls;
   std::vector<clang::Expr *> &functionCalls;
   StringSymbolizer stringSymbolizer;
+  ValueBuilder valueBuilder;
 
   SymbolicStmt * symbolizeApiCall(api_call::RosApiCall *apiCall) {
     using namespace rosdiscover::api_call;
@@ -129,7 +131,7 @@ private:
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::BareGetParamWithDefaultCall *apiCall) {
-    return createAssignment(new ReadParamWithDefault(symbolizeApiCallName(apiCall), StringLiteral::create("DEFAULT")));
+    return createAssignment(new ReadParamWithDefault(symbolizeApiCallName(apiCall), valueBuilder.unknown()));
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::BareHasParamCall *apiCall) {
@@ -142,7 +144,7 @@ private:
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::BareSetParamCall *apiCall) {
-    return new WriteParam(symbolizeApiCallName(apiCall), StringLiteral::create("VALUE"));
+    return new WriteParam(symbolizeApiCallName(apiCall), valueBuilder.unknown());
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::DeleteParamCall *apiCall) {
@@ -158,7 +160,7 @@ private:
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::GetParamWithDefaultCall *apiCall) {
-    return createAssignment(new ReadParamWithDefault(symbolizeApiCallName(apiCall), StringLiteral::create("DEFAULT")));
+    return createAssignment(new ReadParamWithDefault(symbolizeApiCallName(apiCall), valueBuilder.unknown()));
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::HasParamCall *apiCall) {
@@ -175,7 +177,7 @@ private:
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::SetParamCall *apiCall) {
-    return new WriteParam(symbolizeApiCallName(apiCall), StringLiteral::create("VALUE"));
+    return new WriteParam(symbolizeApiCallName(apiCall), valueBuilder.unknown());
   }
 
   SymbolicStmt * symbolizeApiCall(api_call::SubscribeTopicCall *apiCall) {

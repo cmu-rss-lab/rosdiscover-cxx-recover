@@ -135,8 +135,8 @@ public:
 
 class WriteParam : public SymbolicRosApiCall {
 public:
-  WriteParam(std::unique_ptr<SymbolicString> name, SymbolicValue const *value)
-    : SymbolicRosApiCall(std::move(name)), value(value)
+  WriteParam(std::unique_ptr<SymbolicString> name, std::unique_ptr<SymbolicValue> value)
+    : SymbolicRosApiCall(std::move(name)), value(std::move(value))
   {}
 
   void print(llvm::raw_ostream &os) const override {
@@ -153,7 +153,7 @@ public:
   }
 
 private:
-  SymbolicValue const *value;
+  std::unique_ptr<SymbolicValue> value;
 };
 
 class DeleteParam : public SymbolicRosApiCall {
@@ -200,12 +200,14 @@ class ReadParamWithDefault :
   public virtual SymbolicValue
 {
 public:
-  ReadParamWithDefault(std::unique_ptr<SymbolicString> name, SymbolicValue const *defaultValue)
-    : SymbolicRosApiCall(std::move(name)), defaultValue(defaultValue)
+  ReadParamWithDefault(
+    std::unique_ptr<SymbolicString> name,
+    std::unique_ptr<SymbolicValue> defaultValue
+  ) : SymbolicRosApiCall(std::move(name)), defaultValue(std::move(defaultValue))
   {}
 
   SymbolicValue const * getDefaultValue() const {
-    return defaultValue;
+    return defaultValue.get();
   }
 
   void print(llvm::raw_ostream &os) const override {
@@ -225,7 +227,7 @@ public:
   }
 
 private:
-  SymbolicValue const *defaultValue;
+  std::unique_ptr<SymbolicValue> defaultValue;
 };
 
 } // rosdiscover::symbolic

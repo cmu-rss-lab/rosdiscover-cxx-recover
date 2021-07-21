@@ -109,7 +109,7 @@ private:
       auto *callerNode = callGraph.getNode(caller);
       for (clang::CallGraphNode::CallRecord const &callRecord : *callerNode) {
         // is this a call to another relevant function?
-        auto const *callee = dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl())->getCanonicalDecl();
+        auto const *callee = clang::dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl())->getCanonicalDecl();
         if (relevantFunctions.find(callee) != relevantFunctions.end())
           relevantFunctionCalls[caller].push_back(callRecord.CallExpr);
       }
