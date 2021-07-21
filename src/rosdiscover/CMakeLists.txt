@@ -11,6 +11,7 @@ target_link_libraries(rosdiscover
   ${ROSDISCOVER_LLVM_LIBS}
   ${CLANG_LIBS}
   nlohmann_json::nlohmann_json
+  fmt::fmt-header-only
 )
 target_compile_options(rosdiscover PRIVATE
   -Wall -Werror
@@ -23,6 +24,7 @@ target_include_directories(rosdiscover
     ${CLANG_INCLUDE_DIRS}
     ${LLVM_INCLUDE_DIRS}
     nlohmann_json::nlohmann_json
+    fmt::fmt
     ../../include
 )
 

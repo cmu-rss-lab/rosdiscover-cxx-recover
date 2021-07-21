@@ -68,13 +68,13 @@ public:
     return j;
   }
 
-  static AnnotatedSymbolicStmt* create(
+  static std::unique_ptr<AnnotatedSymbolicStmt> create(
       clang::ASTContext &context,
       std::unique_ptr<SymbolicStmt> symbolicStmt,
       RawStatement *rawStmt
   ) {
     auto *clangStmt = rawStmt->getUnderlyingStmt();
-    return new AnnotatedSymbolicStmt(
+    return std::make_unique<AnnotatedSymbolicStmt>(
         std::move(symbolicStmt),
         rawStmt->getUnderlyingStmt(),
         clangStmt->getSourceRange().printToString(context.getSourceManager())
@@ -104,8 +104,8 @@ public:
   : statements(std::move(other.statements))
   {}
 
-  void append(SymbolicStmt *statement) {
-    statements.emplace_back(statement);
+  void append(std::unique_ptr<SymbolicStmt> statement) {
+    statements.push_back(std::move(statement));
   }
 
   void print(llvm::raw_ostream &os) const {

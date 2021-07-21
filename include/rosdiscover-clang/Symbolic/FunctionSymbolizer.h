@@ -6,6 +6,8 @@
 #include <clang/AST/Decl.h>
 #include <clang/AST/DeclCXX.h>
 
+#include <fmt/core.h>
+
 #include "../StmtOrderingVisitor.h"
 #include "../RawStatement.h"
 #include "ApiCall.h"
@@ -49,6 +51,7 @@ private:
       apiCalls(apiCalls),
       functionCalls(functionCalls),
       stringSymbolizer(astContext),
+      nextVarNumber(0),
       valueBuilder()
   {}
 
@@ -58,6 +61,7 @@ private:
   std::vector<api_call::RosApiCall *> &apiCalls;
   std::vector<clang::Expr *> &functionCalls;
   StringSymbolizer stringSymbolizer;
+  size_t nextVarNumber;
   ValueBuilder valueBuilder;
 
   SymbolicStmt * symbolizeApiCall(api_call::RosApiCall *apiCall) {
@@ -185,8 +189,8 @@ private:
   }
 
   SymbolicStmt * createAssignment(SymbolicValue *valueExpr) {
-      // TODO assign a fresh local variable name
-     return new AssignmentStmt("TODO-VAR-NAME", valueExpr);   
+    auto varName = fmt::format("v{:d}", nextVarNumber);
+    return new AssignmentStmt(varName, valueExpr);   
   }
 
   clang::FunctionDecl const * getCallee(clang::Expr *expr) const {
@@ -249,7 +253,7 @@ private:
     return ordered;
   }
 
-  SymbolicStmt* symbolizeStatement(RawStatement *statement) {
+  std::unique_ptr<SymbolicStmt> symbolizeStatement(RawStatement *statement) {
     SymbolicStmt *symbolic;
     switch (statement->getKind()) {
       case RawStatementKind::RosApiCall:
