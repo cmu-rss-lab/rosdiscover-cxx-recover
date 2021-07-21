@@ -12,19 +12,19 @@ public:
   ~SymbolicRosApiCall(){}
 
   SymbolicString const * getName() const {
-    return name;
+    return name.get();
   }
 
 protected:
-  SymbolicRosApiCall(SymbolicString const *name) : name(name) {}
+  SymbolicRosApiCall(std::unique_ptr<SymbolicString> name) : name(std::move(name)) {}
 
 private:
-  SymbolicString const *name;
+  std::unique_ptr<SymbolicString> name;
 };
 
 class RosInit : public SymbolicRosApiCall {
 public:
-  RosInit(SymbolicString const *name) : SymbolicRosApiCall(name) {}
+  RosInit(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(ros-init ";
@@ -42,7 +42,7 @@ public:
 
 class Publisher : public SymbolicRosApiCall {
 public:
-  Publisher(SymbolicString const *name) : SymbolicRosApiCall(name) {}
+  Publisher(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(publishes-to ";
@@ -60,7 +60,7 @@ public:
 
 class Subscriber : public SymbolicRosApiCall {
 public:
-  Subscriber(SymbolicString const *name) : SymbolicRosApiCall(name) {}
+  Subscriber(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(subscribes-to ";
@@ -78,7 +78,7 @@ public:
 
 class ServiceCaller : public SymbolicRosApiCall {
 public:
-  ServiceCaller(SymbolicString const *name) : SymbolicRosApiCall(name) {}
+  ServiceCaller(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(calls-service ";
@@ -96,7 +96,7 @@ public:
 
 class ServiceProvider : public SymbolicRosApiCall {
 public:
-  ServiceProvider(SymbolicString const *name) : SymbolicRosApiCall(name) {}
+  ServiceProvider(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(provides-service ";
@@ -117,7 +117,7 @@ class ReadParam :
   public virtual SymbolicValue
 {
 public:
-  ReadParam(SymbolicString const *name) : SymbolicRosApiCall(name) {}
+  ReadParam(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(reads-param ";
@@ -135,8 +135,8 @@ public:
 
 class WriteParam : public SymbolicRosApiCall {
 public:
-  WriteParam(SymbolicString const *name, SymbolicValue const *value)
-    : SymbolicRosApiCall(name), value(value)
+  WriteParam(std::unique_ptr<SymbolicString> name, SymbolicValue const *value)
+    : SymbolicRosApiCall(std::move(name)), value(value)
   {}
 
   void print(llvm::raw_ostream &os) const override {
@@ -158,7 +158,7 @@ private:
 
 class DeleteParam : public SymbolicRosApiCall {
 public:
-  DeleteParam(SymbolicString const *name) : SymbolicRosApiCall(name) {}
+  DeleteParam(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(deletes-param ";
@@ -179,7 +179,7 @@ class HasParam :
   public virtual SymbolicBool
 {
 public:
-  HasParam(SymbolicString const *name) : SymbolicRosApiCall(name) {}
+  HasParam(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(checks-for-param ";
@@ -200,8 +200,8 @@ class ReadParamWithDefault :
   public virtual SymbolicValue
 {
 public:
-  ReadParamWithDefault(SymbolicString const *name, SymbolicValue const *defaultValue)
-    : SymbolicRosApiCall(name), defaultValue(defaultValue)
+  ReadParamWithDefault(std::unique_ptr<SymbolicString> name, SymbolicValue const *defaultValue)
+    : SymbolicRosApiCall(std::move(name)), defaultValue(defaultValue)
   {}
 
   SymbolicValue const * getDefaultValue() const {

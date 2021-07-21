@@ -11,7 +11,11 @@ public:
   ~BoolLiteral() {}
 
   void print(llvm::raw_ostream &os) const override {
-      os << ("true" ? literal : "false");
+    if (literal) {
+      os << "true";
+    } else {
+      os << "false";
+    }
   }
 
   nlohmann::json toJson() const override {

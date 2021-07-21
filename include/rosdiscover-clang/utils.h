@@ -56,7 +56,7 @@ std::unordered_map<clang::FunctionDecl const *, std::unordered_set<clang::Functi
     clang::FunctionDecl const *caller = dyn_cast<clang::FunctionDecl>(callGraphEntry.first)->getCanonicalDecl();
     clang::CallGraphNode const &callerNode = *callGraphEntry.second.get();
     for (clang::CallGraphNode::CallRecord const &callRecord : callerNode) {
-      auto const *callee = dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl())->getCanonicalDecl();
+      auto const *callee = clang::dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl())->getCanonicalDecl();
 
       if (functionToCallers.find(callee) != functionToCallers.end()) {
         functionToCallers[callee].insert(caller);

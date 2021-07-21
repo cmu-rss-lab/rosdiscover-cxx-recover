@@ -11,8 +11,8 @@ namespace symbolic {
 
 class ValueBuilder {
 public:
-    std::unique_ptr<SymbolicBool> boolLiteral(bool literal) const {
-        return std::make_unique<SymbolicBool>(literal);
+    std::unique_ptr<BoolLiteral> boolLiteral(bool literal) const {
+        return std::make_unique<BoolLiteral>(literal);
     }
 
     std::unique_ptr<StringLiteral> stringLiteral(std::string const &string) const {

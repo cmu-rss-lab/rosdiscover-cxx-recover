@@ -104,7 +104,7 @@ private:
     }
   }
 
-  SymbolicString * symbolizeApiCallName(api_call::RosApiCall *apiCall) {
+  std::unique_ptr<SymbolicString> symbolizeApiCallName(api_call::RosApiCall *apiCall) {
     return stringSymbolizer.symbolize(const_cast<clang::Expr*>(apiCall->getNameExpr()));
   }
 
@@ -189,9 +189,9 @@ private:
   }
 
   clang::FunctionDecl const * getCallee(clang::Expr *expr) const {
-    if (auto *callExpr = dyn_cast<clang::CallExpr>(expr)) {
+    if (auto *callExpr = clang::dyn_cast<clang::CallExpr>(expr)) {
       return getCallee(callExpr);
-    } else if (auto *constructExpr = dyn_cast<clang::CXXConstructExpr>(expr)) {
+    } else if (auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(expr)) {
       return getCallee(constructExpr);
     } else {
       llvm::errs() << "FATAL ERROR: cannot determine callee from expr:\n";

@@ -60,7 +60,9 @@ class SymbolicUnknown :
   public virtual SymbolicInteger
 {
 public:
+  SymbolicUnknown(){}
   ~SymbolicUnknown(){}
+
   void print(llvm::raw_ostream &os) const override {
     os << "UNKNOWN";
   }
@@ -70,13 +72,6 @@ public:
       {"kind", "unknown"}
     };
   }
-
-  static SymbolicUnknown* create() {
-    return new SymbolicUnknown();
-  }
-
-private:
-  SymbolicUnknown(){}
 };
 
 } // rosdiscover::symbolic
