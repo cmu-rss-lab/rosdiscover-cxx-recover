@@ -11,7 +11,7 @@ class SymbolicVariable {
 public:
   virtual ~SymbolicVariable();
   virtual std::string getName() const = 0;
-  virtual SymbolicValueType getType() const;
+  virtual SymbolicValueType getType() const = 0;
 
   std::string getTypeAsString() const {
     return SymbolicValue::getSymbolicTypeAsString(getType());
