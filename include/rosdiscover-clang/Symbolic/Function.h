@@ -41,6 +41,11 @@ public:
     this->body = std::move(body);
   }
 
+  LocalVariable& createLocal(std::string const &name, SymbolicValueType const &type) {
+    locals.emplace_back(name, type);
+    return locals.back();
+  }
+
   std::string getName() const {
     return qualifiedName;
   }
