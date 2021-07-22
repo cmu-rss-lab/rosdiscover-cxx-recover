@@ -20,7 +20,7 @@ class LocalVariable : public SymbolicVariable {
 
 private:
   std::string name;
-  SymbolicValuetype type;
+  SymbolicValueType type;
 };
 
 } // rosdiscover::symbolic
