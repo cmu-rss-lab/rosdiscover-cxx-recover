@@ -3,44 +3,13 @@
 #include <nlohmann/json.hpp>
 
 #include "../Value/Value.h"
+#include "../Variable/LocalVariable.h"
+#include "../Variable/Parameter.h"
 #include "Stmt.h"
 
 namespace rosdiscover {
 namespace symbolic {
 
-class SymbolicFunctionParameter {
-public:
-  size_t getIndex() const { return index; }
-  std::string const & getName() const { return name; }
-  SymbolicValueType getType() const { return type; }
-
-  // TODO add support for default values here!
-
-  SymbolicFunctionParameter(size_t index, std::string const &name, SymbolicValueType const type)
-    : index(index), name(name), type(type)
-  {}
-
-  nlohmann::json toJson() const {
-    return {
-      {"index", index},
-      {"name", name},
-      {"type", SymbolicValue::getSymbolicTypeAsString(type)}
-    };
-  }
-
-  void print(llvm::raw_ostream &os) const {
-    os << index
-      << ":"
-      << name
-      << ":"
-      << SymbolicValue::getSymbolicTypeAsString(type);
-  }
-
-private:
-  size_t const index;
-  std::string const name;
-  SymbolicValueType const type;
-};
 
 class SymbolicFunction {
 public:
@@ -97,7 +66,8 @@ private:
   std::string qualifiedName;
   std::string location;
   std::unique_ptr<SymbolicCompound> body;
-  std::unordered_map<size_t, SymbolicFunctionParameter> parameters;
+  std::unordered_map<size_t, Parameter> parameters;
+  std::vector<LocalVariable> locals;
 
   SymbolicFunction(
     std::string const &qualifiedName,
@@ -105,7 +75,8 @@ private:
   ) : qualifiedName(qualifiedName),
       location(location),
       body(std::make_unique<SymbolicCompound>()),
-      parameters()
+      parameters(),
+      locals()
   {}
 
   void addParam(size_t index, clang::ParmVarDecl const *param) {
@@ -116,10 +87,10 @@ private:
     if (type == SymbolicValueType::Unsupported)
       return;
 
-    addParam(SymbolicFunctionParameter(index, name, type));
+    addParam(Parameter(index, name, type));
   }
 
-  void addParam(SymbolicFunctionParameter const &param) {
+  void addParam(Parameter const &param) {
     parameters.emplace(param.getIndex(), param);
   }
 };

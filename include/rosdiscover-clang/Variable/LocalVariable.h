@@ -8,6 +8,11 @@ namespace rosdiscover {
 namespace symbolic {
 
 class LocalVariable : public SymbolicVariable {
+public:
+  LocalVariable(std::string const &name, SymbolicValueType const &type)
+  : name(name), type(type)
+  {}
+
   ~LocalVariable(){}
 
   std::string getName() const override {
@@ -20,7 +25,7 @@ class LocalVariable : public SymbolicVariable {
 
 private:
   std::string name;
-  SymbolicValueType type;
+  SymbolicValueType const type;
 };
 
 } // rosdiscover::symbolic

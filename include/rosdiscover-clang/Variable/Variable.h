@@ -9,7 +9,7 @@ namespace symbolic {
 
 class SymbolicVariable {
 public:
-  virtual ~SymbolicVariable();
+  virtual ~SymbolicVariable(){}
   virtual std::string getName() const = 0;
   virtual SymbolicValueType getType() const = 0;
 
