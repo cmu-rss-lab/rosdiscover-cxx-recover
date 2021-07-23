@@ -13,6 +13,7 @@
 #include "../Value/String.h"
 #include "../Value/Value.h"
 #include "../Stmt/Stmts.h"
+#include "../Variable/Variable.h"
 #include "Context.h"
 #include "Function.h"
 #include "StringSymbolizer.h"
@@ -54,6 +55,7 @@ private:
       function(function),
       apiCalls(apiCalls),
       functionCalls(functionCalls),
+      apiCallToVar(),
       stringSymbolizer(astContext),
       valueBuilder()
   {}
@@ -64,6 +66,7 @@ private:
   clang::FunctionDecl const *function;
   std::vector<api_call::RosApiCall *> &apiCalls;
   std::vector<clang::Expr *> &functionCalls;
+  std::unordered_map<clang::CallExpr *, SymbolicVariable *> apiCallToVar;
   StringSymbolizer stringSymbolizer;
   ValueBuilder valueBuilder;
 
