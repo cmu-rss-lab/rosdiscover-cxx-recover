@@ -4,7 +4,6 @@
 
 #include "../RawStatement.h"
 #include "../Value/Value.h"
-#include "Stmt.h"
 
 namespace rosdiscover {
 namespace symbolic {
@@ -20,14 +19,14 @@ class AssignmentStmt : public SymbolicStmt {
 public:
   AssignmentStmt(
     std::string const &varName,
-    SymbolicValue *valueExpr
-  ) : varName(varName), valueExpr(valueExpr)
+    std::unique_ptr<SymbolicValue> value
+  ) : varName(varName), value(std::move(value))
   {}
   ~AssignmentStmt(){}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(assign " << varName << " ";
-    valueExpr->print(os);
+    value->print(os);
     os << ")";
   }
 
@@ -35,13 +34,13 @@ public:
     return {
       {"kind", "assignment"},
       {"variable", varName},
-      {"value", valueExpr->toJson()}
+      {"value", value->toJson()}
     };
   }
 
 private:
   std::string varName;
-  SymbolicValue *valueExpr; // TODO use unique_ptr!
+  std::unique_ptr<SymbolicValue> value;
 };
 
 class AnnotatedSymbolicStmt : public SymbolicStmt {

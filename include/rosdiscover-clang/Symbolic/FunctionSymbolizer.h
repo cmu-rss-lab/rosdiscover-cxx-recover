@@ -188,9 +188,10 @@ private:
     return new Subscriber(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicStmt * createAssignment(SymbolicValue *valueExpr) {
+  // TODO a unique_ptr should be passed in here!
+  SymbolicStmt * createAssignment(SymbolicValue *value) {
     auto varName = fmt::format("v{:d}", nextVarNumber++);
-    return new AssignmentStmt(varName, valueExpr);
+    return new AssignmentStmt(varName, std::unique_ptr<SymbolicValue>(value));
   }
 
   clang::FunctionDecl const * getCallee(clang::Expr *expr) const {
