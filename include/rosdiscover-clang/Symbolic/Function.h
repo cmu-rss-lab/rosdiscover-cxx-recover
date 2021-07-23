@@ -8,10 +8,10 @@
 #include "../Variable/LocalVariable.h"
 #include "../Variable/Parameter.h"
 #include "../Stmt/Stmt.h"
+#include "../Stmt/Compound.h"
 
 namespace rosdiscover {
 namespace symbolic {
-
 
 class SymbolicFunction {
 public:
