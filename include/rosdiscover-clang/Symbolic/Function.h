@@ -43,10 +43,10 @@ public:
     this->body = std::move(body);
   }
 
-  LocalVariable& createLocal(SymbolicValueType const &type) {
+  LocalVariable* createLocal(SymbolicValueType const &type) {
     auto name = fmt::format("v{:d}", nextLocalNumber++);
-    locals.emplace_back(name, type);
-    return locals.back();
+    locals.emplace_back(std::make_unique<LocalVariable>(name, type));
+    return locals.back().get();
   }
 
   std::string getName() const {
@@ -76,7 +76,7 @@ private:
   std::unique_ptr<SymbolicCompound> body;
   size_t nextLocalNumber;
   std::unordered_map<size_t, Parameter> parameters;
-  std::vector<LocalVariable> locals;
+  std::vector<std::unique_ptr<LocalVariable>> locals;
 
   SymbolicFunction(
     std::string const &qualifiedName,

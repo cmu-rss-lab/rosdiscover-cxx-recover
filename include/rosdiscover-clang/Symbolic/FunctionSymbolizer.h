@@ -55,18 +55,16 @@ private:
       apiCalls(apiCalls),
       functionCalls(functionCalls),
       stringSymbolizer(astContext),
-      nextVarNumber(0),
       valueBuilder()
   {}
 
   clang::ASTContext &astContext;
   SymbolicContext &symContext;
-  [[maybe_unused]] SymbolicFunction &symFunction;
+  SymbolicFunction &symFunction;
   clang::FunctionDecl const *function;
   std::vector<api_call::RosApiCall *> &apiCalls;
   std::vector<clang::Expr *> &functionCalls;
   StringSymbolizer stringSymbolizer;
-  size_t nextVarNumber;
   ValueBuilder valueBuilder;
 
   SymbolicStmt * symbolizeApiCall(api_call::RosApiCall *apiCall) {
@@ -195,8 +193,9 @@ private:
 
   // TODO a unique_ptr should be passed in here!
   SymbolicStmt * createAssignment(SymbolicValue *value) {
-    auto varName = fmt::format("v{:d}", nextVarNumber++);
-    return new AssignmentStmt(varName, std::unique_ptr<SymbolicValue>(value));
+    // TODO determine type
+    auto *local = symFunction.createLocal(SymbolicValueType::Unsupported);
+    return new AssignmentStmt(local, std::unique_ptr<SymbolicValue>(value));
   }
 
   clang::FunctionDecl const * getCallee(clang::Expr *expr) const {
@@ -280,8 +279,8 @@ private:
     // TODO this should operate on a reference instead!
     auto compound = std::make_unique<SymbolicCompound>();
 
-    for (auto &statement : computeStatementOrder()) {
-      compound->append(symbolizeStatement(statement.get()));
+    for (auto &rawStmt : computeStatementOrder()) {
+      compound->append(symbolizeStatement(rawStmt.get()));
     }
 
     symContext.define(function, std::move(compound));

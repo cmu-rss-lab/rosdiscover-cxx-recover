@@ -2,8 +2,9 @@
 
 #include <string>
 
-#include "Stmt.h"
 #include "../Value/Value.h"
+#include "../Variable/LocalVariable.h"
+#include "Stmt.h"
 
 namespace rosdiscover {
 namespace symbolic {
@@ -11,14 +12,14 @@ namespace symbolic {
 class AssignmentStmt : public SymbolicStmt {
 public:
   AssignmentStmt(
-    std::string const &varName,
+    LocalVariable const *variable,
     std::unique_ptr<SymbolicValue> value
-  ) : varName(varName), value(std::move(value))
+  ) : variable(variable), value(std::move(value))
   {}
   ~AssignmentStmt(){}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(assign " << varName << " ";
+    os << "(assign " << variable->getName() << " ";
     value->print(os);
     os << ")";
   }
@@ -26,13 +27,13 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "assignment"},
-      {"variable", varName},
+      {"variable", variable->getName()},
       {"value", value->toJson()}
     };
   }
 
 private:
-  std::string varName;
+  LocalVariable const *variable;
   std::unique_ptr<SymbolicValue> value;
 };
 
