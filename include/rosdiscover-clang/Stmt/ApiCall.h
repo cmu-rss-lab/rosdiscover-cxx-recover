@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Stmt/Stmt.h"
+#include "Stmt.h"
 #include "../Value/String.h"
 #include "../Value/Value.h"
 

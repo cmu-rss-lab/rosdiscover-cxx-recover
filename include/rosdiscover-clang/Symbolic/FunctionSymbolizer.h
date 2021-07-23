@@ -13,7 +13,6 @@
 #include "../Value/String.h"
 #include "../Value/Value.h"
 #include "../Stmt/Stmts.h"
-#include "ApiCall.h"
 #include "Context.h"
 #include "Function.h"
 #include "StringSymbolizer.h"
