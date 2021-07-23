@@ -14,9 +14,6 @@
 namespace rosdiscover {
 namespace symbolic {
 
-// this is responsible for holding everything in memory
-//
-// idea: use this to manage creation and destruction of stmts? or use shared pointers?
 class SymbolicContext {
 public:
   SymbolicContext() : nameToFunction() {}
@@ -67,6 +64,7 @@ public:
   }
 
 private:
+  // no need for unique_ptr; getters should just return references
   std::unordered_map<std::string, std::unique_ptr<SymbolicFunction>> nameToFunction;
 };
 
