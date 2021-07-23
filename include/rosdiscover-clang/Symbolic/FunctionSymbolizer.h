@@ -190,7 +190,7 @@ private:
 
   SymbolicStmt * createAssignment(SymbolicValue *valueExpr) {
     auto varName = fmt::format("v{:d}", nextVarNumber++);
-    return new AssignmentStmt(varName, valueExpr);   
+    return new AssignmentStmt(varName, valueExpr);
   }
 
   clang::FunctionDecl const * getCallee(clang::Expr *expr) const {
