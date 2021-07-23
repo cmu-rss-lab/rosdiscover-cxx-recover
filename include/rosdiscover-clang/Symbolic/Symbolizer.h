@@ -16,6 +16,7 @@
 #include <rosdiscover-clang/utils.h>
 
 #include "Context.h"
+#include "Function.h"
 #include "FunctionSymbolizer.h"
 
 namespace rosdiscover {
@@ -35,7 +36,8 @@ private:
       apiCalls(),
       functionToApiCalls(),
       relevantFunctions(),
-      relevantFunctionCalls()
+      relevantFunctionCalls(),
+      astFunctionToSymbolic()
   {}
 
   SymbolicContext &symContext;
@@ -45,6 +47,9 @@ private:
   std::unordered_map<clang::FunctionDecl const *, std::vector<api_call::RosApiCall *>> functionToApiCalls;
   std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
   std::unordered_map<clang::FunctionDecl const *, std::vector<clang::Expr *>> relevantFunctionCalls;
+
+  // TODO instead use AnnotatedFunctionDecl and AnnotatedContext
+  std::unordered_map<clang::FunctionDecl const*, SymbolicFunction*> astFunctionToSymbolic;
 
   /** Constructs the call graph */
   void buildCallGraph() {
@@ -128,11 +133,13 @@ private:
   }
 
   void symbolize(clang::FunctionDecl const *function) {
+    auto *symFunction = astFunctionToSymbolic[function];
     auto &apiCalls = functionToApiCalls[function];
     auto &functionCalls = relevantFunctionCalls[function];
     FunctionSymbolizer::symbolize(
         astContext,
         symContext,
+        *symFunction,
         function,
         apiCalls,
         functionCalls
@@ -147,8 +154,9 @@ private:
 
     // declare all of the relevant functions
     llvm::outs() << "declaring symbolic functions\n";
-    for (auto const *function : relevantFunctions)
-      symContext.declare(astContext, function);
+    for (auto const *function : relevantFunctions) {
+      astFunctionToSymbolic.emplace(function, symContext.declare(astContext, function));
+    }
     llvm::outs() << "declared symbolic functions\n";
 
     // produce initial definitions for each function

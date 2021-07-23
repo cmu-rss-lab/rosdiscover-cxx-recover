@@ -25,6 +25,7 @@ public:
   static void symbolize(
       clang::ASTContext &astContext,
       SymbolicContext &symContext,
+      SymbolicFunction &symFunction,
       clang::FunctionDecl const *function,
       std::vector<api_call::RosApiCall *> &apiCalls,
       std::vector<clang::Expr *> &functionCalls
@@ -32,6 +33,7 @@ public:
     FunctionSymbolizer(
         astContext,
         symContext,
+        symFunction,
         function,
         apiCalls,
         functionCalls
@@ -42,11 +44,13 @@ private:
   FunctionSymbolizer(
       clang::ASTContext &astContext,
       SymbolicContext &symContext,
+      SymbolicFunction &symFunction,
       clang::FunctionDecl const *function,
       std::vector<api_call::RosApiCall *> &apiCalls,
       std::vector<clang::Expr *> &functionCalls
   ) : astContext(astContext),
       symContext(symContext),
+      symFunction(symFunction),
       function(function),
       apiCalls(apiCalls),
       functionCalls(functionCalls),
@@ -57,6 +61,7 @@ private:
 
   clang::ASTContext &astContext;
   SymbolicContext &symContext;
+  [[maybe_unused]] SymbolicFunction &symFunction;
   clang::FunctionDecl const *function;
   std::vector<api_call::RosApiCall *> &apiCalls;
   std::vector<clang::Expr *> &functionCalls;
