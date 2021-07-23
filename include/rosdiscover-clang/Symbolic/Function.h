@@ -2,6 +2,8 @@
 
 #include <nlohmann/json.hpp>
 
+#include <fmt/core.h>
+
 #include "../Value/Value.h"
 #include "../Variable/LocalVariable.h"
 #include "../Variable/Parameter.h"
@@ -41,7 +43,8 @@ public:
     this->body = std::move(body);
   }
 
-  LocalVariable& createLocal(std::string const &name, SymbolicValueType const &type) {
+  LocalVariable& createLocal(SymbolicValueType const &type) {
+    auto name = fmt::format("v{:d}", nextLocalNumber++);
     locals.emplace_back(name, type);
     return locals.back();
   }
@@ -71,6 +74,7 @@ private:
   std::string qualifiedName;
   std::string location;
   std::unique_ptr<SymbolicCompound> body;
+  size_t nextLocalNumber;
   std::unordered_map<size_t, Parameter> parameters;
   std::vector<LocalVariable> locals;
 
@@ -80,6 +84,7 @@ private:
   ) : qualifiedName(qualifiedName),
       location(location),
       body(std::make_unique<SymbolicCompound>()),
+      nextLocalNumber(0),
       parameters(),
       locals()
   {}
