@@ -70,7 +70,7 @@ private:
   StringSymbolizer stringSymbolizer;
   ValueBuilder valueBuilder;
 
-  SymbolicStmt * symbolizeApiCall(api_call::RosApiCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::RosApiCall *apiCall) {
     using namespace rosdiscover::api_call;
     llvm::outs() << "symbolizing ROS API call: ";
     apiCall->print(llvm::outs());
@@ -120,85 +120,85 @@ private:
     return stringSymbolizer.symbolize(const_cast<clang::Expr*>(apiCall->getNameExpr()));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::AdvertiseServiceCall *apiCall) {
-    return new ServiceProvider(symbolizeApiCallName(apiCall));
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::AdvertiseServiceCall *apiCall) {
+    return std::make_unique<ServiceProvider>(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::AdvertiseTopicCall *apiCall) {
-    return new Publisher(symbolizeApiCallName(apiCall));
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::AdvertiseTopicCall *apiCall) {
+    return std::make_unique<Publisher>(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::BareDeleteParamCall *apiCall) {
-    return new DeleteParam(symbolizeApiCallName(apiCall));
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareDeleteParamCall *apiCall) {
+    return std::make_unique<DeleteParam>(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::BareGetParamCachedCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareGetParamCachedCall *apiCall) {
     return createAssignment(new ReadParam(symbolizeApiCallName(apiCall)));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::BareGetParamCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareGetParamCall *apiCall) {
     return createAssignment(new ReadParam(symbolizeApiCallName(apiCall)));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::BareGetParamWithDefaultCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareGetParamWithDefaultCall *apiCall) {
     return createAssignment(new ReadParamWithDefault(symbolizeApiCallName(apiCall), valueBuilder.unknown()));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::BareHasParamCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareHasParamCall *apiCall) {
     // TODO we know that this is a bool!
     return createAssignment(new HasParam(symbolizeApiCallName(apiCall)));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::BareServiceCall *apiCall) {
-    return new ServiceCaller(symbolizeApiCallName(apiCall));
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareServiceCall *apiCall) {
+    return std::make_unique<ServiceCaller>(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::BareSetParamCall *apiCall) {
-    return new WriteParam(symbolizeApiCallName(apiCall), valueBuilder.unknown());
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareSetParamCall *apiCall) {
+    return std::make_unique<WriteParam>(symbolizeApiCallName(apiCall), valueBuilder.unknown());
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::DeleteParamCall *apiCall) {
-    return new DeleteParam(symbolizeApiCallName(apiCall));
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::DeleteParamCall *apiCall) {
+    return std::make_unique<DeleteParam>(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::GetParamCachedCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::GetParamCachedCall *apiCall) {
     return createAssignment(new ReadParam(symbolizeApiCallName(apiCall)));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::GetParamCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::GetParamCall *apiCall) {
     return createAssignment(new ReadParam(symbolizeApiCallName(apiCall)));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::GetParamWithDefaultCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::GetParamWithDefaultCall *apiCall) {
     return createAssignment(new ReadParamWithDefault(symbolizeApiCallName(apiCall), valueBuilder.unknown()));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::HasParamCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::HasParamCall *apiCall) {
     // TODO we know that this is a bool!
     return createAssignment(new HasParam(symbolizeApiCallName(apiCall)));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::RosInitCall *apiCall) {
-    return new RosInit(symbolizeApiCallName(apiCall));
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::RosInitCall *apiCall) {
+    return std::make_unique<RosInit>(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::ServiceClientCall *apiCall) {
-    return new ServiceCaller(symbolizeApiCallName(apiCall));
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::ServiceClientCall *apiCall) {
+    return std::make_unique<ServiceCaller>(symbolizeApiCallName(apiCall));
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::SetParamCall *apiCall) {
-    return new WriteParam(symbolizeApiCallName(apiCall), valueBuilder.unknown());
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::SetParamCall *apiCall) {
+    return std::make_unique<WriteParam>(symbolizeApiCallName(apiCall), valueBuilder.unknown());
   }
 
-  SymbolicStmt * symbolizeApiCall(api_call::SubscribeTopicCall *apiCall) {
-    return new Subscriber(symbolizeApiCallName(apiCall));
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::SubscribeTopicCall *apiCall) {
+    return std::make_unique<Subscriber>(symbolizeApiCallName(apiCall));
   }
 
   // TODO a unique_ptr should be passed in here!
-  SymbolicStmt * createAssignment(SymbolicValue *value) {
+  std::unique_ptr<SymbolicStmt> createAssignment(SymbolicValue *value, clang::Expr *expr) {
     // TODO determine type
     auto *local = symFunction.createLocal(SymbolicValueType::Unsupported);
-    return new AssignmentStmt(local, std::unique_ptr<SymbolicValue>(value));
+    return std::make_unique<AssignmentStmt>(local, std::unique_ptr<SymbolicValue>(value));
   }
 
   clang::FunctionDecl const * getCallee(clang::Expr *expr) const {
@@ -227,9 +227,9 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  SymbolicStmt * symbolizeFunctionCall(clang::Expr *callExpr) {
+  std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {
     auto *function = symContext.getDefinition(getCallee(callExpr));
-    return new SymbolicFunctionCall(function);
+    return std::make_unique<SymbolicFunctionCall>(function);
   }
 
   std::vector<std::unique_ptr<RawStatement>> computeStatementOrder() {
@@ -262,7 +262,7 @@ private:
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeStatement(RawStatement *statement) {
-    SymbolicStmt *symbolic;
+    std::unique_ptr<SymbolicStmt> symbolic;
     switch (statement->getKind()) {
       case RawStatementKind::RosApiCall:
         symbolic = symbolizeApiCall(((RawRosApiCallStatement*) statement)->getApiCall());
@@ -273,7 +273,7 @@ private:
     }
     return AnnotatedSymbolicStmt::create(
       astContext,
-      std::unique_ptr<SymbolicStmt>(symbolic),
+      std::move(symbolic),
       statement
     );
   }
