@@ -134,21 +134,21 @@ private:
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareGetParamCachedCall *apiCall) {
     return createAssignment(
-      new ReadParam(symbolizeApiCallName(apiCall)),
+      std::make_unique<ReadParam>(symbolizeApiCallName(apiCall)),
       apiCall
     );
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareGetParamCall *apiCall) {
     return createAssignment(
-      new ReadParam(symbolizeApiCallName(apiCall)),
+      std::make_unique<ReadParam>(symbolizeApiCallName(apiCall)),
       apiCall
     );
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareGetParamWithDefaultCall *apiCall) {
     return createAssignment(
-      new ReadParamWithDefault(symbolizeApiCallName(apiCall), valueBuilder.unknown()),
+      std::make_unique<ReadParamWithDefault>(symbolizeApiCallName(apiCall), valueBuilder.unknown()),
       apiCall
     );
   }
@@ -156,7 +156,7 @@ private:
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareHasParamCall *apiCall) {
     // TODO we know that this is a bool!
     return createAssignment(
-      new HasParam(symbolizeApiCallName(apiCall)),
+      std::make_unique<HasParam>(symbolizeApiCallName(apiCall)),
       apiCall
     );
   }
@@ -175,21 +175,21 @@ private:
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::GetParamCachedCall *apiCall) {
     return createAssignment(
-      new ReadParam(symbolizeApiCallName(apiCall)),
+      std::make_unique<ReadParam>(symbolizeApiCallName(apiCall)),
       apiCall
     );
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::GetParamCall *apiCall) {
     return createAssignment(
-      new ReadParam(symbolizeApiCallName(apiCall)),
+      std::make_unique<ReadParam>(symbolizeApiCallName(apiCall)),
       apiCall
     );
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::GetParamWithDefaultCall *apiCall) {
     return createAssignment(
-      new ReadParamWithDefault(symbolizeApiCallName(apiCall), valueBuilder.unknown()),
+      std::make_unique<ReadParamWithDefault>(symbolizeApiCallName(apiCall), valueBuilder.unknown()),
       apiCall
     );
   }
@@ -197,7 +197,7 @@ private:
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::HasParamCall *apiCall) {
     // TODO we know that this is a bool!
     return createAssignment(
-      new HasParam(symbolizeApiCallName(apiCall)),
+      std::make_unique<HasParam>(symbolizeApiCallName(apiCall)),
       apiCall
     );
   }
@@ -220,12 +220,12 @@ private:
 
   // TODO a unique_ptr should be passed in here!
   std::unique_ptr<SymbolicStmt> createAssignment(
-    SymbolicValue *value,
+    std::unique_ptr<SymbolicValue> value,
     api_call::RosApiCall *apiCall
   ) {
     // TODO determine type
     auto *local = symFunction.createLocal(SymbolicValueType::Unsupported);
-    auto stmt = std::make_unique<AssignmentStmt>(local, std::unique_ptr<SymbolicValue>(value));
+    auto stmt = std::make_unique<AssignmentStmt>(local, std::move(value));
 
     // maintain a mapping from the ROS API call expression to the corresponding
     // symbolic variable
