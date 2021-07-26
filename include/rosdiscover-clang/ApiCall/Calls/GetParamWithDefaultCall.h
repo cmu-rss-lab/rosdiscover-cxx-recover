@@ -20,7 +20,19 @@ public:
   }
 
   clang::Expr const * getResultExpr() const override {
-    return getCallExpr()->getArg(1);
+    auto *callExpr = getCallExpr();
+    auto numArgs = callExpr->getNumArgs();
+
+    // if this call has two arguments, then it simply returns the parameter value
+    if (numArgs == 2) {
+      return callExpr;
+
+    // if the call has three arguments, then it writes the parameter value to a given reference
+    } else if (numArgs == 3) {
+      return callExpr->getArg(2);
+    }
+
+    assert(!"Expected NodeHandle::param call to have two or three arguments");
   }
 
   class Finder : public RosApiCall::Finder {
