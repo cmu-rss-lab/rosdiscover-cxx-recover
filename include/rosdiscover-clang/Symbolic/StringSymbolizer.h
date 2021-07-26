@@ -23,6 +23,8 @@ public:
   : astContext(astContext), apiCallToVar(apiCallToVar), valueBuilder() {}
 
   std::unique_ptr<SymbolicString> symbolize(clang::Expr *expr) {
+    expr = expr->IgnoreParenCasts();
+
     llvm::outs() << "symbolizing: ";
     expr->dumpColor();
     llvm::outs() << "\n";
@@ -82,11 +84,9 @@ private:
     // TODO does this refer to a parameter?
 
     if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(nameExpr->getDecl())) {
-      auto *def = FindDefVisitor::find(astContext, varDecl, nameExpr);
-      def = def->IgnoreParenCasts();
-      llvm::outs() << "found var def:\n";
-      def->dumpColor();
-      llvm::outs() << "\n";
+      if (auto *def = findDef(varDecl, nameExpr)) {
+        return symbolize(def);
+      }
     }
 
     return valueBuilder.unknown();
@@ -98,6 +98,10 @@ private:
 
   std::unique_ptr<SymbolicString> symbolize(clang::MaterializeTemporaryExpr *expr) {
     return symbolize(expr->getSubExpr());
+  }
+
+  clang::Expr* findDef(clang::VarDecl *decl, clang::Expr *location) {
+    return FindDefVisitor::find(astContext, decl, location);
   }
 };
 
