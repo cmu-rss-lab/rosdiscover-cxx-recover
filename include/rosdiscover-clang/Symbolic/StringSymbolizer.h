@@ -52,7 +52,7 @@ public:
   }
 
 private:
-  [[maybe_unused]] clang::ASTContext &astContext;
+  clang::ASTContext &astContext;
   std::unordered_map<clang::Expr const *, SymbolicVariable *> &apiCallToVar;
   ValueBuilder valueBuilder;
 
@@ -83,7 +83,7 @@ private:
 
     if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(nameExpr->getDecl())) {
       auto *def = FindDefVisitor::find(astContext, varDecl, nameExpr);
-      // TODO remove any junk from around the def!
+      def = def->IgnoreParenCasts();
       llvm::outs() << "found var def:\n";
       def->dumpColor();
       llvm::outs() << "\n";
