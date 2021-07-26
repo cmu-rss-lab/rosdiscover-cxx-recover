@@ -81,24 +81,13 @@ private:
   std::unique_ptr<SymbolicString> symbolize(clang::DeclRefExpr *nameExpr) {
     // TODO does this refer to a parameter?
 
-    // find the corresponding definition
-    auto *decl = nameExpr->getDecl();
-
-    llvm::outs() << "reference to decl: ";
-    decl->dumpColor();
-
-    if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
-      llvm::outs() << "this is a vardecl\n";
-      auto *def = varDecl->getDefinition(astContext);
+    if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(nameExpr->getDecl())) {
+      auto *def = FindDefVisitor::find(astContext, varDecl, nameExpr);
+      // TODO remove any junk from around the def!
+      llvm::outs() << "found var def:\n";
       def->dumpColor();
-
-      if (def->hasInit()) {
-        llvm::outs() << "\nwe have an initializer:\n";
-        def->getInit()->dumpColor();
-      }
+      llvm::outs() << "\n";
     }
-
-    llvm::outs() << "\n";
 
     return valueBuilder.unknown();
   }

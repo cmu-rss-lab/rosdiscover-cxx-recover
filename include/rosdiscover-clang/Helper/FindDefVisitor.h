@@ -8,10 +8,10 @@
 namespace rosdiscover {
 
 class FindDefVisitor
-  : public clang::LexicallyOrderedRecursiveASTVisitor<StmtOrderingVisitor>
+  : public clang::LexicallyOrderedRecursiveASTVisitor<FindDefVisitor>
 {
 private:
-  [[maybe_unused]] clang::Decl const *decl;
+  clang::VarDecl const *decl;
   clang::Expr const *location;
   // NOTE we assume a single reaching definition for now;
   //  once we have path handling, we may have multiple reach definitions
@@ -19,7 +19,7 @@ private:
 
   FindDefVisitor(
       const clang::ASTContext &astContext,
-      clang::Decl const *decl,
+      clang::VarDecl const *decl,
       clang::Expr const *location
   ) : LexicallyOrderedRecursiveASTVisitor(astContext.getSourceManager()),
       decl(decl),
@@ -40,7 +40,7 @@ private:
 public:
   static clang::Expr* find(
       clang::ASTContext &astContext,
-      clang::Decl const *decl,
+      clang::VarDecl const *decl,
       clang::Expr *location
   ) {
     auto visitor = FindDefVisitor(astContext, decl, location);
@@ -54,14 +54,19 @@ public:
   }
 
   bool VisitStmt(clang::Stmt *stmt) {
-    // have we reached the querying node?
+    // terminate when we reach the querying node
     if (stmt == location)
       return false;
 
-    llvm::outs() << "visiting stmt:\n";
-    stmt->dumpColor();
-    llvm::outs() << "\n";
+    return true;
+  }
 
+  bool VisitDeclStmt(clang::DeclStmt *stmt) {
+    for (auto *otherDecl : stmt->decls()) {
+      if (otherDecl == decl && decl->hasInit()) {
+        definition = const_cast<clang::Expr*>(decl->getInit());
+      }
+    }
     return true;
   }
 };
