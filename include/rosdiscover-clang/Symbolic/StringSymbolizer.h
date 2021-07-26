@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <unordered_map>
 
 #include <clang/AST/Expr.h>
 #include <clang/AST/ExprCXX.h>
@@ -14,8 +15,11 @@ namespace symbolic {
 
 class StringSymbolizer {
 public:
-  StringSymbolizer(clang::ASTContext &astContext)
-  : astContext(astContext), valueBuilder() {}
+  StringSymbolizer(
+    clang::ASTContext &astContext,
+    std::unordered_map<clang::CallExpr const *, SymbolicVariable *> &apiCallToVar
+  )
+  : astContext(astContext), apiCallToVar(apiCallToVar), valueBuilder() {}
 
   std::unique_ptr<SymbolicString> symbolize(clang::Expr *expr) {
     llvm::outs() << "symbolizing: ";
@@ -42,6 +46,7 @@ public:
 
 private:
   [[maybe_unused]] clang::ASTContext &astContext;
+  [[maybe_unused]] std::unordered_map<clang::CallExpr const *, SymbolicVariable *> &apiCallToVar;
   ValueBuilder valueBuilder;
 
   std::unique_ptr<SymbolicString> symbolize(clang::StringLiteral *literal) {
@@ -67,6 +72,7 @@ private:
   }
 
   std::unique_ptr<SymbolicString> symbolize(clang::DeclRefExpr *nameExpr) {
+    // TODO does this refer to a parameter?
     return valueBuilder.unknown();
   }
 

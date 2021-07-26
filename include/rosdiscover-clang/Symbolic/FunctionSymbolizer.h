@@ -56,7 +56,7 @@ private:
       apiCalls(apiCalls),
       functionCalls(functionCalls),
       apiCallToVar(),
-      stringSymbolizer(astContext),
+      stringSymbolizer(astContext, apiCallToVar),
       valueBuilder()
   {}
 
