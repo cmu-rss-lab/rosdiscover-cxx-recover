@@ -9,6 +9,7 @@
 
 #include "../Builder/ValueBuilder.h"
 #include "../Value/String.h"
+#include "../Helper/FindDefVisitor.h"
 
 namespace rosdiscover {
 namespace symbolic {
@@ -83,13 +84,20 @@ private:
     // find the corresponding definition
     auto *decl = nameExpr->getDecl();
 
-    // what happens if we go to the expr statement?
-    auto *expr = nameExpr->getExprStmt();
-
     llvm::outs() << "reference to decl: ";
     decl->dumpColor();
-    llvm::outs() << "\nlooking at expr stmt: ";
-    expr->dumpColor();
+
+    if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
+      llvm::outs() << "this is a vardecl\n";
+      auto *def = varDecl->getDefinition(astContext);
+      def->dumpColor();
+
+      if (def->hasInit()) {
+        llvm::outs() << "\nwe have an initializer:\n";
+        def->getInit()->dumpColor();
+      }
+    }
+
     llvm::outs() << "\n";
 
     return valueBuilder.unknown();
