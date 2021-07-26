@@ -66,7 +66,7 @@ private:
   clang::FunctionDecl const *function;
   std::vector<api_call::RosApiCall *> &apiCalls;
   std::vector<clang::Expr *> &functionCalls;
-  std::unordered_map<clang::CallExpr const *, SymbolicVariable *> apiCallToVar;
+  std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar;
   StringSymbolizer stringSymbolizer;
   ValueBuilder valueBuilder;
 
@@ -229,7 +229,13 @@ private:
 
     // maintain a mapping from the ROS API call expression to the corresponding
     // symbolic variable
-    apiCallToVar.emplace(apiCall->getCallExpr(), local);
+    auto *resultExpr = apiCall->getResultExpr();
+    assert(resultExpr);
+    apiCallToVar.emplace(resultExpr, local);
+
+    llvm::outs() << "added expr->result mapping [" << local->getName() << "]:\n";
+    resultExpr->dumpColor();
+    llvm::outs() << "\n";
 
     return std::move(stmt);
   }

@@ -17,7 +17,7 @@ class StringSymbolizer {
 public:
   StringSymbolizer(
     clang::ASTContext &astContext,
-    std::unordered_map<clang::CallExpr const *, SymbolicVariable *> &apiCallToVar
+    std::unordered_map<clang::Expr const *, SymbolicVariable *> &apiCallToVar
   )
   : astContext(astContext), apiCallToVar(apiCallToVar), valueBuilder() {}
 
@@ -25,6 +25,12 @@ public:
     llvm::outs() << "symbolizing: ";
     expr->dumpColor();
     llvm::outs() << "\n";
+
+    // is this expression mapped to a ROS API call?
+    if (clang::CallExpr const *callExpr = clang::dyn_cast<clang::CallExpr>(expr)) {
+      if (apiCallToVar.find(callExpr) != apiCallToVar.end())
+        return valueBuilder.varRef(apiCallToVar[callExpr]);
+    }
 
     if (clang::DeclRefExpr *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(expr)) {
       return symbolize(declRefExpr);
@@ -46,7 +52,7 @@ public:
 
 private:
   [[maybe_unused]] clang::ASTContext &astContext;
-  [[maybe_unused]] std::unordered_map<clang::CallExpr const *, SymbolicVariable *> &apiCallToVar;
+  std::unordered_map<clang::Expr const *, SymbolicVariable *> &apiCallToVar;
   ValueBuilder valueBuilder;
 
   std::unique_ptr<SymbolicString> symbolize(clang::StringLiteral *literal) {
@@ -73,6 +79,19 @@ private:
 
   std::unique_ptr<SymbolicString> symbolize(clang::DeclRefExpr *nameExpr) {
     // TODO does this refer to a parameter?
+
+    // find the corresponding definition
+    auto *decl = nameExpr->getDecl();
+
+    // what happens if we go to the expr statement?
+    auto *expr = nameExpr->getExprStmt();
+
+    llvm::outs() << "reference to decl: ";
+    decl->dumpColor();
+    llvm::outs() << "\nlooking at expr stmt: ";
+    expr->dumpColor();
+    llvm::outs() << "\n";
+
     return valueBuilder.unknown();
   }
 
