@@ -18,7 +18,12 @@ public:
   }
 };
 
-class VariableReference : public virtual SymbolicValue {
+class VariableReference :
+  public virtual SymbolicValue,
+  public virtual SymbolicString,
+  public virtual SymbolicBool,
+  public virtual SymbolicInteger
+{
 public:
   VariableReference(SymbolicVariable const *variable) : variable(variable) {}
   ~VariableReference(){}
