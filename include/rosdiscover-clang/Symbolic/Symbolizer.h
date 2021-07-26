@@ -11,10 +11,9 @@
 
 #include <llvm/Support/raw_ostream.h>
 
-#include <rosdiscover-clang/ApiCall/RosApiCall.h>
-#include <rosdiscover-clang/ApiCall/Finder.h>
-#include <rosdiscover-clang/utils.h>
-
+#include "../ApiCall/Finder.h"
+#include "../ApiCall/RosApiCall.h"
+#include "../Helper/utils.h"
 #include "Context.h"
 #include "Function.h"
 #include "FunctionSymbolizer.h"

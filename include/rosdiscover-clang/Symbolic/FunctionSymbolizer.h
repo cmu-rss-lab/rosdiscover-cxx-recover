@@ -8,11 +8,11 @@
 
 #include <fmt/core.h>
 
+#include "../Helper/StmtOrderingVisitor.h"
 #include "../RawStatement.h"
-#include "../StmtOrderingVisitor.h"
+#include "../Stmt/Stmts.h"
 #include "../Value/String.h"
 #include "../Value/Value.h"
-#include "../Stmt/Stmts.h"
 #include "../Variable/Variable.h"
 #include "Context.h"
 #include "Function.h"
