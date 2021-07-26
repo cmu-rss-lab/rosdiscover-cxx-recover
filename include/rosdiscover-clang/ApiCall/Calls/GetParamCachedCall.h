@@ -21,6 +21,10 @@ public:
     return getCallExpr()->getArg(0);
   }
 
+  clang::Expr const * getResultExpr() const override {
+    return getCallExpr()->getArg(1);
+  }
+
   class Finder : public RosApiCall::Finder {
   public:
     Finder(std::vector<RosApiCall*> &found) : RosApiCall::Finder(found) {}
