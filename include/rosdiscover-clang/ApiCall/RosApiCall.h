@@ -22,6 +22,19 @@ public:
   /** Returns the expression that provides the name associated with this call. */
   virtual clang::Expr const * getNameExpr() const = 0;
 
+  /**
+   * Returns the expression, if any, that holds the value produced by this call.
+   * Depending on the kind of API call, this may either be:
+   * - the return value of the API call (e.g., hasParam), or
+   * - the variable to which the result of the API call is written (e.g., getParam)
+   *
+   * If there is no such value associated with this API call (e.g., publishing to a topic),
+   * then a null pointer is returned.
+   */
+  virtual clang::Expr const * getResultExpr() const {
+    return nullptr;
+  }
+
   /** Returns the kind of this API call. Used for dynamic dispatch. */
   virtual RosApiCallKind const getKind() const = 0;
 
