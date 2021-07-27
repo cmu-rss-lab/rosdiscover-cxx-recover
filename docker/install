@@ -3,8 +3,11 @@
 # This script installs the Docker volumes for rosdiscover-cxx-extract
 #
 IMAGE_NAME="rosdiscover/cxx-extract"
+TEMPORARY_CONTAINER_NAME="rosdiscover-cxx-extract-volume-builder"
 VOLUME_ROSDISCOVER_NAME="rosdiscover-cxx-extract-opt"
+VOLUME_ROSDISCOVER_LOCATION="/opt/rosdiscover"
 VOLUME_LLVM_NAME="rosdiscover-cxx-extract-llvm"
+VOLUME_LLVM_LOCATION="/opt/llvm11"
 
 function error {
     echo "ERROR: $1"
@@ -20,8 +23,10 @@ function image_sha1_used_by_volume {
     if [ "$?" -eq 0 ]; then
         echo $out | jq -r .
         return 0
+    else
+        echo "none"
+        return 1
     fi
-    return 1
 }
 
 # get the SHA1 of the existing rosdiscover-cxx-extract image
@@ -45,11 +50,23 @@ fi
 info "building volumes..."
 
 # destroy both volumes
-exit 0
 docker volume rm -f ${VOLUME_ROSDISCOVER_NAME} ${VOLUME_LLVM_NAME} &> /dev/null
 info "destroyed existing volumes (if there were any)"
 
+# create the actual empty volumes themselves
 docker volume create --label ROSDISCOVER_IMAGE_SHA1=${IMAGE_SHA1} ${VOLUME_ROSDISCOVER_NAME} &> /dev/null
 docker volume create --label ROSDISCOVER_IMAGE_SHA1=${IMAGE_SHA1} ${VOLUME_LLVM_NAME} &> /dev/null
 info "initialized volumes"
 
+# populate the volumes using the rosdiscover-cxx-extract image
+info "populating volumes..."
+docker rm -f ${TEMPORARY_CONTAINER_NAME} &> /dev/null
+docker run \
+    --rm \
+    --name=${TEMPORARY_CONTAINER_NAME} \
+    -v "${VOLUME_ROSDISCOVER_NAME}:${VOLUME_ROSDISCOVER_LOCATION}" \
+    -v "${VOLUME_LLVM_NAME}:${VOLUME_LLVM_LOCATION}" \
+    ${IMAGE_NAME}
+docker rm -f ${TEMPORARY_CONTAINER_NAME} &> /dev/null
+
+echo "finished installation"
