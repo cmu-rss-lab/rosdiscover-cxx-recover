@@ -1,0 +1,22 @@
+#!/bin/bash
+#
+# This script installs the Docker volumes for rosdiscover-cxx-extract
+#
+IMAGE_NAME="rosdiscover/cxx-extract"
+VOLUME_ROSDISCOVER="rosdiscover-cxx-extract-opt"
+VOLUME_LLVM="rosdiscover-cxx-extract-llvm"
+
+function error {
+    echo "ERROR: $1"
+    exit 1;
+}
+
+# get the SHA1 of the existing rosdiscover-cxx-extract image
+IMAGE_SHA1="$(docker image inspect --format=\"\{\{.Id\}\}\" ${IMAGE_NAME} | jq -r .)" \
+    || error "image does not exist [${IMAGE_NAME}]"
+
+echo "INFO: SHA1 for image [${IMAGE_NAME}]: ${IMAGE_SHA1}"
+
+# do the volumes already exist?
+# VOLUME_ROSDISCOVER_VERSION="$(docker volume inspect --format '{{ .Labels.ROSDISCOVER_IMAGE_SHA1 }}' ${VOLUME_NAME_ROSDISCOVER}"
+# VOLUME_ROSDISCOVER_EXISTS=$?
