@@ -1,6 +1,6 @@
 FROM therobotcooperative/turtlebot3
 
-COPY --from=christimperley/llvm11 /opt/llvm11/ /opt/llvm11/
+#COPY --from=christimperley/llvm11 /opt/llvm11/ /opt/llvm11/
 ENV PATH "/opt/llvm11/bin:${PATH}"
 ENV LIBRARY_PATH "/opt/llvm11/lib:${LIBRARY_PATH}"
 ENV LD_LIBRARY_PATH "/opt/llvm11/lib:${LD_LIBRARY_PATH}"
@@ -21,7 +21,7 @@ RUN . /opt/ros/${ROS_DISTRO}/setup.sh \
       -DCMAKE_EXPORT_COMPILE_COMMANDS=1
 
 # install rosdiscover
-COPY --from=rosdiscover /opt/rosdiscover/ /opt/rosdiscover/
+#COPY --from=rosdiscover /opt/rosdiscover/ /opt/rosdiscover/
 ENV LD_LIBRARY_PATH "/opt/rosdiscover/lib:${LD_LIBRARY_PATH}"
 ENV LIBRARY_PATH "/opt/rosdiscover/lib:${LIBRARY_PATH}"
 ENV PATH "/opt/rosdiscover/bin:${PATH}"
