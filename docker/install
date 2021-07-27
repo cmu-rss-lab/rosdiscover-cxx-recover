@@ -3,20 +3,45 @@
 # This script installs the Docker volumes for rosdiscover-cxx-extract
 #
 IMAGE_NAME="rosdiscover/cxx-extract"
-VOLUME_ROSDISCOVER="rosdiscover-cxx-extract-opt"
-VOLUME_LLVM="rosdiscover-cxx-extract-llvm"
+VOLUME_ROSDISCOVER_NAME="rosdiscover-cxx-extract-opt"
+VOLUME_LLVM_NAME="rosdiscover-cxx-extract-llvm"
 
 function error {
     echo "ERROR: $1"
     exit 1;
 }
 
+function info {
+    echo "INFO: $1"
+}
+
+function image_sha1_used_by_volume {
+    out="$(docker volume inspect --format '{{ .Labels.ROSDISCOVER_IMAGE_SHA1 }}' $1 2> /dev/null)"
+    if [ $? -eq 0 ]; then
+        echo $out | jq -r .
+        return 0
+    fi
+    return 1
+}
+
 # get the SHA1 of the existing rosdiscover-cxx-extract image
-IMAGE_SHA1="$(docker image inspect --format=\"\{\{.Id\}\}\" ${IMAGE_NAME} | jq -r .)" \
+IMAGE_SHA1="$(docker image inspect --format=\"\{\{.Id\}\}\" ${IMAGE_NAME} 2> /dev/null)" \
     || error "image does not exist [${IMAGE_NAME}]"
+IMAGE_SHA1="$(echo ${IMAGE_SHA1} | jq -r .)"
+info "SHA1 for image [${IMAGE_NAME}]: ${IMAGE_SHA1}"
 
-echo "INFO: SHA1 for image [${IMAGE_NAME}]: ${IMAGE_SHA1}"
+# get the image SHA1 associated with the volumes
+VOLUME_ROSDISCOVER_VERSION=$(image_sha1_used_by_volume ${VOLUME_ROSDISCOVER_NAME})
+info "image SHA1 used in volume [${VOLUME_ROSDISCOVER_NAME}]: ${VOLUME_ROSDISCOVER_VERSION}"
+VOLUME_LLVM_VERSION=$(image_sha1_used_by_volume ${VOLUME_LLVM_NAME})
+info "image SHA1 used in volume [${VOLUME_LLVM_NAME}]: ${VOLUME_LLVM_VERSION}"
 
-# do the volumes already exist?
-# VOLUME_ROSDISCOVER_VERSION="$(docker volume inspect --format '{{ .Labels.ROSDISCOVER_IMAGE_SHA1 }}' ${VOLUME_NAME_ROSDISCOVER}"
-# VOLUME_ROSDISCOVER_EXISTS=$?
+# skip volume construction where possible
+if [ "${VOLUME_LLVM_VERSION}" == "${IMAGE_SHA1}" ] && [ "${VOLUME_ROSDISCOVER_VERSION}" == "${IMAGE_SHA1}" ]; then
+    info "skipping volume construction: volumes were created using the latest image"
+    exit 0
+fi
+
+info "building volumes..."
+
+# destroy both volumes
