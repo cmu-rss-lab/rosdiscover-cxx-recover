@@ -1,4 +1,4 @@
-FROM rosdiscover:builder
+FROM rosdiscover/cxx-extract:builder
 COPY --from=christimperley/llvm11 /opt/llvm11/ /opt/llvm11/
 WORKDIR /tmp/rosdiscover
 COPY . .
