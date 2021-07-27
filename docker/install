@@ -45,3 +45,5 @@ fi
 info "building volumes..."
 
 # destroy both volumes
+docker volume rm -f ${VOLUME_ROSDISCOVER_NAME} ${VOLUME_LLVM_NAME} &> /dev/null
+info "destroyed existing volumes (if there were any)"
