@@ -16,8 +16,8 @@ function info {
 }
 
 function image_sha1_used_by_volume {
-    out="$(docker volume inspect --format '{{ .Labels.ROSDISCOVER_IMAGE_SHA1 }}' $1 2> /dev/null)"
-    if [ $? -eq 0 ]; then
+    out="$(docker volume inspect --format \"\{\{.Labels.ROSDISCOVER_IMAGE_SHA1\}\}\" $1 2> /dev/null)"
+    if [ "$?" -eq 0 ]; then
         echo $out | jq -r .
         return 0
     fi
@@ -45,5 +45,11 @@ fi
 info "building volumes..."
 
 # destroy both volumes
+exit 0
 docker volume rm -f ${VOLUME_ROSDISCOVER_NAME} ${VOLUME_LLVM_NAME} &> /dev/null
 info "destroyed existing volumes (if there were any)"
+
+docker volume create --label ROSDISCOVER_IMAGE_SHA1=${IMAGE_SHA1} ${VOLUME_ROSDISCOVER_NAME} &> /dev/null
+docker volume create --label ROSDISCOVER_IMAGE_SHA1=${IMAGE_SHA1} ${VOLUME_LLVM_NAME} &> /dev/null
+info "initialized volumes"
+
