@@ -2,7 +2,6 @@
 set -eu
 
 VOLUME_ROSDISCOVER_NAME="rosdiscover-cxx-extract-opt"
-VOLUME_LLVM_NAME="rosdiscover-cxx-extract-llvm"
 SOURCE_FILES="/ros_ws/build src/turtlebot3_simulations/turtlebot3_gazebo/src/turtlebot3_drive.cpp"
 #SOURCE_FILES="/ros_ws/build src/turtlebot3_simulations/turtlebot3_fake/src/turtlebot3_fake.cpp"
 HERE_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
@@ -16,7 +15,6 @@ docker build -t example .
 #docker run --rm -w /ros_ws -it example rosdiscover -p /ros_ws/build src/turtlebot3_simulations/turtlebot3_gazebo/src/turtlebot3_drive.cpp
 docker run --rm \
     -v "${VOLUME_ROSDISCOVER_NAME}:/opt/rosdiscover" \
-    -v "${VOLUME_LLVM_NAME}:/opt/llvm11" \
     -w /ros_ws \
     -it example \
-    rosdiscover -p /ros_ws/build ${SOURCE_FILES}
+    rosdiscover-cxx-extract -p /ros_ws/build ${SOURCE_FILES}
