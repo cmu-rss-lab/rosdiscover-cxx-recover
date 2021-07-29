@@ -7,9 +7,7 @@ namespace api_call {
 
 class BareHasParamCall : public BareRosApiCall {
 public:
-  BareHasParamCall(clang::CallExpr const *call)
-    : BareRosApiCall(call)
-  {}
+  using BareRosApiCall::BareRosApiCall;
 
   RosApiCallKind const getKind() const override {
     return RosApiCallKind::BareHasParamCall;

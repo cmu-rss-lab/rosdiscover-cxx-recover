@@ -7,9 +7,7 @@ namespace api_call {
 
 class AdvertiseTopicCall : public NodeHandleRosApiCall {
 public:
-  AdvertiseTopicCall(clang::CallExpr const *call)
-    : NodeHandleRosApiCall(call)
-  {}
+  using NodeHandleRosApiCall::NodeHandleRosApiCall;
 
   RosApiCallKind const getKind() const override {
     return RosApiCallKind::AdvertiseTopicCall;

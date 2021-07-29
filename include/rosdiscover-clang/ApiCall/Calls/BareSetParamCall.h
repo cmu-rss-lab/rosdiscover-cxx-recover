@@ -5,12 +5,9 @@
 namespace rosdiscover {
 namespace api_call {
 
-// ros::param::set
 class BareSetParamCall : public BareRosApiCall {
 public:
-  BareSetParamCall(clang::CallExpr const *call)
-    : BareRosApiCall(call)
-  {}
+  using BareRosApiCall::BareRosApiCall;
 
   RosApiCallKind const getKind() const override {
     return RosApiCallKind::BareSetParamCall;

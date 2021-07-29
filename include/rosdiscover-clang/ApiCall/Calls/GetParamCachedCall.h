@@ -5,13 +5,9 @@
 namespace rosdiscover {
 namespace api_call {
 
-// ros::NodeHandle::getParamCached
-// ros::NodeHandle::getCached
 class GetParamCachedCall : public NodeHandleRosApiCall {
 public:
-  GetParamCachedCall(clang::CallExpr const *call)
-    : NodeHandleRosApiCall(call)
-  {}
+  using NodeHandleRosApiCall::NodeHandleRosApiCall;
 
   RosApiCallKind const getKind() const override {
     return RosApiCallKind::GetParamCachedCall;

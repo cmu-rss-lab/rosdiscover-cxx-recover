@@ -7,9 +7,8 @@ namespace api_call {
 
 class ServiceClientCall : public NodeHandleRosApiCall {
 public:
-  ServiceClientCall(clang::CallExpr const *call)
-    : NodeHandleRosApiCall(call)
-  {}
+  using NodeHandleRosApiCall::NodeHandleRosApiCall;
+
 
   RosApiCallKind const getKind() const override {
     return RosApiCallKind::ServiceClientCall;

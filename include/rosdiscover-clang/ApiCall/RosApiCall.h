@@ -17,6 +17,9 @@ namespace api_call {
 
 class RosApiCall {
 public:
+  RosApiCall(clang::CallExpr const *call) : call(call) {}
+  virtual ~RosApiCall(){}
+
   clang::CallExpr const * getCallExpr() const { return call; }
 
   /** Returns the expression that provides the name associated with this call. */
@@ -76,27 +79,22 @@ public:
     getCallExpr()->printPretty(os, nullptr, printPolicy);
   }
 
-protected:
-  RosApiCall(clang::CallExpr const *call) : call(call) {}
-
 private:
   clang::CallExpr const *call;
 }; // RosApiCall
 
 
 class BareRosApiCall : public RosApiCall {
-protected:
-  BareRosApiCall(clang::CallExpr const *call)
-    : RosApiCall(call)
-  {}
+public:
+  virtual ~BareRosApiCall(){}
+  BareRosApiCall(clang::CallExpr const *call) : RosApiCall(call) {}
 }; // BareRosApiCall
 
 
 class NodeHandleRosApiCall : public RosApiCall {
-protected:
-  NodeHandleRosApiCall(clang::CallExpr const *call)
-    : RosApiCall(call)
-  {}
+public:
+  virtual ~NodeHandleRosApiCall(){}
+  NodeHandleRosApiCall(clang::CallExpr const *call) : RosApiCall(call) {}
 }; // NodeHandleRosApiCall
 
 

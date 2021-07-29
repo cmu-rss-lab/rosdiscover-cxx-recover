@@ -9,9 +9,7 @@ namespace api_call {
 
 class RosInitCall : public BareRosApiCall {
 public:
-  RosInitCall(clang::CallExpr const *call)
-    : BareRosApiCall(call)
-  {}
+  using BareRosApiCall::BareRosApiCall;
 
   RosApiCallKind const getKind() const override {
     return RosApiCallKind::RosInitCall;

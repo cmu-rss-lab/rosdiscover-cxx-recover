@@ -7,9 +7,7 @@ namespace api_call {
 
 class GetParamCall : public NodeHandleRosApiCall {
 public:
-  GetParamCall(clang::CallExpr const *call)
-    : NodeHandleRosApiCall(call)
-  {}
+  using NodeHandleRosApiCall::NodeHandleRosApiCall;
 
   RosApiCallKind const getKind() const override {
     return RosApiCallKind::GetParamCall;
