@@ -2,7 +2,6 @@ add_executable(rosdiscover
   RosDiscover.cpp
 )
 
-# TODO compile these into a static executable with a static libc++
 llvm_map_components_to_libnames(ROSDISCOVER_LLVM_LIBS
   Demangle
 )
