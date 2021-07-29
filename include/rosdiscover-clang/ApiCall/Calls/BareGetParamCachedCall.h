@@ -7,8 +7,8 @@ namespace api_call {
 
 class BareGetParamCachedCall : public BareRosApiCall {
 public:
-  BareGetParamCachedCall(clang::CallExpr const *call, clang::ASTContext const *context)
-    : BareRosApiCall(call, context)
+  BareGetParamCachedCall(clang::CallExpr const *call)
+    : BareRosApiCall(call)
   {}
 
   RosApiCallKind const getKind() const override {
@@ -36,7 +36,7 @@ public:
 
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
-      return new BareGetParamCachedCall(result.Nodes.getNodeAs<clang::CallExpr>("call"), result.Context);
+      return new BareGetParamCachedCall(result.Nodes.getNodeAs<clang::CallExpr>("call"));
     }
   };
 };

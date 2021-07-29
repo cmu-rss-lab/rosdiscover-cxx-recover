@@ -9,8 +9,8 @@ namespace api_call {
 // ros::NodeHandle::getCached
 class GetParamCachedCall : public NodeHandleRosApiCall {
 public:
-  GetParamCachedCall(clang::CallExpr const *call, clang::ASTContext const *context)
-    : NodeHandleRosApiCall(call, context)
+  GetParamCachedCall(clang::CallExpr const *call)
+    : NodeHandleRosApiCall(call)
   {}
 
   RosApiCallKind const getKind() const override {
@@ -38,7 +38,7 @@ public:
 
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
-      return new GetParamCachedCall(result.Nodes.getNodeAs<clang::CallExpr>("call"), result.Context);
+      return new GetParamCachedCall(result.Nodes.getNodeAs<clang::CallExpr>("call"));
     }
   };
 };

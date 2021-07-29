@@ -8,8 +8,8 @@ namespace api_call {
 
 class BareGetParamWithDefaultCall : public BareRosApiCall {
 public:
-  BareGetParamWithDefaultCall(clang::CallExpr const *call, clang::ASTContext const *context)
-    : BareRosApiCall(call, context)
+  BareGetParamWithDefaultCall(clang::CallExpr const *call)
+    : BareRosApiCall(call)
   {}
 
   RosApiCallKind const getKind() const override {
@@ -37,7 +37,7 @@ public:
 
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
-      return new BareGetParamWithDefaultCall(result.Nodes.getNodeAs<clang::CallExpr>("call"), result.Context);
+      return new BareGetParamWithDefaultCall(result.Nodes.getNodeAs<clang::CallExpr>("call"));
     }
   };
 };

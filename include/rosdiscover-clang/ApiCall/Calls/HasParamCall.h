@@ -7,8 +7,8 @@ namespace api_call {
 
 class HasParamCall : public NodeHandleRosApiCall {
 public:
-  HasParamCall(clang::CallExpr const *call, clang::ASTContext const *context)
-    : NodeHandleRosApiCall(call, context)
+  HasParamCall(clang::CallExpr const *call)
+    : NodeHandleRosApiCall(call)
   {}
 
   RosApiCallKind const getKind() const override {
@@ -36,7 +36,7 @@ public:
 
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
-      return new HasParamCall(result.Nodes.getNodeAs<clang::CallExpr>("call"), result.Context);
+      return new HasParamCall(result.Nodes.getNodeAs<clang::CallExpr>("call"));
     }
   };
 };

@@ -74,33 +74,28 @@ public:
     static clang::LangOptions langOptions;
     static clang::PrintingPolicy printPolicy(langOptions);
     getCallExpr()->printPretty(os, nullptr, printPolicy);
-    os << " [" << locationString << "]";
   }
 
 protected:
-  RosApiCall(clang::CallExpr const *call, clang::ASTContext const *context)
-    : call(call),
-      locationString(call->getBeginLoc().printToString(context->getSourceManager()))
-  {}
+  RosApiCall(clang::CallExpr const *call) : call(call) {}
 
 private:
   clang::CallExpr const *call;
-  std::string const locationString;
 }; // RosApiCall
 
 
 class BareRosApiCall : public RosApiCall {
 protected:
-  BareRosApiCall(clang::CallExpr const *call, clang::ASTContext const *context)
-    : RosApiCall(call, context)
+  BareRosApiCall(clang::CallExpr const *call)
+    : RosApiCall(call)
   {}
 }; // BareRosApiCall
 
 
 class NodeHandleRosApiCall : public RosApiCall {
 protected:
-  NodeHandleRosApiCall(clang::CallExpr const *call, clang::ASTContext const *context)
-    : RosApiCall(call, context)
+  NodeHandleRosApiCall(clang::CallExpr const *call)
+    : RosApiCall(call)
   {}
 }; // NodeHandleRosApiCall
 

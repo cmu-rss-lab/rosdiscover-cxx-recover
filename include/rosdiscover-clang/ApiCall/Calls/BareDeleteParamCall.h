@@ -7,8 +7,8 @@ namespace api_call {
 
 class BareDeleteParamCall : public BareRosApiCall {
 public:
-  BareDeleteParamCall(clang::CallExpr const *call, clang::ASTContext const *context)
-    : BareRosApiCall(call, context)
+  BareDeleteParamCall(clang::CallExpr const *call)
+    : BareRosApiCall(call)
   {}
 
   RosApiCallKind const getKind() const override {
@@ -32,7 +32,7 @@ public:
 
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
-      return new BareDeleteParamCall(result.Nodes.getNodeAs<clang::CallExpr>("call"), result.Context);
+      return new BareDeleteParamCall(result.Nodes.getNodeAs<clang::CallExpr>("call"));
     }
   };
 };

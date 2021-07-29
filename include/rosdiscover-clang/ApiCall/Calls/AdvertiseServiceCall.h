@@ -7,8 +7,8 @@ namespace api_call {
 
 class AdvertiseServiceCall : public NodeHandleRosApiCall {
 public:
-  AdvertiseServiceCall(clang::CallExpr const *call, clang::ASTContext const *context)
-    : NodeHandleRosApiCall(call, context)
+  AdvertiseServiceCall(clang::CallExpr const *call)
+    : NodeHandleRosApiCall(call)
   {}
 
   RosApiCallKind const getKind() const override {
@@ -32,7 +32,7 @@ public:
 
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
-      return new AdvertiseServiceCall(result.Nodes.getNodeAs<clang::CallExpr>("call"), result.Context);
+      return new AdvertiseServiceCall(result.Nodes.getNodeAs<clang::CallExpr>("call"));
     }
   };
 };
