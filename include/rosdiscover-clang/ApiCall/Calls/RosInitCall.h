@@ -19,14 +19,6 @@ public:
     return getCallExpr()->getArg(2);
   }
 
-  // llvm::Optional<std::string> getLiteralName() const {
-  //
-  // }
-
-  // llvm::Optional<std::string> getStaticName() const {
-  //
-  // }
-
   class Finder : public RosApiCall::Finder {
   public:
     Finder(std::vector<RosApiCall*> &found) : RosApiCall::Finder(found) {}
