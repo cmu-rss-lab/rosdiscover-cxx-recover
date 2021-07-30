@@ -167,7 +167,7 @@ private:
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareServiceCall *apiCall) {
     return std::make_unique<ServiceCaller>(
       symbolizeApiCallName(apiCall),
-      apiCall->getServiceTypeName()
+      apiCall->getFormatName()
     );
   }
 
@@ -215,7 +215,7 @@ private:
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::ServiceClientCall *apiCall) {
     return std::make_unique<ServiceCaller>(
       symbolizeApiCallName(apiCall),
-      apiCall->getServiceTypeName()
+      apiCall->getFormatName()
     );
   }
 
@@ -226,7 +226,7 @@ private:
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::SubscribeTopicCall *apiCall) {
     return std::make_unique<Subscriber>(
       symbolizeApiCallName(apiCall),
-      apiCall->getTopicTypeName()
+      apiCall->getFormatName()
     );
   }
 

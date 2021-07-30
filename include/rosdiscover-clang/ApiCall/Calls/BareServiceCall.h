@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../Helper/FormatHelper.h"
 #include "../RosApiCall.h"
 
 namespace rosdiscover {
@@ -17,8 +18,8 @@ public:
     return getCallExpr()->getArg(0);
   }
 
-  std::string getServiceTypeName() const {
-    return "TODO-BARE-SERVICE-CALL-TYPE-NAME";
+  std::string getFormatName() const {
+    return typeNameToFormatName(getServiceTypeName());
   }
 
   class Finder : public RosApiCall::Finder {
@@ -37,6 +38,11 @@ public:
       return new BareServiceCall(result.Nodes.getNodeAs<clang::CallExpr>("call"));
     }
   };
+
+private:
+  std::string getServiceTypeName() const {
+    return "todo::service";
+  }
 };
 
 } // rosdiscover::api_call

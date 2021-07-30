@@ -2,6 +2,7 @@
 
 #include <clang/AST/TemplateBase.h>
 
+#include "../../Helper/FormatHelper.h"
 #include "../RosApiCall.h"
 
 namespace rosdiscover {
@@ -16,12 +17,12 @@ public:
     return RosApiCallKind::ServiceClientCall;
   }
 
-  clang::Expr const * getNameExpr() const override {
-    return getCallExpr()->getArg(0);
+  std::string getFormatName() const {
+    return typeNameToFormatName(getServiceTypeName());
   }
 
-  std::string getServiceTypeName() const {
-    return getServiceTypeDecl()->getQualifiedNameAsString();
+  clang::Expr const * getNameExpr() const override {
+    return getCallExpr()->getArg(0);
   }
 
   class Finder : public RosApiCall::Finder {
@@ -42,6 +43,10 @@ public:
   };
 
 private:
+  std::string getServiceTypeName() const {
+    return getServiceTypeDecl()->getQualifiedNameAsString();
+  }
+
   // FIXME there are three versions of serviceClient; each has different template arguments
   // https://docs.ros.org/en/api/roscpp/html/classros_1_1NodeHandle.html
   clang::TemplateArgument const getServiceTypeTemplateArg() const {

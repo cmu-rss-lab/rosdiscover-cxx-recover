@@ -2,6 +2,7 @@
 
 #include <clang/AST/TemplateBase.h>
 
+#include "../../Helper/FormatHelper.h"
 #include "../RosApiCall.h"
 
 namespace rosdiscover {
@@ -19,8 +20,8 @@ public:
     return getCallExpr()->getArg(0);
   }
 
-  std::string getTopicTypeName() const {
-    return getTopicTypeDecl()->getQualifiedNameAsString();
+  std::string getFormatName() const {
+    return typeNameToFormatName(getTopicTypeName());
   }
 
   class Finder : public RosApiCall::Finder {
@@ -41,6 +42,10 @@ public:
   };
 
 private:
+  std::string getTopicTypeName() const {
+    return getTopicTypeDecl()->getQualifiedNameAsString();
+  }
+
   clang::TemplateArgument const getTopicTemplateArg() const {
     return getCallExpr()->getDirectCallee()->getTemplateSpecializationArgs()->get(0);
   }
