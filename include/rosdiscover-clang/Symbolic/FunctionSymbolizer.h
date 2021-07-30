@@ -162,7 +162,10 @@ private:
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareServiceCall *apiCall) {
-    return std::make_unique<ServiceCaller>(symbolizeApiCallName(apiCall));
+    return std::make_unique<ServiceCaller>(
+      symbolizeApiCallName(apiCall),
+      "TODO-BARE-SERVICE-CALL-NAME"
+    );
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareSetParamCall *apiCall) {
@@ -207,7 +210,10 @@ private:
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::ServiceClientCall *apiCall) {
-    return std::make_unique<ServiceCaller>(symbolizeApiCallName(apiCall));
+    return std::make_unique<ServiceCaller>(
+      symbolizeApiCallName(apiCall),
+      apiCall->getServiceTypeName()
+    );
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::SetParamCall *apiCall) {

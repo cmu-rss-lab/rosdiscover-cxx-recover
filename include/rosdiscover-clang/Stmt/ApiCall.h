@@ -78,25 +78,30 @@ public:
   }
 
 private:
-  std::string topicType;
+  std::string const topicType;
 };
 
 class ServiceCaller : public SymbolicRosApiCall {
 public:
-  ServiceCaller(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
+  ServiceCaller(std::unique_ptr<SymbolicString> name, std::string const &serviceType)
+  : SymbolicRosApiCall(std::move(name)), serviceType(serviceType) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(calls-service ";
     getName()->print(os);
-    os << ")";
+    os << " " << serviceType << ")";
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "calls-service"},
-      {"name", getName()->toJson()}
+      {"name", getName()->toJson()},
+      {"service-type", serviceType}
     };
   }
+
+private:
+  std::string const serviceType;
 };
 
 class ServiceProvider : public SymbolicRosApiCall {

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <clang/AST/TemplateBase.h>
+
 #include "../RosApiCall.h"
 
 namespace rosdiscover {
@@ -18,6 +20,10 @@ public:
     return getCallExpr()->getArg(0);
   }
 
+  std::string getServiceTypeName() const {
+    return "TODO-SERVICE-TYPE-NAME";
+  }
+
   class Finder : public RosApiCall::Finder {
   public:
     Finder(std::vector<RosApiCall*> &found) : RosApiCall::Finder(found) {}
@@ -34,6 +40,11 @@ public:
       return new ServiceClientCall(result.Nodes.getNodeAs<clang::CallExpr>("call"));
     }
   };
+
+private:
+  clang::TemplateArgument const getServiceTypeTemplateArg() const {
+    return getCallExpr()->getDirectCallee()->getTemplateSpecializationArgs()->get(0);
+  }
 };
 
 } // rosdiscover::api_call
