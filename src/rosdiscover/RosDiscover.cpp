@@ -20,11 +20,22 @@ using namespace rosdiscover::symbolic;
 static llvm::cl::OptionCategory MyToolCategory("rosdiscover options");
 static llvm::cl::extrahelp CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
 
+static llvm::cl::opt<std::string> outputFilename(
+  "output-filename",
+  llvm::cl::desc("the name of the file to which the node summary should be written."),
+  llvm::cl::value_desc("filename"),
+  llvm::cl::init("node-summary.json")
+);
+
 int main(int argc, const char **argv) {
   CommonOptionsParser optionsParser(argc, argv, MyToolCategory);
 
   auto program = ProgramSymbolizer::symbolize(optionsParser.getCompilations(), optionsParser.getSourcePathList());
   auto json = program->toJson();
   std::cout << std::setw(2) << json;
+
+  // save the program to disk
+  program->save(outputFilename);
+
   return 0;
 }
