@@ -60,20 +60,25 @@ public:
 
 class Subscriber : public SymbolicRosApiCall {
 public:
-  Subscriber(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
+  Subscriber(std::unique_ptr<SymbolicString> name, std::string const &topicType)
+  : SymbolicRosApiCall(std::move(name)), topicType(topicType) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(subscribes-to ";
     getName()->print(os);
-    os << ")";
+    os << " " << topicType << ")";
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "subscribes-to"},
-      {"name", getName()->toJson()}
+      {"name", getName()->toJson()},
+      {"topic-type", topicType}
     };
   }
+
+private:
+  std::string topicType;
 };
 
 class ServiceCaller : public SymbolicRosApiCall {

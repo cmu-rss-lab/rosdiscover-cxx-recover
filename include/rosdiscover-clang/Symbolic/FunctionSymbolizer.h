@@ -215,7 +215,7 @@ private:
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::SubscribeTopicCall *apiCall) {
-    return std::make_unique<Subscriber>(symbolizeApiCallName(apiCall));
+    return std::make_unique<Subscriber>(symbolizeApiCallName(apiCall), apiCall->getTopicTypeName());
   }
 
   // TODO a unique_ptr should be passed in here!
