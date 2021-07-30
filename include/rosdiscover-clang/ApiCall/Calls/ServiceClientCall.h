@@ -21,7 +21,7 @@ public:
   }
 
   std::string getServiceTypeName() const {
-    return "TODO-SERVICE-TYPE-NAME";
+    return getServiceTypeDecl()->getQualifiedNameAsString();
   }
 
   class Finder : public RosApiCall::Finder {
@@ -44,6 +44,17 @@ public:
 private:
   clang::TemplateArgument const getServiceTypeTemplateArg() const {
     return getCallExpr()->getDirectCallee()->getTemplateSpecializationArgs()->get(0);
+  }
+
+  // TODO lift some of this code into a helper function
+  clang::CXXRecordDecl const * getServiceTypeDecl() const {
+    auto qualType = getServiceTypeTemplateArg().getAsType().getNonReferenceType().getUnqualifiedType();
+    auto *recordType = clang::dyn_cast<clang::RecordType>(qualType.getTypePtr());
+    auto const *recordDecl = clang::dyn_cast<clang::CXXRecordDecl>(recordType->getDecl());
+    if (auto *specializationDecl = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>(recordDecl)) {
+      recordDecl = specializationDecl->getSpecializedTemplate()->getTemplatedDecl();
+    }
+    return recordDecl;
   }
 };
 
