@@ -42,6 +42,8 @@ public:
   };
 
 private:
+  // FIXME there are three versions of serviceClient; each has different template arguments
+  // https://docs.ros.org/en/api/roscpp/html/classros_1_1NodeHandle.html
   clang::TemplateArgument const getServiceTypeTemplateArg() const {
     return getCallExpr()->getDirectCallee()->getTemplateSpecializationArgs()->get(0);
   }

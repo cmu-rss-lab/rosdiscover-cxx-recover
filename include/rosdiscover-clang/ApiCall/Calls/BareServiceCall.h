@@ -17,6 +17,10 @@ public:
     return getCallExpr()->getArg(0);
   }
 
+  std::string getServiceTypeName() const {
+    return "TODO-BARE-SERVICE-CALL-TYPE-NAME";
+  }
+
   class Finder : public RosApiCall::Finder {
   public:
     Finder(std::vector<RosApiCall*> &found) : RosApiCall::Finder(found) {}

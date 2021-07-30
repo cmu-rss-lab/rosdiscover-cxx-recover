@@ -42,66 +42,71 @@ public:
 
 class Publisher : public SymbolicRosApiCall {
 public:
-  Publisher(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
+  Publisher(std::unique_ptr<SymbolicString> name, std::string const &format)
+  : SymbolicRosApiCall(std::move(name)), format(format) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(publishes-to ";
     getName()->print(os);
-    os << ")";
+    os << " " << format << ")";
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "publishes-to"},
-      {"name", getName()->toJson()}
+      {"name", getName()->toJson()},
+      {"format", format}
     };
   }
+
+private:
+  std::string const format;
 };
 
 class Subscriber : public SymbolicRosApiCall {
 public:
-  Subscriber(std::unique_ptr<SymbolicString> name, std::string const &topicType)
-  : SymbolicRosApiCall(std::move(name)), topicType(topicType) {}
+  Subscriber(std::unique_ptr<SymbolicString> name, std::string const &format)
+  : SymbolicRosApiCall(std::move(name)), format(format) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(subscribes-to ";
     getName()->print(os);
-    os << " " << topicType << ")";
+    os << " " << format << ")";
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "subscribes-to"},
       {"name", getName()->toJson()},
-      {"topic-type", topicType}
+      {"format", format}
     };
   }
 
 private:
-  std::string const topicType;
+  std::string const format;
 };
 
 class ServiceCaller : public SymbolicRosApiCall {
 public:
-  ServiceCaller(std::unique_ptr<SymbolicString> name, std::string const &serviceType)
-  : SymbolicRosApiCall(std::move(name)), serviceType(serviceType) {}
+  ServiceCaller(std::unique_ptr<SymbolicString> name, std::string const &format)
+  : SymbolicRosApiCall(std::move(name)), format(format) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(calls-service ";
     getName()->print(os);
-    os << " " << serviceType << ")";
+    os << " " << format << ")";
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "calls-service"},
       {"name", getName()->toJson()},
-      {"service-type", serviceType}
+      {"format", format}
     };
   }
 
 private:
-  std::string const serviceType;
+  std::string const format;
 };
 
 class ServiceProvider : public SymbolicRosApiCall {

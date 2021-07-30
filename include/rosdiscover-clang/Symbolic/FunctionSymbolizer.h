@@ -125,7 +125,10 @@ private:
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::AdvertiseTopicCall *apiCall) {
-    return std::make_unique<Publisher>(symbolizeApiCallName(apiCall));
+    return std::make_unique<Publisher>(
+      symbolizeApiCallName(apiCall),
+      apiCall->getFormatName()
+    );
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareDeleteParamCall *apiCall) {
@@ -164,7 +167,7 @@ private:
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::BareServiceCall *apiCall) {
     return std::make_unique<ServiceCaller>(
       symbolizeApiCallName(apiCall),
-      "TODO-BARE-SERVICE-CALL-NAME"
+      apiCall->getServiceTypeName()
     );
   }
 
@@ -221,7 +224,10 @@ private:
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::SubscribeTopicCall *apiCall) {
-    return std::make_unique<Subscriber>(symbolizeApiCallName(apiCall), apiCall->getTopicTypeName());
+    return std::make_unique<Subscriber>(
+      symbolizeApiCallName(apiCall),
+      apiCall->getTopicTypeName()
+    );
   }
 
   // TODO a unique_ptr should be passed in here!
