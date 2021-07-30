@@ -19,9 +19,8 @@ public:
     return getCallExpr()->getArg(0);
   }
 
-  clang::CXXRecordDecl const * getTopicType() const override {
-    // TODO implement!
-    return nullptr;
+  std::string getTopicTypeName() const {
+    return getTopicTypeDecl()->getQualifiedNameAsString();
   }
 
   class Finder : public RosApiCall::Finder {
@@ -31,27 +30,30 @@ public:
     const clang::ast_matchers::StatementMatcher getPattern() override {
       using namespace clang::ast_matchers;
       return callExpr(
-        callee(cxxMethodDecl(
-          hasTemplateArgument(0, templateArgument().bind("templateArg")),
-          hasName("subscribe"), ofClass(hasName("ros::NodeHandle"))))
+        callee(cxxMethodDecl(hasName("subscribe"), ofClass(hasName("ros::NodeHandle"))))
       ).bind("call");
     }
 
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
-      llvm::outs() << "nice!\n";
-      auto qualType = result.Nodes.getNodeAs<clang::TemplateArgument>("templateArg")->getAsType().getNonReferenceType().getUnqualifiedType();
-      auto *recordType = clang::dyn_cast<clang::RecordType>(qualType.getTypePtr());
-      auto const *recordDecl = recordType->getDecl();
-      if (auto *specializationDecl = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>(recordDecl)) {
-        recordDecl = specializationDecl->getSpecializedTemplate()->getTemplatedDecl();
-        llvm::outs() << "decl name: " << recordDecl->getQualifiedNameAsString() << "\n";
-      }
-      recordDecl->dump();
-      llvm::outs() << "\n";
       return new SubscribeTopicCall(result.Nodes.getNodeAs<clang::CallExpr>("call"));
     }
   };
+
+private:
+  clang::TemplateArgument const getTopicTemplateArg() const {
+    return getCallExpr()->getDirectCallee()->getTemplateSpecializationArgs()->get(0);
+  }
+
+  clang::CXXRecordDecl const * getTopicTypeDecl() const {
+    auto qualType = getTopicTemplateArg().getAsType().getNonReferenceType().getUnqualifiedType();
+    auto *recordType = clang::dyn_cast<clang::RecordType>(qualType.getTypePtr());
+    auto const *recordDecl = clang::dyn_cast<clang::CXXRecordDecl>(recordType->getDecl());
+    if (auto *specializationDecl = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>(recordDecl)) {
+      recordDecl = specializationDecl->getSpecializedTemplate()->getTemplatedDecl();
+    }
+    return recordDecl;
+  }
 };
 
 } // rosdiscover::api_call
