@@ -30,11 +30,15 @@ public:
   }
 
   nlohmann::json toJson() const {
-    auto j = nlohmann::json::array();
+
+    auto j_statements = nlohmann::json::array();
     for (auto const &statement : statements) {
-      j.push_back(statement->toJson());
+      j_statements.push_back(statement->toJson());
     }
-    return j;
+    return {
+      {"kind", "compound"},
+      {"statements", j_statements}
+    };
   }
 
 private:
