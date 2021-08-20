@@ -151,6 +151,10 @@ private:
   }
 
   void symbolize(clang::FunctionDecl const *function) {
+    llvm::outs()
+      << "symbolizing function: "
+      << function->getQualifiedNameAsString()
+      << "\n";
     auto *symFunction = astFunctionToSymbolic[function];
     auto &apiCalls = functionToApiCalls[function];
     auto &functionCalls = relevantFunctionCalls[function];
@@ -162,6 +166,10 @@ private:
         apiCalls,
         functionCalls
     );
+    llvm::outs()
+      << "symbolized function: "
+      << function->getQualifiedNameAsString()
+      << "\n";
   }
 
   void run() {

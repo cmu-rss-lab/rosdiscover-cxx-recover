@@ -28,6 +28,10 @@ private:
   }
 
 public:
+  bool shouldVisitImplicitCode() const {
+    return true;
+  }
+
   static std::vector<clang::Stmt *> computeOrder(
       clang::ASTContext const &astContext,
       clang::FunctionDecl const *function,
@@ -39,6 +43,13 @@ public:
     // ensure that we found every statement
     if (!visitor.statementsToFind.empty()) {
       llvm::errs() << "FATAL ERROR: failed to order all statements\n";
+      for (auto *statement : visitor.statementsToFind) {
+        llvm::errs() << "-> failed to find statement: ";
+        statement->dumpColor();
+        llvm::errs() << "\n";
+        statement->getBeginLoc().dump(astContext.getSourceManager());
+        llvm::errs() << "\n";
+      }
       abort();
     }
 
