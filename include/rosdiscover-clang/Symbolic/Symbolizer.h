@@ -104,13 +104,29 @@ private:
     for (auto const *function : relevantFunctions) {
       llvm::outs() << "found relevant function: " << function->getQualifiedNameAsString() << "\n";
     }
+
+    llvm::outs() << "finished finding all relevant functions\n";
   }
 
   void findRelevantFunctionCalls() {
     // look at all function calls within the set of relevant functions
     for (auto const *caller : relevantFunctions) {
+      llvm::outs()
+        << "finding all calls to relevant function: "
+        << caller->getQualifiedNameAsString()
+        << "\n";
       relevantFunctionCalls.emplace(caller, std::vector<clang::Expr *>());
       auto *callerNode = callGraph.getNode(caller);
+
+      if (callerNode == nullptr) {
+        llvm::errs()
+          << "Call graph node is missing for relevant function: "
+          << caller->getQualifiedNameAsString()
+          << "\n";
+        continue;
+      }
+      llvm::outs() << "-> fetched call graph node\n";
+
       for (clang::CallGraphNode::CallRecord const &callRecord : *callerNode) {
         // is this a call to another relevant function?
         auto const *callee = clang::dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl())->getCanonicalDecl();
@@ -124,11 +140,14 @@ private:
         << relevantFunctionCalls[caller].size()
         << " relevant function calls\n";
 
-      for (auto call : relevantFunctionCalls[caller]) {
-        call->dumpColor();
-        llvm::outs() << "\n";
-      }
+      // attempting to dump certain function calls sometimes leads to a crash?
+      // for (auto call : relevantFunctionCalls[caller]) {
+      //   call->dumpColor();
+      //   llvm::outs() << "\n";
+      // }
     }
+
+    llvm::outs() << "finished finding all relevant functions calls\n";
   }
 
   void symbolize(clang::FunctionDecl const *function) {
