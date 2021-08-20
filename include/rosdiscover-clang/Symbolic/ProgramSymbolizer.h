@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <vector>
 
+#include <clang/AST/ASTImporter.h>
 #include <clang/Tooling/Tooling.h>
 
 #include "Program.h"
@@ -42,14 +43,34 @@ private:
     llvm::outs() << "built " << numAsts << " ASTs\n";
     assert(numAsts > 0);
 
-    // we're going to merge everything into the first translation unit in our list
-    // clang::ASTUnit toUnit = asts[0].get();
+    // we merge all top-level decls into the first translation unit in our list
+    // - we could check which TU is the main file AST (via isMainFileAST),
+    //    but I don't think this makes a difference?
+    // - https://clang.llvm.org/docs/LibASTImporter.html
+    // - https://clang.llvm.org/docs/InternalsManual.html#the-astimporter
+    // - https://github.com/correctcomputation/checkedc-clang/issues/551
+    clang::ASTUnit *toUnit = asts[0].get();
+    for (auto i = 1; i < numAsts; ++i) {
+      llvm::outs() << "importing decls from translation unit [" << i << "/" << numAsts - 1 << "]";
+      clang::ASTUnit *fromUnit = asts[i].get();
+      clang::ASTImporter importer(
+        toUnit->getASTContext(),
+        toUnit->getFileManager(),
+        fromUnit->getASTContext(),
+        fromUnit->getFileManager(),
+        /*MinimalImport=*/false
+      );
+      for (
+        auto top_level_iterator = fromUnit->top_level_begin(), top_level_end = fromUnit->top_level_end();
+        top_level_iterator != top_level_end;
+        top_level_iterator++
+      ) {
+        clang::Decl *fromDecl = *top_level_iterator;
+        llvm::Expected<clang::Decl*> importedOrError = importer.Import(fromDecl);
+      }
+    }
 
-    // TODO merge the ASTs into a single translation unit
-    // https://clang.llvm.org/docs/LibASTImporter.html
-    // https://clang.llvm.org/docs/InternalsManual.html#the-astimporter
-    // https://github.com/correctcomputation/checkedc-clang/issues/551
-
+    llvm::outs() << "successfully merged " << numAsts << "ASTs into a single AST for analysis\n";
     mergedAst = std::move(asts[0]);
   }
 
