@@ -51,7 +51,7 @@ private:
     // - https://github.com/correctcomputation/checkedc-clang/issues/551
     clang::ASTUnit *toUnit = asts[0].get();
     for (auto i = 1; i < numAsts; ++i) {
-      llvm::outs() << "importing decls from translation unit [" << i << "/" << numAsts - 1 << "]";
+      llvm::outs() << "importing decls from translation unit [" << i << "/" << numAsts - 1 << "]\n";
       clang::ASTUnit *fromUnit = asts[i].get();
       clang::ASTImporter importer(
         toUnit->getASTContext(),
@@ -70,7 +70,7 @@ private:
       }
     }
 
-    llvm::outs() << "successfully merged " << numAsts << "ASTs into a single AST for analysis\n";
+    llvm::outs() << "successfully merged " << numAsts << " ASTs into a single AST for analysis\n";
     mergedAst = std::move(asts[0]);
   }
 
