@@ -25,6 +25,9 @@ public:
   /** Returns the expression that provides the name associated with this call. */
   virtual clang::Expr const * getNameExpr() const = 0;
 
+  /** Indicates whether or not this API call has an associated node handle. */
+  virtual bool hasNodeHandle() const = 0;
+
   /**
    * Returns the expression, if any, that holds the value produced by this call.
    * Depending on the kind of API call, this may either be:
@@ -88,6 +91,7 @@ class BareRosApiCall : public RosApiCall {
 public:
   virtual ~BareRosApiCall(){}
   BareRosApiCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  bool hasNodeHandle() const override { return false; }
 }; // BareRosApiCall
 
 
@@ -95,6 +99,7 @@ class NodeHandleRosApiCall : public RosApiCall {
 public:
   virtual ~NodeHandleRosApiCall(){}
   NodeHandleRosApiCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  bool hasNodeHandle() const override { return true; }
 }; // NodeHandleRosApiCall
 
 
