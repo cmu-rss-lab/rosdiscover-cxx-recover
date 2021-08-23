@@ -59,6 +59,26 @@ class SymbolicBool : public virtual SymbolicValue {};
 
 class SymbolicInteger : public virtual SymbolicValue {};
 
+class SymbolicUnknown :
+  public virtual SymbolicString,
+  public virtual SymbolicBool,
+  public virtual SymbolicInteger
+{
+public:
+  SymbolicUnknown(){}
+  ~SymbolicUnknown(){}
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "UNKNOWN";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "unknown"}
+    };
+  }
+};
+
 class SymbolicNodeHandle : public virtual SymbolicValue {
 public:
   SymbolicNodeHandle(std::unique_ptr<SymbolicString> name)
@@ -86,26 +106,6 @@ public:
 
 private:
   std::unique_ptr<SymbolicString> name;
-};
-
-class SymbolicUnknown :
-  public virtual SymbolicString,
-  public virtual SymbolicBool,
-  public virtual SymbolicInteger
-{
-public:
-  SymbolicUnknown(){}
-  ~SymbolicUnknown(){}
-
-  void print(llvm::raw_ostream &os) const override {
-    os << "UNKNOWN";
-  }
-
-  nlohmann::json toJson() const override {
-    return {
-      {"kind", "unknown"}
-    };
-  }
 };
 
 } // rosdiscover::symbolic
