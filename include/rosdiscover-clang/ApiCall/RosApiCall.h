@@ -100,6 +100,20 @@ public:
   virtual ~NodeHandleRosApiCall(){}
   NodeHandleRosApiCall(clang::CallExpr const *call) : RosApiCall(call) {}
   bool hasNodeHandle() const override { return true; }
+
+  void getNodeHandleExpr() const {
+    auto callExpr = getCallExpr();
+    llvm::outs() << "NODE HANDLE? ";
+    clang::DeclRefExpr const *nhDeclRef = clang::dyn_cast<clang::DeclRefExpr>(
+      clang::dyn_cast<clang::MemberExpr>(callExpr->getCallee())
+      ->getBase()
+      ->IgnoreImpCasts()
+    );
+    // getDecl vs. getFoundDecl?
+    auto const *nhDecl = nhDeclRef->getDecl();
+    nhDecl->dumpColor();
+    llvm::outs() << "\n";
+  }
 }; // NodeHandleRosApiCall
 
 
