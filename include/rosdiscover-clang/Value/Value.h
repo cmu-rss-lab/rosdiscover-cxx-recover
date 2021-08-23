@@ -11,7 +11,8 @@ enum class SymbolicValueType {
   String,
   Bool,
   Integer,
-  Unsupported
+  Unsupported,
+  NodeHandle
 };
 
 class SymbolicValue {
@@ -44,6 +45,8 @@ public:
         return "integer";
       case SymbolicValueType::Unsupported:
         return "unsupported";
+      case SymbolicValueType::NodeHandle:
+        return "node-handle";
     }
   }
 }; // SymbolicValue
@@ -53,6 +56,31 @@ class SymbolicString : public virtual SymbolicValue {};
 class SymbolicBool : public virtual SymbolicValue {};
 
 class SymbolicInteger : public virtual SymbolicValue {};
+
+class SymbolicNodeHandle : public virtual SymbolicValue {
+public:
+  SymbolicNodeHandle(std::unique_ptr<SymbolicString> name)
+    : name(std::move(name))
+  {}
+
+  ~SymbolicNodeHandle();
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "NodeHandle[";
+    name.get()->print(os);
+    os << "]";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "node-handle"},
+      {"name", name->toJson()}
+    };
+  }
+
+private:
+  std::unique_ptr<SymbolicString> name;
+};
 
 class SymbolicUnknown :
   public virtual SymbolicString,

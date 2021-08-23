@@ -90,7 +90,7 @@ private:
     llvm::outs() << "\n";
 
     // TODO resolved the associated node handle
-    apiCall->getNodeHandleExpr();
+    // auto const *nodeHandleDecl = apiCall->getNodeHandleDecl();
 
     switch (apiCall->getKind()) {
       case RosApiCallKind::AdvertiseServiceCall:

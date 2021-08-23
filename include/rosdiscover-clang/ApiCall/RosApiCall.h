@@ -124,7 +124,7 @@ public:
 
   void getNodeHandleExpr() const {
     llvm::outs() << "NODE HANDLE DECL: ";
-    getNodeHandleDecl();
+    getNodeHandleDecl()->dumpColor();
     llvm::outs() << "\n";
   }
 }; // NodeHandleRosApiCall
