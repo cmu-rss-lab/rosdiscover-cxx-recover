@@ -101,17 +101,30 @@ public:
   NodeHandleRosApiCall(clang::CallExpr const *call) : RosApiCall(call) {}
   bool hasNodeHandle() const override { return true; }
 
+  clang::ValueDecl const * getNodeHandleDecl() const {
+    auto const *nodeHandleExpr = clang::dyn_cast<clang::MemberExpr>(getCallExpr()->getCallee())
+        ->getBase()
+        ->IgnoreImpCasts();
+
+    // node handle is provided by a parameter or local variable
+    if (auto const *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(nodeHandleExpr)) {
+      return declRefExpr->getDecl();
+
+    // node handle is provided by a CXX field
+    } else if (auto const *memberExpr = clang::dyn_cast<clang::MemberExpr>(nodeHandleExpr)) {
+      return memberExpr->getMemberDecl();
+
+    } else {
+      llvm::errs() << "unable to fetch decl for node handle expr: ";
+      nodeHandleExpr->dumpColor();
+      llvm::errs() << "\n";
+      abort();
+    }
+  }
+
   void getNodeHandleExpr() const {
-    auto callExpr = getCallExpr();
-    llvm::outs() << "NODE HANDLE? ";
-    clang::DeclRefExpr const *nhDeclRef = clang::dyn_cast<clang::DeclRefExpr>(
-      clang::dyn_cast<clang::MemberExpr>(callExpr->getCallee())
-      ->getBase()
-      ->IgnoreImpCasts()
-    );
-    // getDecl vs. getFoundDecl?
-    auto const *nhDecl = nhDeclRef->getDecl();
-    nhDecl->dumpColor();
+    llvm::outs() << "NODE HANDLE DECL: ";
+    getNodeHandleDecl();
     llvm::outs() << "\n";
   }
 }; // NodeHandleRosApiCall
