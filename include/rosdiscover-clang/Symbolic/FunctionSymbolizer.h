@@ -76,11 +76,58 @@ private:
     apiCall->print(llvm::outs());
     llvm::outs() << "\n";
 
+    if (apiCall->hasNodeHandle()) {
+      return symbolizeNodeHandleApiCall((api_call::NodeHandleRosApiCall*) apiCall);
+    } else {
+      return symbolizeBareApiCall((api_call::BareRosApiCall*) apiCall);
+    }
+  }
+
+  std::unique_ptr<SymbolicStmt> symbolizeNodeHandleApiCall(api_call::NodeHandleRosApiCall *apiCall) {
+    using namespace rosdiscover::api_call;
+    llvm::outs() << "symbolizing ROS API call with node handle: ";
+    apiCall->print(llvm::outs());
+    llvm::outs() << "\n";
+
+    // TODO resolved the associated node handle
+
     switch (apiCall->getKind()) {
       case RosApiCallKind::AdvertiseServiceCall:
         return symbolizeApiCall((AdvertiseServiceCall*) apiCall);
       case RosApiCallKind::AdvertiseTopicCall:
         return symbolizeApiCall((AdvertiseTopicCall*) apiCall);
+      case RosApiCallKind::DeleteParamCall:
+        return symbolizeApiCall((DeleteParamCall*) apiCall);
+      case RosApiCallKind::GetParamCachedCall:
+        return symbolizeApiCall((GetParamCachedCall*) apiCall);
+      case RosApiCallKind::GetParamCall:
+        return symbolizeApiCall((GetParamCall*) apiCall);
+      case RosApiCallKind::GetParamWithDefaultCall:
+        return symbolizeApiCall((GetParamWithDefaultCall*) apiCall);
+      case RosApiCallKind::HasParamCall:
+        return symbolizeApiCall((HasParamCall*) apiCall);
+      case RosApiCallKind::ServiceClientCall:
+        return symbolizeApiCall((ServiceClientCall*) apiCall);
+      case RosApiCallKind::SetParamCall:
+        return symbolizeApiCall((SetParamCall*) apiCall);
+      case RosApiCallKind::SubscribeTopicCall:
+        return symbolizeApiCall((SubscribeTopicCall*) apiCall);
+      default:
+        llvm::errs() << "unrecognized ROS API call with node handle: ";
+        apiCall->print(llvm::outs());
+        llvm::outs() << "\n";
+        abort();
+    }
+  }
+
+
+  std::unique_ptr<SymbolicStmt> symbolizeBareApiCall(api_call::BareRosApiCall *apiCall) {
+    using namespace rosdiscover::api_call;
+    llvm::outs() << "symbolizing bare ROS API call: ";
+    apiCall->print(llvm::outs());
+    llvm::outs() << "\n";
+
+    switch (apiCall->getKind()) {
       case RosApiCallKind::BareDeleteParamCall:
         return symbolizeApiCall((BareDeleteParamCall*) apiCall);
       case RosApiCallKind::BareGetParamCachedCall:
@@ -95,24 +142,13 @@ private:
         return symbolizeApiCall((BareServiceCall*) apiCall);
       case RosApiCallKind::BareSetParamCall:
         return symbolizeApiCall((BareSetParamCall*) apiCall);
-      case RosApiCallKind::DeleteParamCall:
-        return symbolizeApiCall((DeleteParamCall*) apiCall);
-      case RosApiCallKind::GetParamCachedCall:
-        return symbolizeApiCall((GetParamCachedCall*) apiCall);
-      case RosApiCallKind::GetParamCall:
-        return symbolizeApiCall((GetParamCall*) apiCall);
-      case RosApiCallKind::GetParamWithDefaultCall:
-        return symbolizeApiCall((GetParamWithDefaultCall*) apiCall);
-      case RosApiCallKind::HasParamCall:
-        return symbolizeApiCall((HasParamCall*) apiCall);
       case RosApiCallKind::RosInitCall:
         return symbolizeApiCall((RosInitCall*) apiCall);
-      case RosApiCallKind::ServiceClientCall:
-        return symbolizeApiCall((ServiceClientCall*) apiCall);
-      case RosApiCallKind::SetParamCall:
-        return symbolizeApiCall((SetParamCall*) apiCall);
-      case RosApiCallKind::SubscribeTopicCall:
-        return symbolizeApiCall((SubscribeTopicCall*) apiCall);
+      default:
+        llvm::errs() << "unrecognized bare ROS API call: ";
+        apiCall->print(llvm::outs());
+        llvm::outs() << "\n";
+        abort();
     }
   }
 
