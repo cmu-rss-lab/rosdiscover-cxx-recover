@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #include <nlohmann/json.hpp>
 
 #include <llvm/Support/raw_ostream.h>
@@ -64,6 +66,10 @@ public:
   {}
 
   ~SymbolicNodeHandle();
+
+  static std::unique_ptr<SymbolicNodeHandle> unknown() {
+    return std::make_unique<SymbolicNodeHandle>(std::make_unique<SymbolicUnknown>());
+  }
 
   void print(llvm::raw_ostream &os) const override {
     os << "NodeHandle[";
