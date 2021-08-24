@@ -76,7 +76,16 @@ private:
 
   void run() {
     buildAST();
-    Symbolizer::symbolize(mergedAst->getASTContext(), program->getContext());
+    // TODO obtain list of files to restrict our attention to
+    std::vector<std::string> restrictAnalysisToPaths = {
+      "/ros_ws/devel/include/autorally_control/",
+      "/ros_ws/src/autorally/",
+    };
+    Symbolizer::symbolize(
+      mergedAst->getASTContext(),
+      program->getContext(),
+      restrictAnalysisToPaths
+    );
   }
 };
 

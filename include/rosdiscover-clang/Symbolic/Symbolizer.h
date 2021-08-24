@@ -1,6 +1,7 @@
 #pragma once
 
 #include <queue>
+#include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -23,14 +24,23 @@ namespace symbolic {
 
 class Symbolizer {
 public:
-  static void symbolize(clang::ASTContext &astContext, SymbolicContext &symContext) {
-    Symbolizer(astContext, symContext).run();
+  static void symbolize(
+    clang::ASTContext &astContext,
+    SymbolicContext &symContext,
+    std::vector<std::string> &restrictAnalysisToPaths
+  ) {
+    Symbolizer(astContext, symContext, restrictAnalysisToPaths).run();
   }
 
 private:
-  Symbolizer(clang::ASTContext &astContext, SymbolicContext &symContext)
+  Symbolizer(
+    clang::ASTContext &astContext,
+    SymbolicContext &symContext,
+    std::vector<std::string> &restrictAnalysisToPaths
+  )
     : symContext(symContext),
       astContext(astContext),
+      restrictAnalysisToPaths(restrictAnalysisToPaths),
       callGraph(),
       apiCalls(),
       functionToApiCalls(),
@@ -41,6 +51,7 @@ private:
 
   SymbolicContext &symContext;
   clang::ASTContext &astContext;
+  std::vector<std::string> &restrictAnalysisToPaths;
   clang::CallGraph callGraph;
   std::vector<api_call::RosApiCall *> apiCalls;
   std::unordered_map<clang::FunctionDecl const *, std::vector<api_call::RosApiCall *>> functionToApiCalls;
@@ -65,6 +76,28 @@ private:
       functionDecl = functionDecl->getCanonicalDecl();
       if (functionDecl == nullptr) {
         llvm::errs() << "failed to determine parent function for ROS API call\n";
+      }
+
+      // check to see whether this API call takes place in a file
+      // that we're allowed to analyze
+      if (!restrictAnalysisToPaths.empty()) {
+        auto filename = clang::FullSourceLoc(
+          functionDecl->getLocation(),
+          astContext.getSourceManager()
+        ).getFileEntry()->getName().str();
+
+        bool ignoreFile = true;
+        for (auto const &allowedPath : restrictAnalysisToPaths) {
+          if (starts_with(filename, allowedPath)) {
+            ignoreFile = false;
+            break;
+          }
+        }
+
+        if (ignoreFile) {
+          llvm::outs() << "ignoring API call in: " << filename << "\n";
+          continue;
+        }
       }
 
       if (functionToApiCalls.find(functionDecl) == functionToApiCalls.end()) {
