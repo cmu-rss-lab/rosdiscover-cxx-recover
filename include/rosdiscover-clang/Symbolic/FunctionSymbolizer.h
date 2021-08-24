@@ -83,14 +83,100 @@ private:
     }
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeNodeHandleApiCall(api_call::NodeHandleRosApiCall *apiCall) {
-    using namespace rosdiscover::api_call;
-    llvm::outs() << "symbolizing ROS API call with node handle: ";
-    apiCall->print(llvm::outs());
+  std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(clang::ValueDecl const *decl) {
+    if (auto const *fieldDecl = clang::dyn_cast<clang::FieldDecl>(decl)) {
+      return symbolizeNodeHandle(fieldDecl);
+    } else if (auto const *parmVarDecl = clang::dyn_cast<clang::ParmVarDecl>(decl)) {
+      return symbolizeNodeHandle(parmVarDecl);
+    } else {
+      llvm::errs() << "ERROR: failed to symbolize node handle: ";
+      decl->dumpColor();
+      llvm::errs() << "\n";
+      abort();
+    }
+  }
+
+  std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(clang::FieldDecl const *decl) {
+    llvm::outs() << "symbolizing node handle in CXX record field: ";
+    decl->dumpColor();
     llvm::outs() << "\n";
 
-    // TODO resolved the associated node handle
-    // auto const *nodeHandleDecl = apiCall->getNodeHandleDecl();
+    auto const *recordDecl = clang::dyn_cast<clang::CXXRecordDecl>(decl->getParent());
+    if (recordDecl == nullptr) {
+      llvm::errs() << "failed to retrieve associated CXX record\n";
+      abort();
+    }
+
+    // for now, we assume that the node handle is initialized in the constructor's
+    // initializer list
+    auto symbolic = std::unique_ptr<SymbolicNodeHandle>();
+
+    for (auto const *constructorDecl : recordDecl->ctors()) {
+      if (constructorDecl->isCopyOrMoveConstructor())
+        continue;
+
+      auto const *constructorDef = clang::dyn_cast<clang::CXXConstructorDecl>(
+        constructorDecl->getDefinition()
+      );
+
+      if (constructorDef == nullptr) {
+        llvm::errs() << "WARNING: unable to retrieve definition for constructor: ";
+        constructorDef->dumpColor();
+        llvm::errs() << "\n";
+        continue;
+      }
+
+      for (auto const *initDecl : constructorDef->inits()) {
+        if (auto const *initMemberDecl = initDecl->getMember()) {
+          if (initMemberDecl != decl)
+            continue;
+
+          // FIXME if this doesn't call the NodeHandle constructor, skip to unknown
+          auto *nameExpr = initDecl->getInit()->IgnoreParenCasts();
+          if (auto *fieldConstructExpr = clang::dyn_cast<clang::CXXConstructExpr>(nameExpr)) {
+            auto fieldConstructorName = fieldConstructExpr->getConstructor()->getQualifiedNameAsString();
+            if (fieldConstructorName == "ros::NodeHandle::NodeHandle") {
+              nameExpr = fieldConstructExpr->getArg(0)->IgnoreParenCasts();
+            }
+          }
+
+          auto name = stringSymbolizer.symbolize(nameExpr);
+          auto newSymbolic = valueBuilder.nodeHandle(std::move(name));
+
+          // FIXME check for ambiguous definition!
+          // if (symbolic.get() != nullptr && !symbolic.equals(newSymbolic)) {
+          //   llvm::outs() << "WARNING: node handle has ambiguous definition; treating as unknown\n";
+          //   return SymbolicNodeHandle::unknown();
+          // }
+
+          symbolic = std::move(newSymbolic);
+        }
+      }
+    }
+
+    // FIXME verbose?
+    if (symbolic == nullptr) {
+      return SymbolicNodeHandle::unknown();
+    } else {
+      return symbolic;
+    }
+  }
+
+  std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(clang::ParmVarDecl const *decl) {
+    // FIXME for now, until function call parameters are supported, we consider node handler
+    // parameters to be unknown
+    return SymbolicNodeHandle::unknown();
+  }
+
+  std::unique_ptr<SymbolicStmt> symbolizeNodeHandleApiCall(api_call::NodeHandleRosApiCall *apiCall) {
+    using namespace rosdiscover::api_call;
+
+    // resolved the associated node handle
+    // TODO: this can be cached for each node handle
+    auto nodeHandle = symbolizeNodeHandle(apiCall->getNodeHandleDecl());
+    llvm::outs() << "symbolic node handle: ";
+    nodeHandle->print(llvm::outs());
+    llvm::outs() << "\n";
 
     switch (apiCall->getKind()) {
       case RosApiCallKind::AdvertiseServiceCall:

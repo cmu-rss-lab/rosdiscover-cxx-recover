@@ -27,6 +27,14 @@ public:
   std::unique_ptr<VariableReference> varRef(SymbolicVariable const *var) {
     return std::make_unique<VariableReference>(var);
   }
+
+  std::unique_ptr<SymbolicNodeHandle> nodeHandle(std::string const &name) const {
+    return nodeHandle(stringLiteral(name));
+  }
+
+  std::unique_ptr<SymbolicNodeHandle> nodeHandle(std::unique_ptr<SymbolicString> name) const {
+    return std::make_unique<SymbolicNodeHandle>(std::move(name));
+  }
 };
 
 } // rosdiscover::symbolic
