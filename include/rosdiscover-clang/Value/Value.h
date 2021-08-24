@@ -22,6 +22,7 @@ public:
   virtual ~SymbolicValue(){};
   virtual void print(llvm::raw_ostream &os) const = 0;
   virtual nlohmann::json toJson() const = 0;
+  virtual bool isUnknown() const { return false; }
 
   static SymbolicValueType getSymbolicType(clang::QualType clangType) {
     clangType = clangType.getUnqualifiedType();
@@ -68,6 +69,10 @@ public:
   SymbolicUnknown(){}
   ~SymbolicUnknown(){}
 
+  bool isUnknown() const override {
+    return true;
+  }
+
   void print(llvm::raw_ostream &os) const override {
     os << "UNKNOWN";
   }
@@ -89,6 +94,10 @@ public:
 
   static std::unique_ptr<SymbolicNodeHandle> unknown() {
     return std::make_unique<SymbolicNodeHandle>(std::make_unique<SymbolicUnknown>());
+  }
+
+  bool isUnknown() const override {
+    return name->isUnknown();
   }
 
   void print(llvm::raw_ostream &os) const override {
