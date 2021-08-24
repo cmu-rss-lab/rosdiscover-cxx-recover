@@ -85,7 +85,7 @@ public:
     : name(std::move(name))
   {}
 
-  ~SymbolicNodeHandle();
+  ~SymbolicNodeHandle(){}
 
   static std::unique_ptr<SymbolicNodeHandle> unknown() {
     return std::make_unique<SymbolicNodeHandle>(std::make_unique<SymbolicUnknown>());
