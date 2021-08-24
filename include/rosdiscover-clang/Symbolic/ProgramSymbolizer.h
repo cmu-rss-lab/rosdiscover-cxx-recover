@@ -1,6 +1,7 @@
 #pragma once
 
 #include <assert.h>
+#include <string>
 #include <vector>
 
 #include <clang/AST/ASTImporter.h>
@@ -16,9 +17,14 @@ class ProgramSymbolizer {
 public:
   static std::unique_ptr<SymbolicProgram> symbolize(
       clang::tooling::CompilationDatabase const &compilationDatabase,
-      llvm::ArrayRef<std::string> sourcePaths
+      llvm::ArrayRef<std::string> sourcePaths,
+      std::vector<std::string> &restrictAnalysisToPaths
   ) {
-    auto symbolizer = ProgramSymbolizer(compilationDatabase, sourcePaths);
+    auto symbolizer = ProgramSymbolizer(
+      compilationDatabase,
+      sourcePaths,
+      restrictAnalysisToPaths
+    );
     symbolizer.run();
     return std::move(symbolizer.program);
   }
@@ -27,12 +33,15 @@ private:
   clang::tooling::ClangTool tool;
   std::unique_ptr<SymbolicProgram> program;
   std::unique_ptr<clang::ASTUnit> mergedAst;
+  std::vector<std::string> &restrictAnalysisToPaths;
 
   ProgramSymbolizer(
       clang::tooling::CompilationDatabase const &compilationDatabase,
-      llvm::ArrayRef<std::string> sourcePaths
+      llvm::ArrayRef<std::string> sourcePaths,
+      std::vector<std::string> &restrictAnalysisToPaths
   ) : tool(compilationDatabase, sourcePaths),
-      program(std::make_unique<SymbolicProgram>())
+      program(std::make_unique<SymbolicProgram>()),
+      restrictAnalysisToPaths(restrictAnalysisToPaths)
   {}
 
   void buildAST() {
@@ -77,10 +86,6 @@ private:
   void run() {
     buildAST();
     // TODO obtain list of files to restrict our attention to
-    std::vector<std::string> restrictAnalysisToPaths = {
-      "/ros_ws/devel/include/autorally_control/",
-      "/ros_ws/src/autorally/",
-    };
     Symbolizer::symbolize(
       mergedAst->getASTContext(),
       program->getContext(),

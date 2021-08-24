@@ -27,10 +27,20 @@ static llvm::cl::opt<std::string> outputFilename(
   llvm::cl::init("node-summary.json")
 );
 
+static llvm::cl::list<std::string> restrictAnalysisToPaths(
+  "restrict-to",
+  llvm::cl::desc("a list of paths that the analysis should be limited to"),
+  llvm::cl::value_desc("restrict-analysis-to-paths")
+);
+
 int main(int argc, const char **argv) {
   CommonOptionsParser optionsParser(argc, argv, MyToolCategory);
 
-  auto program = ProgramSymbolizer::symbolize(optionsParser.getCompilations(), optionsParser.getSourcePathList());
+  auto program = ProgramSymbolizer::symbolize(
+    optionsParser.getCompilations(),
+    optionsParser.getSourcePathList(),
+    restrictAnalysisToPaths
+  );
   auto json = program->toJson();
   std::cout << std::setw(2) << json;
 
