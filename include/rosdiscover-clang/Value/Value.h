@@ -106,9 +106,9 @@ public:
   }
 
   void print(llvm::raw_ostream &os) const override {
-    os << "NodeHandle[";
+    os << "(node-handle ";
     name.get()->print(os);
-    os << "]";
+    os << ")";
   }
 
   nlohmann::json toJson() const override {

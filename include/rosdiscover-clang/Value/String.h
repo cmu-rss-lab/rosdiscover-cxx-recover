@@ -41,9 +41,9 @@ public:
   ~Concatenate(){}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "concatenate(";
+    os << "(concatenate ";
     lhs->print(os);
-    os << ", ";
+    os << " ";
     rhs->print(os);
     os << ")";
   }
