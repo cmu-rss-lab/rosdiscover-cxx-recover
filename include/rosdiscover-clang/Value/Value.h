@@ -114,7 +114,7 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "node-handle"},
-      {"name", name->toJson()}
+      {"namespace", name->toJson()}
     };
   }
 
