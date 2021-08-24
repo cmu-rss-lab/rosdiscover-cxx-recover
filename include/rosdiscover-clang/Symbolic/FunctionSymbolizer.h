@@ -83,17 +83,54 @@ private:
     }
   }
 
-  std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(clang::ValueDecl const *decl) {
+  std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(
+    clang::ValueDecl const *decl,
+    clang::Expr *atExpr
+  ) {
     if (auto const *fieldDecl = clang::dyn_cast<clang::FieldDecl>(decl)) {
       return symbolizeNodeHandle(fieldDecl);
     } else if (auto const *parmVarDecl = clang::dyn_cast<clang::ParmVarDecl>(decl)) {
       return symbolizeNodeHandle(parmVarDecl);
+    } else if (auto const *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
+      return symbolizeNodeHandle(varDecl, atExpr);
     } else {
       llvm::errs() << "ERROR: failed to symbolize node handle: ";
       decl->dumpColor();
       llvm::errs() << "\n";
       abort();
     }
+  }
+
+  std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(
+    clang::VarDecl const *decl,
+    clang::Expr *atExpr
+  ) {
+    llvm::outs() << "symbolizing node handle in var decl: ";
+    decl->dumpColor();
+    llvm::outs() << "\n";
+
+    auto *def = FindDefVisitor::find(astContext, decl, atExpr);
+
+    if (auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(def)) {
+      auto *constructorDecl = constructExpr->getConstructor();
+      if (constructorDecl->isCopyConstructor()) {
+        def = constructExpr->getArg(0)->IgnoreParenCasts();
+      }
+
+      // FIXME handle other constructors!
+    }
+
+    if (auto *memberCallExpr = clang::dyn_cast<clang::CXXMemberCallExpr>(def)) {
+      auto *methodDecl = memberCallExpr->getMethodDecl();
+      auto methodName = methodDecl->getQualifiedNameAsString();
+      if (methodName == "nodelet::Nodelet::getNodeHandle") {
+        return valueBuilder.publicNodeHandle();
+      } else if (methodName == "nodelet::Nodelet::getPrivateNodeHandle") {
+        return valueBuilder.privateNodeHandle();
+      }
+    }
+
+    return SymbolicNodeHandle::unknown();
   }
 
   std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(clang::FieldDecl const *decl) {
@@ -173,7 +210,8 @@ private:
 
     // resolved the associated node handle
     // TODO: this can be cached for each node handle
-    auto nodeHandle = symbolizeNodeHandle(apiCall->getNodeHandleDecl());
+    clang::Expr *atExpr = const_cast<clang::Expr*>(static_cast<const clang::Expr*>(apiCall->getCallExpr()));
+    auto nodeHandle = symbolizeNodeHandle(apiCall->getNodeHandleDecl(), atExpr);
     llvm::outs() << "symbolic node handle: ";
     nodeHandle->print(llvm::outs());
     llvm::outs() << "\n";
