@@ -163,7 +163,8 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "writes-to-param"},
-      {"name", getName()->toJson()}
+      {"name", getName()->toJson()},
+      {"value", value->toJson()}
     };
   }
 
