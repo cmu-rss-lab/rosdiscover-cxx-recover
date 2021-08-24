@@ -29,8 +29,8 @@ public:
   }
 
   std::unique_ptr<Concatenate> concatenate(
-    std::unique_ptr<StringLiteral> lhs,
-    std::unique_ptr<StringLiteral> rhs
+    std::unique_ptr<SymbolicString> lhs,
+    std::unique_ptr<SymbolicString> rhs
   ) const {
     return std::make_unique<Concatenate>(std::move(lhs), std::move(rhs));
   }

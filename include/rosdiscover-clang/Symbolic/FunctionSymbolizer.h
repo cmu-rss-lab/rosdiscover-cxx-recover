@@ -180,25 +180,25 @@ private:
 
     switch (apiCall->getKind()) {
       case RosApiCallKind::AdvertiseServiceCall:
-        return symbolizeApiCall((AdvertiseServiceCall*) apiCall);
+        return symbolizeApiCall(std::move(nodeHandle), (AdvertiseServiceCall*) apiCall);
       case RosApiCallKind::AdvertiseTopicCall:
-        return symbolizeApiCall((AdvertiseTopicCall*) apiCall);
+        return symbolizeApiCall(std::move(nodeHandle), (AdvertiseTopicCall*) apiCall);
       case RosApiCallKind::DeleteParamCall:
-        return symbolizeApiCall((DeleteParamCall*) apiCall);
+        return symbolizeApiCall(std::move(nodeHandle), (DeleteParamCall*) apiCall);
       case RosApiCallKind::GetParamCachedCall:
-        return symbolizeApiCall((GetParamCachedCall*) apiCall);
+        return symbolizeApiCall(std::move(nodeHandle), (GetParamCachedCall*) apiCall);
       case RosApiCallKind::GetParamCall:
-        return symbolizeApiCall((GetParamCall*) apiCall);
+        return symbolizeApiCall(std::move(nodeHandle), (GetParamCall*) apiCall);
       case RosApiCallKind::GetParamWithDefaultCall:
-        return symbolizeApiCall((GetParamWithDefaultCall*) apiCall);
+        return symbolizeApiCall(std::move(nodeHandle), (GetParamWithDefaultCall*) apiCall);
       case RosApiCallKind::HasParamCall:
-        return symbolizeApiCall((HasParamCall*) apiCall);
+        return symbolizeApiCall(std::move(nodeHandle), (HasParamCall*) apiCall);
       case RosApiCallKind::ServiceClientCall:
-        return symbolizeApiCall((ServiceClientCall*) apiCall);
+        return symbolizeApiCall(std::move(nodeHandle), (ServiceClientCall*) apiCall);
       case RosApiCallKind::SetParamCall:
-        return symbolizeApiCall((SetParamCall*) apiCall);
+        return symbolizeApiCall(std::move(nodeHandle), (SetParamCall*) apiCall);
       case RosApiCallKind::SubscribeTopicCall:
-        return symbolizeApiCall((SubscribeTopicCall*) apiCall);
+        return symbolizeApiCall(std::move(nodeHandle), (SubscribeTopicCall*) apiCall);
       default:
         llvm::errs() << "unrecognized ROS API call with node handle: ";
         apiCall->print(llvm::outs());
@@ -243,13 +243,32 @@ private:
     return stringSymbolizer.symbolize(const_cast<clang::Expr*>(apiCall->getNameExpr()));
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::AdvertiseServiceCall *apiCall) {
-    return std::make_unique<ServiceProvider>(symbolizeApiCallName(apiCall));
+  std::unique_ptr<SymbolicString> symbolizeNodeHandleApiCallName(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::RosApiCall *apiCall
+  ) {
+    auto name = symbolizeApiCallName(apiCall);
+
+    // FIXME: since we use unique_ptr, we need to use a separate node handle
+    // for each concatenate command. the solution is probably to switch to using
+    // shared_ptrs in more places.
+    return valueBuilder.concatenate(std::move(nodeHandle), std::move(name));
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::AdvertiseTopicCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::AdvertiseServiceCall *apiCall
+  ) {
+    auto name = symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall);
+    return std::make_unique<ServiceProvider>(std::move(name));
+  }
+
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::AdvertiseTopicCall *apiCall
+  ) {
     return std::make_unique<Publisher>(
-      symbolizeApiCallName(apiCall),
+      symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
       apiCall->getFormatName()
     );
   }
@@ -298,35 +317,56 @@ private:
     return std::make_unique<WriteParam>(symbolizeApiCallName(apiCall), valueBuilder.unknown());
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::DeleteParamCall *apiCall) {
-    return std::make_unique<DeleteParam>(symbolizeApiCallName(apiCall));
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::DeleteParamCall *apiCall
+  ) {
+    return std::make_unique<DeleteParam>(
+      symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall)
+    );
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::GetParamCachedCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::GetParamCachedCall *apiCall
+  ) {
+    auto name = symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall);
     return createAssignment(
-      std::make_unique<ReadParam>(symbolizeApiCallName(apiCall)),
+      std::make_unique<ReadParam>(std::move(name)),
       apiCall
     );
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::GetParamCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::GetParamCall *apiCall
+  ) {
+    auto name = symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall);
     return createAssignment(
-      std::make_unique<ReadParam>(symbolizeApiCallName(apiCall)),
+      std::make_unique<ReadParam>(std::move(name)),
       apiCall
     );
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::GetParamWithDefaultCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::GetParamWithDefaultCall *apiCall
+  ) {
+    auto name = symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall);
     return createAssignment(
-      std::make_unique<ReadParamWithDefault>(symbolizeApiCallName(apiCall), valueBuilder.unknown()),
+      std::make_unique<ReadParamWithDefault>(std::move(name), valueBuilder.unknown()),
       apiCall
     );
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::HasParamCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::HasParamCall *apiCall
+  ) {
     // TODO we know that this is a bool!
+    auto name = symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall);
     return createAssignment(
-      std::make_unique<HasParam>(symbolizeApiCallName(apiCall)),
+      std::make_unique<HasParam>(std::move(name)),
       apiCall
     );
   }
@@ -335,20 +375,32 @@ private:
     return std::make_unique<RosInit>(symbolizeApiCallName(apiCall));
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::ServiceClientCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::ServiceClientCall *apiCall
+  ) {
     return std::make_unique<ServiceCaller>(
-      symbolizeApiCallName(apiCall),
+      symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
       apiCall->getFormatName()
     );
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::SetParamCall *apiCall) {
-    return std::make_unique<WriteParam>(symbolizeApiCallName(apiCall), valueBuilder.unknown());
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::SetParamCall *apiCall
+  ) {
+    return std::make_unique<WriteParam>(
+      symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
+      valueBuilder.unknown()
+    );
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::SubscribeTopicCall *apiCall) {
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::SubscribeTopicCall *apiCall
+  ) {
     return std::make_unique<Subscriber>(
-      symbolizeApiCallName(apiCall),
+      symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
       apiCall->getFormatName()
     );
   }

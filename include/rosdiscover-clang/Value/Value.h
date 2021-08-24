@@ -84,12 +84,17 @@ public:
   }
 };
 
-class SymbolicNodeHandle : public virtual SymbolicValue {
+class SymbolicNodeHandle :
+  public virtual SymbolicString,
+  public virtual SymbolicValue
+{
 public:
   SymbolicNodeHandle(std::unique_ptr<SymbolicString> name)
     : name(std::move(name))
   {}
-
+  SymbolicNodeHandle(SymbolicNodeHandle &&other)
+    : name(std::move(other.name))
+  {}
   ~SymbolicNodeHandle(){}
 
   static std::unique_ptr<SymbolicNodeHandle> unknown() {
