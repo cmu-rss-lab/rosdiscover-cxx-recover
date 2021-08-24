@@ -35,6 +35,14 @@ public:
     return std::make_unique<Concatenate>(std::move(lhs), std::move(rhs));
   }
 
+  std::unique_ptr<SymbolicNodeHandle> publicNodeHandle() const {
+    return nodeHandle(stringLiteral(""));
+  }
+
+  std::unique_ptr<SymbolicNodeHandle> privateNodeHandle() const {
+    return nodeHandle(stringLiteral("~"));
+  }
+
   std::unique_ptr<SymbolicNodeHandle> nodeHandle(std::string const &name) const {
     return nodeHandle(stringLiteral(name));
   }
