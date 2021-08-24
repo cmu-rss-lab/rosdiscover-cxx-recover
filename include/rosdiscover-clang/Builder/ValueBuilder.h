@@ -28,6 +28,13 @@ public:
     return std::make_unique<VariableReference>(var);
   }
 
+  std::unique_ptr<Concatenate> concatenate(
+    std::unique_ptr<StringLiteral> lhs,
+    std::unique_ptr<StringLiteral> rhs
+  ) const {
+    return std::make_unique<Concatenate>(std::move(lhs), std::move(rhs));
+  }
+
   std::unique_ptr<SymbolicNodeHandle> nodeHandle(std::string const &name) const {
     return nodeHandle(stringLiteral(name));
   }
