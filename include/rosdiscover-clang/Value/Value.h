@@ -33,6 +33,8 @@ public:
       return SymbolicValueType::Bool;
     } else if (typeName == "int") {
       return SymbolicValueType::Integer;
+    } else if (typeName == "ros::NodeHandle") {
+      return SymbolicValueType::NodeHandle;
     } else {
       return SymbolicValueType::Unsupported;
     }
