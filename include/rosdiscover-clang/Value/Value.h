@@ -62,10 +62,16 @@ class SymbolicBool : public virtual SymbolicValue {};
 
 class SymbolicInteger : public virtual SymbolicValue {};
 
+class SymbolicNodeHandle :
+  public virtual SymbolicString,
+  public virtual SymbolicValue
+{};
+
 class SymbolicUnknown :
   public virtual SymbolicString,
   public virtual SymbolicBool,
-  public virtual SymbolicInteger
+  public virtual SymbolicInteger,
+  public virtual SymbolicNodeHandle
 {
 public:
   SymbolicUnknown(){}
@@ -86,11 +92,11 @@ public:
   }
 };
 
-// FIXME this can also be a SymbolicNodeHandle!
 class SymbolicArg:
   public virtual SymbolicString,
   public virtual SymbolicBool,
-  public virtual SymbolicInteger
+  public virtual SymbolicInteger,
+  public virtual SymbolicNodeHandle
 {
 public:
   SymbolicArg(std::string const &name) : name(name) {}
@@ -111,21 +117,20 @@ private:
   std::string const name;
 };
 
-class SymbolicNodeHandle :
-  public virtual SymbolicString,
-  public virtual SymbolicValue
+class SymbolicNodeHandleImpl :
+  public virtual SymbolicNodeHandle
 {
 public:
-  SymbolicNodeHandle(std::unique_ptr<SymbolicString> name)
+  SymbolicNodeHandleImpl(std::unique_ptr<SymbolicString> name)
     : name(std::move(name))
   {}
-  SymbolicNodeHandle(SymbolicNodeHandle &&other)
+  SymbolicNodeHandleImpl(SymbolicNodeHandleImpl &&other)
     : name(std::move(other.name))
   {}
-  ~SymbolicNodeHandle(){}
+  ~SymbolicNodeHandleImpl(){}
 
   static std::unique_ptr<SymbolicNodeHandle> unknown() {
-    return std::make_unique<SymbolicNodeHandle>(std::make_unique<SymbolicUnknown>());
+    return std::make_unique<SymbolicNodeHandleImpl>(std::make_unique<SymbolicUnknown>());
   }
 
   bool isUnknown() const override {

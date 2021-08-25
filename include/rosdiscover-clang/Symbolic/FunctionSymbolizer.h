@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unordered_set>
 #include <vector>
 
 #include <clang/AST/ASTContext.h>
@@ -31,10 +32,22 @@ public:
       std::vector<api_call::RosApiCall *> &apiCalls,
       std::vector<clang::Expr *> &functionCalls
   ) {
+    /*
     std::unordered_map<const clang::ParmVarDecl *, std::string> declToArgName;
+    llvm::outs() << "DEBUG: building parameter map\n";
     for (auto it = symFunction.params_begin(); it != symFunction.params_end(); it++) {
-      const clang::ParmVarDecl *parmVarDecl = function->getParamDecl(it->second.getIndex());
+      const clang::ParmVarDecl *parmVarDecl = clang::dyn_cast<clang::ParmVarDecl>(
+        function->getParamDecl(it->second.getIndex())->getCanonicalDecl()
+      );
+      llvm::outs() << "DEBUG: Added ParmVarDecl mapping [" << it->second.getName() << "]: ";
+      parmVarDecl->dumpColor();
+      llvm::outs() << "\n";
       declToArgName.emplace(parmVarDecl, it->second.getName());
+    }
+    */
+    std::unordered_set<std::string> symbolicArgNames;
+    for (auto it = symFunction.params_begin(); it != symFunction.params_end(); it++) {
+      symbolicArgNames.emplace(it->second.getName());
     }
 
     FunctionSymbolizer(
@@ -44,7 +57,8 @@ public:
         function,
         apiCalls,
         functionCalls,
-        declToArgName
+        symbolicArgNames
+        // declToArgName
     ).run();
   }
 
@@ -56,7 +70,8 @@ private:
       clang::FunctionDecl const *function,
       std::vector<api_call::RosApiCall *> &apiCalls,
       std::vector<clang::Expr *> &functionCalls,
-      std::unordered_map<const clang::ParmVarDecl *, std::string> &declToArgName
+      std::unordered_set<std::string> &symbolicArgNames
+//      std::unordered_map<const clang::ParmVarDecl *, std::string> &declToArgName
   ) : astContext(astContext),
       symContext(symContext),
       symFunction(symFunction),
@@ -66,7 +81,8 @@ private:
       apiCallToVar(),
       stringSymbolizer(astContext, apiCallToVar),
       valueBuilder(),
-      declToArgName(declToArgName)
+      symbolicArgNames(symbolicArgNames)
+//      declToArgName(declToArgName)
   {}
 
   clang::ASTContext &astContext;
@@ -78,7 +94,8 @@ private:
   std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar;
   StringSymbolizer stringSymbolizer;
   ValueBuilder valueBuilder;
-  std::unordered_map<const clang::ParmVarDecl *, std::string> declToArgName;
+  std::unordered_set<std::string> symbolicArgNames;
+//  std::unordered_map<const clang::ParmVarDecl *, std::string> declToArgName;
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::RosApiCall *apiCall) {
     using namespace rosdiscover::api_call;
@@ -154,7 +171,7 @@ private:
     llvm::outs() << "WARNING: unable to symbolize node handle expression: ";
     expr->dumpColor();
     llvm::outs() << "\n";
-    return SymbolicNodeHandle::unknown();
+    return valueBuilder.unknownNodeHandle();
   }
 
   std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(
@@ -233,16 +250,22 @@ private:
 
     // FIXME verbose?
     if (symbolic == nullptr) {
-      return SymbolicNodeHandle::unknown();
+      return valueBuilder.unknownNodeHandle();
     } else {
       return symbolic;
     }
   }
 
   std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(clang::ParmVarDecl const *decl) {
-    // FIXME for now, until function call parameters are supported, we consider node handle
-    // parameters to be unknown
-    return SymbolicNodeHandle::unknown();
+    auto argName = decl->getNameAsString();
+    llvm::outs() << "DEBUG: symbolizing node handle ParmVarDecl [name: " << argName << "]: ";
+    decl->dumpColor();
+    llvm::outs() << "\n";
+
+    if (symbolicArgNames.find(argName) != symbolicArgNames.end()) {
+      return valueBuilder.arg(argName);
+    }
+    return valueBuilder.unknownNodeHandle();
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeNodeHandleApiCall(api_call::NodeHandleRosApiCall *apiCall) {

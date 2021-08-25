@@ -24,6 +24,10 @@ public:
     return std::make_unique<SymbolicUnknown>();
   }
 
+  std::unique_ptr<SymbolicNodeHandle> unknownNodeHandle() const {
+    return std::make_unique<SymbolicNodeHandleImpl>(unknown());
+  }
+
   std::unique_ptr<SymbolicArg> arg(std::string const &name) const {
     return std::make_unique<SymbolicArg>(name);
   }
@@ -56,7 +60,7 @@ public:
   }
 
   std::unique_ptr<SymbolicNodeHandle> nodeHandle(std::unique_ptr<SymbolicString> name) const {
-    return std::make_unique<SymbolicNodeHandle>(std::move(name));
+    return std::make_unique<SymbolicNodeHandleImpl>(std::move(name));
   }
 };
 
