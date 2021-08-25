@@ -70,6 +70,14 @@ public:
     return symbolic;
   }
 
+  std::unordered_map<size_t, Parameter>::iterator params_begin() {
+    return parameters.begin();
+  }
+
+  std::unordered_map<size_t, Parameter>::iterator params_end() {
+    return parameters.end();
+  }
+
 private:
   std::string qualifiedName;
   std::string location;

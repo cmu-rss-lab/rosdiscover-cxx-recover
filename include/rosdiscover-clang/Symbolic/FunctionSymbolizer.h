@@ -102,25 +102,31 @@ private:
   }
 
   std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(
-    clang::VarDecl const *decl,
-    clang::Expr *atExpr
+    clang::Expr *expr
   ) {
-    llvm::outs() << "symbolizing node handle in var decl: ";
-    decl->dumpColor();
+    llvm::outs() << "symbolizing node handle expr: ";
+    expr->dumpColor();
     llvm::outs() << "\n";
 
-    auto *def = FindDefVisitor::find(astContext, decl, atExpr);
-
-    if (auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(def)) {
-      auto *constructorDecl = constructExpr->getConstructor();
-      if (constructorDecl->isCopyConstructor()) {
-        def = constructExpr->getArg(0)->IgnoreParenCasts();
-      }
-
-      // FIXME handle other constructors!
+    if (auto *bindTempExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(expr)) {
+      return symbolizeNodeHandle(bindTempExpr->getSubExpr());
+    }
+    if (auto *cleanupsExpr = clang::dyn_cast<clang::ExprWithCleanups>(expr)) {
+      return symbolizeNodeHandle(cleanupsExpr->getSubExpr());
     }
 
-    if (auto *memberCallExpr = clang::dyn_cast<clang::CXXMemberCallExpr>(def)) {
+    if (auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(expr)) {
+      auto *constructorDecl = constructExpr->getConstructor();
+      if (constructorDecl->isCopyOrMoveConstructor()) {
+        return symbolizeNodeHandle(constructExpr->getArg(0)->IgnoreParenCasts());
+      } else {
+        auto *nameExpr = constructExpr->getArg(0)->IgnoreParenCasts();
+        auto name = stringSymbolizer.symbolize(nameExpr);
+        return valueBuilder.nodeHandle(std::move(name));
+      }
+    }
+
+    if (auto *memberCallExpr = clang::dyn_cast<clang::CXXMemberCallExpr>(expr)) {
       auto *methodDecl = memberCallExpr->getMethodDecl();
       auto methodName = methodDecl->getQualifiedNameAsString();
       if (methodName == "nodelet::Nodelet::getNodeHandle") {
@@ -130,7 +136,26 @@ private:
       }
     }
 
+    if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(expr)) {
+      llvm::outs() << "DEBUG: attempting to symbolize node handle DeclRefExpr\n";
+      return symbolizeNodeHandle(declRefExpr->getDecl(), declRefExpr);
+    }
+
+    llvm::outs() << "WARNING: unable to symbolize node handle expression: ";
+    expr->dumpColor();
+    llvm::outs() << "\n";
     return SymbolicNodeHandle::unknown();
+  }
+
+  std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(
+    clang::VarDecl const *decl,
+    clang::Expr *atExpr
+  ) {
+    llvm::outs() << "symbolizing node handle in var decl: ";
+    decl->dumpColor();
+    llvm::outs() << "\n";
+    auto *def = FindDefVisitor::find(astContext, decl, atExpr);
+    return symbolizeNodeHandle(def);
   }
 
   std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(clang::FieldDecl const *decl) {
@@ -170,6 +195,9 @@ private:
 
           // FIXME if this doesn't call the NodeHandle constructor, skip to unknown
           auto *nameExpr = initDecl->getInit()->IgnoreParenCasts();
+
+          /**
+          // FIXME MOVE THIS!
           if (auto *fieldConstructExpr = clang::dyn_cast<clang::CXXConstructExpr>(nameExpr)) {
             auto fieldConstructorName = fieldConstructExpr->getConstructor()->getQualifiedNameAsString();
             if (fieldConstructorName == "ros::NodeHandle::NodeHandle") {
@@ -179,6 +207,8 @@ private:
 
           auto name = stringSymbolizer.symbolize(nameExpr);
           auto newSymbolic = valueBuilder.nodeHandle(std::move(name));
+          */
+          auto newSymbolic = symbolizeNodeHandle(nameExpr);
 
           // FIXME check for ambiguous definition!
           // if (symbolic.get() != nullptr && !symbolic.equals(newSymbolic)) {
@@ -200,7 +230,7 @@ private:
   }
 
   std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(clang::ParmVarDecl const *decl) {
-    // FIXME for now, until function call parameters are supported, we consider node handler
+    // FIXME for now, until function call parameters are supported, we consider node handle
     // parameters to be unknown
     return SymbolicNodeHandle::unknown();
   }
@@ -492,7 +522,63 @@ private:
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {
+    // FIXME handle parameters
     auto *function = symContext.getDefinition(getCallee(callExpr));
+
+    // TODO maintain mapping from argument name to symbolic value
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
+
+    for (
+      auto it = function->params_begin();
+      it != function->params_end();
+      it++
+    ) {
+      auto &param = it->second;
+
+      // fetch the expression for the associated parameter
+      clang::Expr *paramExpr;
+      if (auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(callExpr)) {
+        paramExpr = constructExpr->getArg(param.getIndex());
+      } else if (auto *functionCallExpr = clang::dyn_cast<clang::CallExpr>(callExpr)) {
+        paramExpr = functionCallExpr->getArg(param.getIndex());
+      } else {
+        llvm::errs() << "ERROR: unrecognized function call type: ";
+        callExpr->dumpColor();
+        llvm::errs() << "\n";
+        abort();
+      }
+
+      // symbolize the parameter expression
+      std::unique_ptr<SymbolicValue> symbolicParam = valueBuilder.unknown();
+      switch (param.getType()) {
+        case SymbolicValueType::String:
+          llvm::outs() << "DEBUG: attempting to symbolize string param\n";
+          symbolicParam = stringSymbolizer.symbolize(paramExpr);
+          break;
+        // where was the node handle defined?
+        case SymbolicValueType::NodeHandle:
+          llvm::outs() << "DEBUG: attempting to symbolize node handle param\n";
+          symbolicParam = symbolizeNodeHandle(paramExpr->IgnoreParenCasts());
+          break;
+        case SymbolicValueType::Bool:
+          llvm::errs() << "WARNING: boolean symbolization is currently unsupported\n";
+          continue;
+        case SymbolicValueType::Integer:
+          llvm::errs() << "WARNING: integer symbolization is currently unsupported\n";
+          continue;
+        case SymbolicValueType::Unsupported:
+          llvm::errs() << "ERROR: attempted to symbolize an unsupported type\n";
+          abort();
+      }
+
+      llvm::outs() << "DEBUG: symbolic parameter [" << param.getName() << "]: ";
+      symbolicParam->print(llvm::outs());
+      llvm::outs() << "\n";
+
+      // store the symbolic parameter
+      args.emplace(param.getName(), std::move(symbolicParam));
+    }
+
     return std::make_unique<SymbolicFunctionCall>(function);
   }
 
