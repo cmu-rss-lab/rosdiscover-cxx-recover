@@ -24,6 +24,14 @@ public:
     return std::make_unique<SymbolicUnknown>();
   }
 
+  std::unique_ptr<SymbolicArg> arg(std::string const &name) const {
+    return std::make_unique<SymbolicArg>(name);
+  }
+
+  std::unique_ptr<SymbolicArg> arg(Parameter const *param) const {
+    return arg(param->getName());
+  }
+
   std::unique_ptr<VariableReference> varRef(SymbolicVariable const *var) {
     return std::make_unique<VariableReference>(var);
   }
