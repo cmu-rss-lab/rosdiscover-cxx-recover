@@ -1,5 +1,9 @@
 #pragma once
 
+#include <memory>
+#include <string>
+#include <unordered_map>
+
 #include <nlohmann/json.hpp>
 
 #include <fmt/core.h>
@@ -113,25 +117,46 @@ private:
   }
 };
 
-// TODO record symbolic function call arguments
 class SymbolicFunctionCall : public virtual SymbolicStmt {
 public:
-  SymbolicFunctionCall(SymbolicFunction *callee) : callee(callee) {}
+  SymbolicFunctionCall(
+    SymbolicFunction *callee,
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args
+  ) : callee(callee), args(std::move(args)) {}
   ~SymbolicFunctionCall(){}
 
+  static std::unique_ptr<SymbolicFunctionCall> create(
+    SymbolicFunction *function,
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args
+  ) {
+    return std::make_unique<SymbolicFunctionCall>(function, args);
+  }
+
   void print(llvm::raw_ostream &os) const override {
-    os << "(call " << callee->getName() << ")";
+    os << "(call " << callee->getName();
+    for (auto const &entry : args) {
+      os << " [" << entry.first << ": ";
+      entry.second->print(os);
+      os << "]";
+    }
+    os << ")";
   }
 
   nlohmann::json toJson() const override {
+    nlohmann::json argsJson;
+    for (auto const &entry : args) {
+      argsJson[entry.first] = entry.second->toJson();
+    }
     return {
       {"kind", "call"},
-      {"callee", callee->getName()}
+      {"callee", callee->getName()},
+      {"args", argsJson}
     };
   }
 
 private:
   SymbolicFunction *callee;
+  std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
 };
 
 } // rosdiscover::symbolic

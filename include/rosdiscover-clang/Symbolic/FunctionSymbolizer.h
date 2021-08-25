@@ -522,12 +522,9 @@ private:
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {
-    // FIXME handle parameters
     auto *function = symContext.getDefinition(getCallee(callExpr));
 
-    // TODO maintain mapping from argument name to symbolic value
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
-
     for (
       auto it = function->params_begin();
       it != function->params_end();
@@ -579,7 +576,7 @@ private:
       args.emplace(param.getName(), std::move(symbolicParam));
     }
 
-    return std::make_unique<SymbolicFunctionCall>(function);
+    return SymbolicFunctionCall::create(function, args);
   }
 
   std::vector<std::unique_ptr<RawStatement>> computeStatementOrder() {
