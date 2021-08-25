@@ -31,13 +31,20 @@ public:
       std::vector<api_call::RosApiCall *> &apiCalls,
       std::vector<clang::Expr *> &functionCalls
   ) {
+    std::unordered_map<const clang::ParmVarDecl *, std::string> declToArgName;
+    for (auto it = symFunction.params_begin(); it != symFunction.params_end(); it++) {
+      const clang::ParmVarDecl *parmVarDecl = function->getParamDecl(it->second.getIndex());
+      declToArgName.emplace(parmVarDecl, it->second.getName());
+    }
+
     FunctionSymbolizer(
         astContext,
         symContext,
         symFunction,
         function,
         apiCalls,
-        functionCalls
+        functionCalls,
+        declToArgName
     ).run();
   }
 
@@ -48,7 +55,8 @@ private:
       SymbolicFunction &symFunction,
       clang::FunctionDecl const *function,
       std::vector<api_call::RosApiCall *> &apiCalls,
-      std::vector<clang::Expr *> &functionCalls
+      std::vector<clang::Expr *> &functionCalls,
+      std::unordered_map<const clang::ParmVarDecl *, std::string> &declToArgName
   ) : astContext(astContext),
       symContext(symContext),
       symFunction(symFunction),
@@ -57,7 +65,8 @@ private:
       functionCalls(functionCalls),
       apiCallToVar(),
       stringSymbolizer(astContext, apiCallToVar),
-      valueBuilder()
+      valueBuilder(),
+      declToArgName(declToArgName)
   {}
 
   clang::ASTContext &astContext;
@@ -69,6 +78,7 @@ private:
   std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar;
   StringSymbolizer stringSymbolizer;
   ValueBuilder valueBuilder;
+  std::unordered_map<const clang::ParmVarDecl *, std::string> declToArgName;
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::RosApiCall *apiCall) {
     using namespace rosdiscover::api_call;
