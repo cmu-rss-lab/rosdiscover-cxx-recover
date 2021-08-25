@@ -86,6 +86,31 @@ public:
   }
 };
 
+// FIXME this can also be a SymbolicNodeHandle!
+class SymbolicArg:
+  public virtual SymbolicString,
+  public virtual SymbolicBool,
+  public virtual SymbolicInteger
+{
+public:
+  SymbolicArg(std::string const &name) : name(name) {}
+  ~SymbolicArg(){}
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(arg " << name << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "arg"},
+      {"name", name}
+    };
+  }
+
+private:
+  std::string const name;
+};
+
 class SymbolicNodeHandle :
   public virtual SymbolicString,
   public virtual SymbolicValue
