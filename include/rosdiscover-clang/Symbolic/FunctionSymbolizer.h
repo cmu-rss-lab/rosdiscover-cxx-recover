@@ -141,18 +141,9 @@ private:
     if (auto *cleanupsExpr = clang::dyn_cast<clang::ExprWithCleanups>(expr)) {
       return symbolizeNodeHandle(cleanupsExpr->getSubExpr());
     }
-
     if (auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(expr)) {
-      auto *constructorDecl = constructExpr->getConstructor();
-      if (constructorDecl->isCopyOrMoveConstructor()) {
-        return symbolizeNodeHandle(constructExpr->getArg(0)->IgnoreParenCasts());
-      } else {
-        auto *nameExpr = constructExpr->getArg(0)->IgnoreParenCasts();
-        auto name = stringSymbolizer.symbolize(nameExpr);
-        return valueBuilder.nodeHandle(std::move(name));
-      }
+      return symbolizeNodeHandle(constructExpr);
     }
-
     if (auto *memberCallExpr = clang::dyn_cast<clang::CXXMemberCallExpr>(expr)) {
       auto *methodDecl = memberCallExpr->getMethodDecl();
       auto methodName = methodDecl->getQualifiedNameAsString();
@@ -171,6 +162,36 @@ private:
     llvm::outs() << "WARNING: unable to symbolize node handle expression: ";
     expr->dumpColor();
     llvm::outs() << "\n";
+    return valueBuilder.unknownNodeHandle();
+  }
+
+  std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(
+    clang::CXXConstructExpr *expr
+  ) {
+    auto *constructorDecl = expr->getConstructor();
+
+    // ros::NodeHandle::NodeHandle(const NodeHandle &rhs)
+    if (constructorDecl->isCopyOrMoveConstructor()) {
+      return symbolizeNodeHandle(expr->getArg(0)->IgnoreParenCasts());
+    }
+
+    // ros::NodeHandle::NodeHandle(const std::string &ns = std::string(), const M_string &remappings = M_string())
+    if (constructorDecl->getParamDecl(0)->getOriginalType().getAsString() == "const std::string &") {
+      auto *nameExpr = expr->getArg(0)->IgnoreParenCasts();
+
+      // default constructor
+      if (clang::isa<clang::CXXDefaultArgExpr>(nameExpr)) {
+        return valueBuilder.publicNodeHandle();
+      }
+
+      auto name = stringSymbolizer.symbolize(nameExpr);
+      return valueBuilder.nodeHandle(std::move(name));
+    }
+
+    // ros::NodeHandle::NodeHandle(const NodeHandle &parent, const std::string &ns)
+    // ros::NodeHandle::NodeHandle(const NodeHandle &parent, const std::string &ns, const M_string &remappings)
+    llvm::outs()
+      << "WARNING: parent node handle constructors are not currently supported\n";
     return valueBuilder.unknownNodeHandle();
   }
 
@@ -222,19 +243,6 @@ private:
 
           // FIXME if this doesn't call the NodeHandle constructor, skip to unknown
           auto *nameExpr = initDecl->getInit()->IgnoreParenCasts();
-
-          /**
-          // FIXME MOVE THIS!
-          if (auto *fieldConstructExpr = clang::dyn_cast<clang::CXXConstructExpr>(nameExpr)) {
-            auto fieldConstructorName = fieldConstructExpr->getConstructor()->getQualifiedNameAsString();
-            if (fieldConstructorName == "ros::NodeHandle::NodeHandle") {
-              nameExpr = fieldConstructExpr->getArg(0)->IgnoreParenCasts();
-            }
-          }
-
-          auto name = stringSymbolizer.symbolize(nameExpr);
-          auto newSymbolic = valueBuilder.nodeHandle(std::move(name));
-          */
           auto newSymbolic = symbolizeNodeHandle(nameExpr);
 
           // FIXME check for ambiguous definition!
