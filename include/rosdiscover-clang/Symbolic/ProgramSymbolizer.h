@@ -76,6 +76,10 @@ private:
       ) {
         clang::Decl *fromDecl = *top_level_iterator;
         llvm::Expected<clang::Decl*> importedOrError = importer.Import(fromDecl);
+        if (!importedOrError) {
+          llvm::errs() << "FATAL ERROR: failed to merge ASTs\n";
+          abort();
+        }
       }
     }
 
