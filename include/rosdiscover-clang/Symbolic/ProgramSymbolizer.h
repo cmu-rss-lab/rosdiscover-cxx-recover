@@ -46,6 +46,7 @@ private:
 
   void buildAST() {
     // build the AST for each translation unit
+    llvm::outs() << "building ASTs..\n";
     std::vector<std::unique_ptr<clang::ASTUnit>> asts;
     tool.buildASTs(asts);
     size_t numAsts = asts.size();
