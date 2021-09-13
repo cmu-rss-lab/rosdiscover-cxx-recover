@@ -177,12 +177,20 @@ private:
 
     // ros::NodeHandle::NodeHandle(const std::string &ns = std::string(), const M_string &remappings = M_string())
     if (constructorDecl->getParamDecl(0)->getOriginalType().getAsString() == "const std::string &") {
+      llvm::outs()
+        << "DEBUG: symbolizing node handle constructor "
+        << "[ros::NodeHandle::NodeHandle(const std::string &ns = std::string(), const M_string &remappings = M_string())]";
       auto *nameExpr = expr->getArg(0)->IgnoreParenCasts();
 
       // default constructor
       if (clang::isa<clang::CXXDefaultArgExpr>(nameExpr)) {
+        llvm::outs() << "DEBUG: symbolizing default constructor argument\n";
         return valueBuilder.publicNodeHandle();
       }
+
+      llvm::outs() << "DEBUG: symbolizing non-default argument: ";
+      nameExpr->dumpColor();
+      llvm::outs() << "\n";
 
       auto name = stringSymbolizer.symbolize(nameExpr);
       return valueBuilder.nodeHandle(std::move(name));
