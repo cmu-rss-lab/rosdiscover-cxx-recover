@@ -1,6 +1,6 @@
 IMAGE_NAME="rosdiscover/cxx-extract"
 
-all: nollvm
+all: install
 
 builder:
 	docker build -f Dockerfile.builder -t ${IMAGE_NAME}:builder .
