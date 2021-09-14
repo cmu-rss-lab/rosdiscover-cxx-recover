@@ -68,10 +68,11 @@ private:
     //
     auto constructorName = expr->getConstructor()->getParent()->getQualifiedNameAsString();
     llvm::outs() << "calling constructor: " << constructorName << "\n";
-    if (constructorName == "std::__cxx11::basic_string") {
+    if (constructorName == "std::__cxx11::basic_string" || constructorName == "std::basic_string") {
       return symbolize(expr->getArg(0));
     }
 
+    llvm::outs() << "call to unknown constructor: " << constructorName << "\n";
     return valueBuilder.unknown();
   }
 
