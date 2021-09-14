@@ -69,6 +69,13 @@ private:
     auto constructorName = expr->getConstructor()->getParent()->getQualifiedNameAsString();
     llvm::outs() << "calling constructor: " << constructorName << "\n";
     if (constructorName == "std::__cxx11::basic_string" || constructorName == "std::basic_string") {
+      if (expr->getNumArgs() == 0) {
+        llvm::outs() << "DEBUG: unimplemented [resolve indirect string variable definition]: ";
+        expr->dumpColor();
+        llvm::outs() << "\n";
+        return valueBuilder.unknown();
+      }
+
       return symbolize(expr->getArg(0));
     }
 
