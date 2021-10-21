@@ -15,10 +15,6 @@ class StmtBuilder {
 public:
   StmtBuilder(SymbolicFunction &function) : function(function) {}
 
-  std::unique_ptr<ServiceProvider> serviceProvider(std::unique_ptr<SymbolicString> name) {
-    return std::make_unique<ServiceProvider>(name);
-  }
-
   std::unique_ptr<Publisher> publisher(std::unique_ptr<SymbolicString> name) {
     return std::make_unique<Publisher>(name);
   }

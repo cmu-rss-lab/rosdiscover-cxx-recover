@@ -53,15 +53,8 @@ private:
     return getCallExpr()->getDirectCallee()->getTemplateSpecializationArgs()->get(0);
   }
 
-  // TODO lift some of this code into a helper function
   clang::CXXRecordDecl const * getServiceTypeDecl() const {
-    auto qualType = getServiceTypeTemplateArg().getAsType().getNonReferenceType().getUnqualifiedType();
-    auto *recordType = clang::dyn_cast<clang::RecordType>(qualType.getTypePtr());
-    auto const *recordDecl = clang::dyn_cast<clang::CXXRecordDecl>(recordType->getDecl());
-    if (auto *specializationDecl = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>(recordDecl)) {
-      recordDecl = specializationDecl->getSpecializedTemplate()->getTemplatedDecl();
-    }
-    return recordDecl;
+    return getTypeDeclFromTemplateArgument(getServiceTypeTemplateArg());
   }
 };
 

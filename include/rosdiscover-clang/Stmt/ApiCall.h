@@ -111,7 +111,14 @@ private:
 
 class ServiceProvider : public SymbolicRosApiCall {
 public:
-  ServiceProvider(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
+  ServiceProvider(
+    std::unique_ptr<SymbolicString> name,
+    std::string const &requestFormat,
+    std::string const &responseFormat
+  ) : SymbolicRosApiCall(std::move(name)),
+      requestFormat(requestFormat),
+      responseFormat(responseFormat)
+  {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(provides-service ";
@@ -122,9 +129,15 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "provides-service"},
-      {"name", getName()->toJson()}
+      {"name", getName()->toJson()},
+      {"request-format", requestFormat},
+      {"response-format", responseFormat}
     };
   }
+
+private:
+  std::string const requestFormat;
+  std::string const responseFormat;
 };
 
 class ReadParam :

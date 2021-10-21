@@ -377,7 +377,14 @@ private:
     api_call::AdvertiseServiceCall *apiCall
   ) {
     auto name = symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall);
-    return std::make_unique<ServiceProvider>(std::move(name));
+    auto requestResponseFormatNames = apiCall->getRequestResponseFormatNames();
+    auto requestFormatName = std::get<0>(requestResponseFormatNames);
+    auto responseFormatName = std::get<1>(requestResponseFormatNames);
+    return std::make_unique<ServiceProvider>(
+      std::move(name),
+      requestFormatName,
+      responseFormatName
+    );
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(

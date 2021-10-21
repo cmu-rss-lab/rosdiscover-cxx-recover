@@ -72,6 +72,7 @@ public:
 
     virtual RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) = 0;
 
+
   private:
     std::vector<RosApiCall*> &found;
   };
@@ -80,6 +81,26 @@ public:
     static clang::LangOptions langOptions;
     static clang::PrintingPolicy printPolicy(langOptions);
     getCallExpr()->printPretty(os, nullptr, printPolicy);
+  }
+
+protected:
+  clang::CXXRecordDecl const * getTypeDeclFromTemplateArgument(clang::TemplateArgument const &templateArgument) const {
+    llvm::outs() << "DEBUG: fetching type decl for template argument: ";
+    templateArgument.dump();
+    llvm::outs() << "\n";
+
+    auto qualType = templateArgument.getAsType().getNonReferenceType().getUnqualifiedType();
+
+    llvm::outs() << "DEBUG: found unqualified type: ";
+    qualType.dump();
+    llvm::outs() << "\n";
+
+    auto *recordType = clang::dyn_cast<clang::RecordType>(qualType.getTypePtr());
+    auto const *recordDecl = clang::dyn_cast<clang::CXXRecordDecl>(recordType->getDecl());
+    if (auto *specializationDecl = clang::dyn_cast<clang::ClassTemplateSpecializationDecl>(recordDecl)) {
+      recordDecl = specializationDecl->getSpecializedTemplate()->getTemplatedDecl();
+    }
+    return recordDecl;
   }
 
 private:
