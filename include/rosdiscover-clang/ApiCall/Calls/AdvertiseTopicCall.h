@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../../Helper/FormatHelper.h"
 #include "../RosApiCall.h"
 
 namespace rosdiscover {
@@ -18,7 +19,7 @@ public:
   }
 
   std::string getFormatName() const {
-    return getFormatDecl()->getQualifiedNameAsString();
+    return typeNameToFormatName(getFormatDecl()->getQualifiedNameAsString());
   }
 
   class Finder : public RosApiCall::Finder {
