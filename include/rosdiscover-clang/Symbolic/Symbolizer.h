@@ -14,6 +14,7 @@
 
 #include "../ApiCall/Finder.h"
 #include "../ApiCall/RosApiCall.h"
+#include "../Helper/FindVirtualsVisitor.h"
 #include "../Helper/utils.h"
 #include "Context.h"
 #include "Function.h"
@@ -117,6 +118,14 @@ private:
     llvm::outs() << "determining function callers\n";
     auto functionToCallers = findCallers(callGraph);
     llvm::outs() << "determined function callers\n";
+
+    // TODO handle inherited API calls (e.g., node init)
+    // -> is there an abstract method in this call?
+    // -> or did we inherit one from a parent class?
+    // -> add an edge
+    auto virtualCalls = FindVirtualsVisitor::find(astContext);
+
+    // TODO add callbacks
 
     std::queue<clang::FunctionDecl const *> queue;
     for (auto const &entry : functionToApiCalls) {
