@@ -44,6 +44,9 @@ private:
       restrictAnalysisToPaths(restrictAnalysisToPaths),
       callGraph(),
       apiCalls(),
+      callbacks(),
+      functionToCallbacks(),
+      relevantCallbacks(),
       functionToApiCalls(),
       relevantFunctions(),
       relevantFunctionCalls(),
@@ -56,6 +59,7 @@ private:
   clang::CallGraph callGraph;
   std::vector<api_call::RosApiCall *> apiCalls;
   std::vector<Callback*> callbacks;
+  std::unordered_map<clang::FunctionDecl const *, std::vector<Callback*>> functionToCallbacks;
   std::unordered_map<clang::FunctionDecl const *, std::vector<Callback*>> relevantCallbacks;
   std::unordered_map<clang::FunctionDecl const *, std::vector<api_call::RosApiCall *>> functionToApiCalls;
   std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
@@ -136,7 +140,12 @@ private:
     llvm::outs() << "grouped ROS API calls by parent function\n";
 
     for (auto const &entry : functionToApiCalls) {
-      llvm::outs() << "ROS API calls found in function: " << entry.first->getQualifiedNameAsString() << "\n";
+      llvm::outs()
+        << "ROS API calls found in function: "
+        << entry.first->getQualifiedNameAsString()
+        << " ["
+        << &(*(entry.first))
+        << "]\n";
     }
   }
 
@@ -151,10 +160,7 @@ private:
     for (auto *callback : callbacks) {
       auto *parentFunction = callback->getParentFunction();
       auto *targetFunction = callback->getTargetFunction();
-
-      if (functionToCallers.find(parentFunction) == functionToCallers.end()) {
-        functionToCallers[parentFunction] = {};
-      }
+      // FIXME the target function MAY be different
       functionToCallers[parentFunction].insert(targetFunction);
     }
 
@@ -186,6 +192,9 @@ private:
       auto *parentFunction = callback->getParentFunction();
       auto *targetFunction = callback->getTargetFunction();
       if (relevantFunctions.find(targetFunction) != relevantFunctions.end()) {
+        llvm::outs() << "DEBUG: callback is relevant: ";
+        callback->print(llvm::outs());
+        llvm::outs() << "\n";
         if (relevantCallbacks.find(parentFunction) == relevantCallbacks.end()) {
           relevantCallbacks[parentFunction] = {};
         }
@@ -197,13 +206,6 @@ private:
           << "\n";
       }
     }
-
-    llvm::outs()
-      << "DEBUG: deemed "
-      << relevantCallbacks.size()
-      << " out of "
-      << callbacks.size()
-      << " callbacks to be relevant\n";
   }
 
   void findRelevantFunctionCalls() {

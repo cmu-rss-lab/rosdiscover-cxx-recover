@@ -77,9 +77,13 @@ public:
     os 
       << "], "
       << parent->getQualifiedNameAsString()
-      << " -> "
+      << " {"
+      << &(*parent)
+      << "} -> "
       << target->getQualifiedNameAsString()
-      << ")";
+      << &(*target)
+      << " {"
+      << "})";
   }
 
 private:
