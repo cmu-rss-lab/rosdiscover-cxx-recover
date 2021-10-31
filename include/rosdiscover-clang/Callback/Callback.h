@@ -11,17 +11,54 @@ namespace rosdiscover {
 
 class Callback {
 public:
-  static Callback create(
+  static Callback* fromArgExpr(
     clang::ASTContext &context,
-    api_call::RosApiCall *apiCall,
+    api_call::RosApiCall const *apiCall,
+    clang::Expr const *argExpr
+  ) {
+    llvm::outs() << "DEBUG: attempting to extract callback from expr: ";
+    argExpr->dump();
+    llvm::outs() << "\n";
+
+    auto *unaryOp = clang::dyn_cast<clang::UnaryOperator>(argExpr);
+    if (unaryOp == nullptr) {
+      return unableToResolve(argExpr);
+    }
+
+    auto *subExpr = unaryOp->getSubExpr();
+    if (subExpr == nullptr) {
+      return unableToResolve(argExpr);
+    }
+
+    auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(subExpr);
+    if (declRefExpr == nullptr) {
+      return unableToResolve(argExpr);
+    }
+
+    auto *valueDecl = declRefExpr->getDecl();
+    if (valueDecl == nullptr) {
+      return unableToResolve(argExpr);
+    }
+
+    auto *functionDecl = clang::dyn_cast<clang::FunctionDecl>(valueDecl);
+    if (functionDecl == nullptr) {
+      return unableToResolve(argExpr);
+    }
+
+    return create(context, apiCall, functionDecl);
+  }
+
+  static Callback* create(
+    clang::ASTContext &context,
+    api_call::RosApiCall const *apiCall,
     clang::FunctionDecl const *target
   ) {
     auto *callExpr = apiCall->getCallExpr();
     auto *parent = getParentFunctionDecl(context, callExpr);
-    return Callback(apiCall, target, parent);
+    return new Callback(apiCall, parent, target);
   }
 
-  api_call::RosApiCall* getApiCall() const {
+  api_call::RosApiCall const * getApiCall() const {
     return apiCall;
   }
 
@@ -33,14 +70,32 @@ public:
     return target;
   }
 
+  void print(llvm::raw_ostream &os) const {
+    os << "Callback(@[";
+    apiCall->print(os);
+    os 
+      << "], "
+      << parent->getQualifiedNameAsString()
+      << " -> "
+      << target->getQualifiedNameAsString()
+      << ")";
+  }
+
 private:
   Callback(
-    api_call::RosApiCall *apiCall,
+    api_call::RosApiCall const *apiCall,
     clang::FunctionDecl const *parent,
     clang::FunctionDecl const *target
   ) : apiCall(apiCall), parent(parent), target(target) {}
 
-  api_call::RosApiCall *apiCall;
+  static Callback* unableToResolve(clang::Expr const *argExpr) {
+    llvm::outs() << "WARNING: unable to resolve callback from expression: ";
+    argExpr->dump();
+    llvm::outs() << "\n";
+    return nullptr;
+  }
+
+  api_call::RosApiCall const *apiCall;
   clang::FunctionDecl const *parent;
   clang::FunctionDecl const *target;
 };

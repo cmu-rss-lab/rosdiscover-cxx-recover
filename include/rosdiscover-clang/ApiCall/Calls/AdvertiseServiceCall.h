@@ -3,6 +3,7 @@
 #include <tuple>
 
 #include "../../Helper/FormatHelper.h"
+#include "../../Callback/Callback.h"
 #include "../RosApiCall.h"
 
 namespace rosdiscover {
@@ -14,6 +15,20 @@ public:
 
   RosApiCallKind const getKind() const override {
     return RosApiCallKind::AdvertiseServiceCall;
+  }
+
+  Callback* getCallback(clang::ASTContext &context) const override {
+    auto *callExpr = getCallExpr();
+    auto numArgs = callExpr->getNumArgs();
+
+    // if the call only has one argument, then we don't know what the callback is for now
+    if (numArgs < 2) {
+      return nullptr;
+    }
+
+    // otherwise the callback should be given by the second argument
+    auto *callbackArg = callExpr->getArg(1);
+    return Callback::fromArgExpr(context, this, callbackArg);
   }
 
   clang::Expr const * getNameExpr() const override {

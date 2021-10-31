@@ -13,6 +13,9 @@
 #include "Calls/Kind.h"
 
 namespace rosdiscover {
+
+class Callback;
+
 namespace api_call {
 
 class RosApiCall {
@@ -21,6 +24,11 @@ public:
   virtual ~RosApiCall(){}
 
   clang::CallExpr const * getCallExpr() const { return call; }
+
+  /** Returns the callback, if any, that is associated with this call. */
+  virtual Callback* getCallback(clang::ASTContext &context) const {
+    return nullptr;
+  }
 
   /** Returns the expression that provides the name associated with this call. */
   virtual clang::Expr const * getNameExpr() const = 0;

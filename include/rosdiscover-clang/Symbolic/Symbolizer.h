@@ -55,6 +55,7 @@ private:
   std::vector<std::string> &restrictAnalysisToPaths;
   clang::CallGraph callGraph;
   std::vector<api_call::RosApiCall *> apiCalls;
+  std::vector<Callback*> callbacks;
   std::unordered_map<clang::FunctionDecl const *, std::vector<api_call::RosApiCall *>> functionToApiCalls;
   std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
   std::unordered_map<clang::FunctionDecl const *, std::vector<clang::Expr *>> relevantFunctionCalls;
@@ -65,6 +66,19 @@ private:
   /** Constructs the call graph */
   void buildCallGraph() {
     callGraph.addToCallGraph(astContext.getTranslationUnitDecl());
+  }
+
+  /** Finds all callbacks from ROS API calls that can be statically resolved */
+  void findCallbacks() {
+    for (auto *call : apiCalls) {
+      auto *callback = call->getCallback(astContext);
+      if (callback != nullptr) {
+        llvm::outs() << "DEBUG: registering callback: ";
+        callback->print(llvm::outs());
+        llvm::outs() << "\n";
+        callbacks.push_back(callback);
+      }
+    }
   }
 
   /** Finds all direct ROS API calls */
@@ -79,10 +93,10 @@ private:
       auto *callExpr = call->getCallExpr();
       llvm::outs() << "DEBUG: examining API call...\n";
       auto *functionDecl = getParentFunctionDecl(astContext, callExpr);
-      llvm::outs() << "DEBUG: parent function for API call: ";
-      functionDecl->dump();
-      llvm::outs() << "\n";
-      functionDecl = functionDecl->getCanonicalDecl();
+      // llvm::outs() << "DEBUG: parent function for API call: ";
+      // functionDecl->dump();
+      // llvm::outs() << "\n";
+      // functionDecl = functionDecl->getCanonicalDecl();
       llvm::outs() << "DEBUG: found canonical definition for parent function\n";
       if (functionDecl == nullptr) {
         llvm::errs() << "failed to determine parent function for ROS API call\n";
@@ -222,10 +236,7 @@ private:
   void run() {
     buildCallGraph();
     findRosApiCalls();
-
-    // TODO find callbacks by walking through the API calls
-    // findCallbacks();
-
+    findCallbacks();
     findRelevantFunctions();
     findRelevantFunctionCalls();
 
