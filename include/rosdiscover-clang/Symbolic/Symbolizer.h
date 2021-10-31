@@ -68,23 +68,35 @@ private:
 
   /** Finds all direct ROS API calls */
   void findRosApiCalls() {
+    llvm::outs() << "DEBUG: finding ROS API calls...\n";
     apiCalls = api_call::RosApiCallFinder::find(astContext);
+    llvm::outs() << "DEBUG: found ROS API calls\n";
 
     // group API calls by parent function
+    llvm::outs() << "DEBUG: grouping ROS API calls by parent function...\n";
     for (auto *call : apiCalls) {
-      auto *functionDecl = getParentFunctionDecl(astContext, call->getCallExpr());
+      auto *callExpr = call->getCallExpr();
+      llvm::outs() << "DEBUG: examining API call...\n";
+      auto *functionDecl = getParentFunctionDecl(astContext, callExpr);
+      llvm::outs() << "DEBUG: parent function for API call: ";
+      functionDecl->dump();
+      llvm::outs() << "\n";
       functionDecl = functionDecl->getCanonicalDecl();
+      llvm::outs() << "DEBUG: found canonical definition for parent function\n";
       if (functionDecl == nullptr) {
         llvm::errs() << "failed to determine parent function for ROS API call\n";
+        continue;
       }
 
       // check to see whether this API call takes place in a file
       // that we're allowed to analyze
       if (!restrictAnalysisToPaths.empty()) {
+        llvm::outs() << "DEBUG: finding name of file that API calls appears in...\n";
         auto filename = clang::FullSourceLoc(
-          functionDecl->getLocation(),
+          callExpr->getBeginLoc(),
           astContext.getSourceManager()
         ).getFileEntry()->getName().str();
+        llvm::outs() << "DEBUG: API call belongs to file: " << filename << "\n";
 
         bool ignoreFile = true;
         for (auto const &allowedPath : restrictAnalysisToPaths) {
@@ -105,6 +117,7 @@ private:
       }
       functionToApiCalls[functionDecl].push_back(call);
     }
+    llvm::outs() << "grouped ROS API calls by parent function\n";
 
     for (auto const &entry : functionToApiCalls) {
       llvm::outs() << "ROS API calls found in function: " << entry.first->getQualifiedNameAsString() << "\n";
