@@ -3,12 +3,14 @@
 #include <clang/AST/Stmt.h>
 
 #include "ApiCall/RosApiCall.h"
+#include "Callback/Callback.h"
 
 namespace rosdiscover {
 
 enum class RawStatementKind {
   RosApiCall,
-  FunctionCall
+  FunctionCall,
+  Callback
 };
 
 class RawStatement {
@@ -58,6 +60,27 @@ public:
 
 private:
   clang::Expr *expr;
+};
+
+class RawCallbackStatement : public RawStatement {
+public:
+  RawCallbackStatement(Callback *callback) : callback(callback) {}
+  ~RawCallbackStatement(){}
+
+  clang::Stmt* getUnderlyingStmt() override {
+    return const_cast<clang::CallExpr*>(callback->getApiCall()->getCallExpr());
+  }
+
+  RawStatementKind getKind() override {
+    return RawStatementKind::Callback;
+  }
+
+  clang::FunctionDecl const * getTargetFunction() const {
+    return callback->getTargetFunction();
+  }
+
+private:
+  Callback *callback;
 };
 
 } // rosdiscover

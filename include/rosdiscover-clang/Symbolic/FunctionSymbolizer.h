@@ -664,6 +664,11 @@ private:
     return ordered;
   }
 
+  std::unique_ptr<SymbolicStmt> symbolizeCallback(RawCallbackStatement *statement) {
+    auto *function = symContext.getDefinition(statement->getTargetFunction());
+    return SymbolicFunctionCall::create(function);
+  }
+
   std::unique_ptr<SymbolicStmt> symbolizeStatement(RawStatement *statement) {
     std::unique_ptr<SymbolicStmt> symbolic;
     switch (statement->getKind()) {
@@ -672,6 +677,9 @@ private:
         break;
       case RawStatementKind::FunctionCall:
         symbolic = symbolizeFunctionCall(((RawFunctionCallStatement*) statement)->getCall());
+        break;
+      case RawStatementKind::Callback:
+        symbolic = symbolizeCallback((RawCallbackStatement*) statement);
         break;
     }
     return AnnotatedSymbolicStmt::create(

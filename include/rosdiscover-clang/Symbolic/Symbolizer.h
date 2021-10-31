@@ -146,6 +146,17 @@ private:
     auto functionToCallers = findCallers(callGraph);
     llvm::outs() << "determined function callers\n";
 
+    // handle callbacks
+    for (auto *callback : callbacks) {
+      auto *parentFunction = callback->getParentFunction();
+      auto *targetFunction = callback->getTargetFunction();
+
+      if (functionToCallers.find(parentFunction) == functionToCallers.end()) {
+        functionToCallers[parentFunction] = {};
+      }
+      functionToCallers[parentFunction].insert(targetFunction);
+    }
+
     std::queue<clang::FunctionDecl const *> queue;
     for (auto const &entry : functionToApiCalls) {
       queue.push(entry.first);

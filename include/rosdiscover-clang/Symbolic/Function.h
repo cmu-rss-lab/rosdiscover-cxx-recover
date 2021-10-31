@@ -132,6 +132,13 @@ public:
     return std::make_unique<SymbolicFunctionCall>(function, args);
   }
 
+  static std::unique_ptr<SymbolicFunctionCall> create(
+    SymbolicFunction *function
+  ) {
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> emptyArgs;
+    return create(function, emptyArgs);
+  }
+
   void print(llvm::raw_ostream &os) const override {
     os << "(call " << callee->getName();
     for (auto const &entry : args) {
