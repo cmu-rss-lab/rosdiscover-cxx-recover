@@ -258,14 +258,19 @@ private:
     auto *symFunction = astFunctionToSymbolic[function];
     auto &apiCalls = functionToApiCalls[function];
     auto &functionCalls = relevantFunctionCalls[function];
-    // auto &callbacks = relevantCallbacks[function];
+    auto &callbacks = relevantCallbacks[function];
+
+    llvm::outs()
+      << "using " << callbacks.size() << " relevant callbacks during symbolization\n";
+
     FunctionSymbolizer::symbolize(
         astContext,
         symContext,
         *symFunction,
         function,
         apiCalls,
-        functionCalls
+        functionCalls,
+        callbacks
     );
     llvm::outs()
       << "symbolized function: "

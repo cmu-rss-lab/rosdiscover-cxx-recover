@@ -30,7 +30,8 @@ public:
       SymbolicFunction &symFunction,
       clang::FunctionDecl const *function,
       std::vector<api_call::RosApiCall *> &apiCalls,
-      std::vector<clang::Expr *> &functionCalls
+      std::vector<clang::Expr *> &functionCalls,
+      std::vector<Callback*> &callbacks
   ) {
     /*
     std::unordered_map<const clang::ParmVarDecl *, std::string> declToArgName;
@@ -57,7 +58,8 @@ public:
         function,
         apiCalls,
         functionCalls,
-        symbolicArgNames
+        symbolicArgNames,
+        callbacks
         // declToArgName
     ).run();
   }
@@ -70,7 +72,8 @@ private:
       clang::FunctionDecl const *function,
       std::vector<api_call::RosApiCall *> &apiCalls,
       std::vector<clang::Expr *> &functionCalls,
-      std::unordered_set<std::string> &symbolicArgNames
+      std::unordered_set<std::string> &symbolicArgNames,
+      std::vector<Callback*> &callbacks
 //      std::unordered_map<const clang::ParmVarDecl *, std::string> &declToArgName
   ) : astContext(astContext),
       symContext(symContext),
@@ -81,7 +84,8 @@ private:
       apiCallToVar(),
       stringSymbolizer(astContext, apiCallToVar),
       valueBuilder(),
-      symbolicArgNames(symbolicArgNames)
+      symbolicArgNames(symbolicArgNames),
+      callbacks(callbacks)
 //      declToArgName(declToArgName)
   {}
 
@@ -95,6 +99,7 @@ private:
   StringSymbolizer stringSymbolizer;
   ValueBuilder valueBuilder;
   std::unordered_set<std::string> symbolicArgNames;
+  [[maybe_unused]] std::vector<Callback*> &callbacks;
 //  std::unordered_map<const clang::ParmVarDecl *, std::string> declToArgName;
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(api_call::RosApiCall *apiCall) {
@@ -644,21 +649,29 @@ private:
     for (auto *functionCall : functionCalls) {
       unordered.push_back(new RawFunctionCallStatement(functionCall));
     }
+    for (auto *callback : callbacks) {
+      unordered.push_back(new RawCallbackStatement(callback));
+    }
 
     // create a mapping from underlying stmts
     std::vector<clang::Stmt*> unorderedClangStmts;
-    std::unordered_map<clang::Stmt*, RawStatement*> clangToRawStmt;
+    std::unordered_map<clang::Stmt*, std::vector<RawStatement*>> clangToRawStmts;
     for (auto *rawStatement : unordered) {
       auto clangStmt = rawStatement->getUnderlyingStmt();
+      if (clangToRawStmts.find(clangStmt) == clangToRawStmts.end()) {
+        clangToRawStmts[clangStmt] = {};
+      }
       unorderedClangStmts.push_back(clangStmt);
-      clangToRawStmt.emplace(clangStmt, rawStatement);
+      clangToRawStmts[clangStmt].push_back(rawStatement);
     }
 
     // find the ordering of underlying stmts
     std::vector<std::unique_ptr<RawStatement>> ordered;
     auto orderedClangStmts = StmtOrderingVisitor::computeOrder(astContext, function, unorderedClangStmts);
     for (auto *clangStmt : orderedClangStmts) {
-      ordered.push_back(std::unique_ptr<RawStatement>(clangToRawStmt[clangStmt]));
+      for (auto *rawStatement : clangToRawStmts[clangStmt]) {
+        ordered.push_back(std::unique_ptr<RawStatement>(rawStatement));
+      }
     }
 
     return ordered;
