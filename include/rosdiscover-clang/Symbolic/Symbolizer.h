@@ -15,6 +15,7 @@
 #include "../ApiCall/Finder.h"
 #include "../ApiCall/RosApiCall.h"
 #include "../Helper/utils.h"
+#include "../Callback/Callback.h"
 #include "Context.h"
 #include "Function.h"
 #include "FunctionSymbolizer.h"
@@ -221,6 +222,10 @@ private:
   void run() {
     buildCallGraph();
     findRosApiCalls();
+
+    // TODO find callbacks by walking through the API calls
+    // findCallbacks();
+
     findRelevantFunctions();
     findRelevantFunctionCalls();
 
