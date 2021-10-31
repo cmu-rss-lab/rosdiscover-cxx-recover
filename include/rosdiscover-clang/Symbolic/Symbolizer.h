@@ -56,6 +56,7 @@ private:
   clang::CallGraph callGraph;
   std::vector<api_call::RosApiCall *> apiCalls;
   std::vector<Callback*> callbacks;
+  std::vector<Callback*> relevantCallbacks;
   std::unordered_map<clang::FunctionDecl const *, std::vector<api_call::RosApiCall *>> functionToApiCalls;
   std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
   std::unordered_map<clang::FunctionDecl const *, std::vector<clang::Expr *>> relevantFunctionCalls;
@@ -180,6 +181,22 @@ private:
     llvm::outs() << "finished finding all relevant functions\n";
   }
 
+  void findRelevantCallbacks() {
+    for (auto *callback : callbacks) {
+      auto *targetFunction = callback->getTargetFunction();
+      if (relevantFunctions.find(targetFunction) != relevantFunctions.end()) {
+        relevantCallbacks.push_back(callback);
+      }
+    }
+
+    llvm::outs()
+      << "DEBUG: deemed "
+      << relevantCallbacks.size()
+      << " out of "
+      << callbacks.size()
+      << " callbacks to be relevant\n";
+  }
+
   void findRelevantFunctionCalls() {
     // look at all function calls within the set of relevant functions
     for (auto const *caller : relevantFunctions) {
@@ -250,6 +267,7 @@ private:
     findCallbacks();
     findRelevantFunctions();
     findRelevantFunctionCalls();
+    findRelevantCallbacks();
 
     // declare all of the relevant functions
     llvm::outs() << "declaring symbolic functions\n";
