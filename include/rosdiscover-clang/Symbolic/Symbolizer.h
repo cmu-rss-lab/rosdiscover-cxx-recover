@@ -56,7 +56,7 @@ private:
   clang::CallGraph callGraph;
   std::vector<api_call::RosApiCall *> apiCalls;
   std::vector<Callback*> callbacks;
-  std::vector<Callback*> relevantCallbacks;
+  std::unordered_map<clang::FunctionDecl const *, std::vector<Callback*>> relevantCallbacks;
   std::unordered_map<clang::FunctionDecl const *, std::vector<api_call::RosApiCall *>> functionToApiCalls;
   std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
   std::unordered_map<clang::FunctionDecl const *, std::vector<clang::Expr *>> relevantFunctionCalls;
@@ -183,9 +183,18 @@ private:
 
   void findRelevantCallbacks() {
     for (auto *callback : callbacks) {
+      auto *parentFunction = callback->getParentFunction();
       auto *targetFunction = callback->getTargetFunction();
       if (relevantFunctions.find(targetFunction) != relevantFunctions.end()) {
-        relevantCallbacks.push_back(callback);
+        if (relevantCallbacks.find(parentFunction) == relevantCallbacks.end()) {
+          relevantCallbacks[parentFunction] = {};
+        }
+        relevantCallbacks[parentFunction].push_back(callback);
+      } else {
+        llvm::outs()
+          << "DEBUG: callback deemed irrelevant: "
+          << targetFunction->getQualifiedNameAsString()
+          << "\n";
       }
     }
 
@@ -247,6 +256,7 @@ private:
     auto *symFunction = astFunctionToSymbolic[function];
     auto &apiCalls = functionToApiCalls[function];
     auto &functionCalls = relevantFunctionCalls[function];
+    // auto &callbacks = relevantCallbacks[function];
     FunctionSymbolizer::symbolize(
         astContext,
         symContext,

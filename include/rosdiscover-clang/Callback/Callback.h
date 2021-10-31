@@ -55,6 +55,7 @@ public:
   ) {
     auto *callExpr = apiCall->getCallExpr();
     auto *parent = getParentFunctionDecl(context, callExpr);
+    target = target->getCanonicalDecl();
     return new Callback(apiCall, parent, target);
   }
 
