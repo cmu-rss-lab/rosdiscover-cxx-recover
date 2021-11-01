@@ -50,6 +50,7 @@ private:
       functionToApiCalls(),
       relevantFunctions(),
       relevantFunctionCalls(),
+      relevantFunctionNames(),
       astFunctionToSymbolic()
   {}
 
@@ -64,6 +65,7 @@ private:
   std::unordered_map<clang::FunctionDecl const *, std::vector<api_call::RosApiCall *>> functionToApiCalls;
   std::unordered_set<clang::FunctionDecl const *> relevantFunctions;
   std::unordered_map<clang::FunctionDecl const *, std::vector<clang::Expr *>> relevantFunctionCalls;
+  [[maybe_unused]] std::unordered_set<std::string> relevantFunctionNames;
 
   // TODO instead use AnnotatedFunctionDecl and AnnotatedContext
   std::unordered_map<clang::FunctionDecl const*, SymbolicFunction*> astFunctionToSymbolic;
@@ -181,7 +183,9 @@ private:
     }
 
     for (auto const *function : relevantFunctions) {
-      llvm::outs() << "found relevant function: " << function->getQualifiedNameAsString() << "\n";
+      auto name = function->getQualifiedNameAsString();
+      relevantFunctionNames.insert(name);
+      llvm::outs() << "found relevant function: " << name << "\n";
     }
 
     llvm::outs() << "finished finding all relevant functions\n";
@@ -237,20 +241,29 @@ private:
       for (clang::CallGraphNode::CallRecord const &callRecord : *callerNode) {
         // is this a call to another relevant function?
         auto const *callee = clang::dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl());
-        auto const *canonicalCallee = callee->getCanonicalDecl();
+        // auto const *canonicalCallee = callee->getCanonicalDecl();
+        auto calleeName = callee->getQualifiedNameAsString();
         llvm::outs()
           << "DEBUG: CHECKING IF CALL IS RELEVANT [dest: "
-          << callee->getQualifiedNameAsString()
+          << calleeName
           << "\n";
-        if (relevantFunctions.find(callee) != relevantFunctions.end()) {
-          llvm::outs() << "DEBUG: FOUND NON-CANONICAL MATCH\n";
-          relevantFunctionCalls[caller].push_back(callRecord.CallExpr);
-        } else if (relevantFunctions.find(canonicalCallee) != relevantFunctions.end()) {
-          llvm::outs() << "DEBUG: FOUND CANONICAL MATCH\n";
+
+        if (relevantFunctionNames.find(calleeName) != relevantFunctionNames.end()) {
+          llvm::outs() << "DEBUG: MATCH\n";
           relevantFunctionCalls[caller].push_back(callRecord.CallExpr);
         } else {
           llvm::outs() << "DEBUG: NO MATCH\n";
         }
+
+        // if (relevantFunctions.find(callee) != relevantFunctions.end()) {
+        //   llvm::outs() << "DEBUG: FOUND NON-CANONICAL MATCH\n";
+        //   relevantFunctionCalls[caller].push_back(callRecord.CallExpr);
+        // } else if (relevantFunctions.find(canonicalCallee) != relevantFunctions.end()) {
+        //   llvm::outs() << "DEBUG: FOUND CANONICAL MATCH\n";
+        //   relevantFunctionCalls[caller].push_back(callRecord.CallExpr);
+        // } else {
+        //   llvm::outs() << "DEBUG: NO MATCH\n";
+        // }
       }
 
       llvm::outs()
