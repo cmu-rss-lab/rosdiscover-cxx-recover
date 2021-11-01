@@ -220,18 +220,37 @@ private:
 
       if (callerNode == nullptr) {
         llvm::errs()
-          << "Call graph node is missing for relevant function: "
+          << "Call graph node is missing for relevant function ["
           << caller->getQualifiedNameAsString()
-          << "\n";
-        continue;
+          << "]. Trying to use canonical declaration as a workaround. \n";
+
+        callerNode = callGraph.getNode(caller->getCanonicalDecl());
+        if (callerNode == nullptr) {
+          llvm::errs() << "Canonical decl workaround didn't work\n";
+          continue;
+        } else {
+          llvm::outs() << "DEBUG: canonical workaround worked!\n";
+        }
       }
       llvm::outs() << "-> fetched call graph node\n";
 
       for (clang::CallGraphNode::CallRecord const &callRecord : *callerNode) {
         // is this a call to another relevant function?
-        auto const *callee = clang::dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl())->getCanonicalDecl();
-        if (relevantFunctions.find(callee) != relevantFunctions.end())
+        auto const *callee = clang::dyn_cast<clang::FunctionDecl>(callRecord.Callee->getDecl());
+        auto const *canonicalCallee = callee->getCanonicalDecl();
+        llvm::outs()
+          << "DEBUG: CHECKING IF CALL IS RELEVANT [dest: "
+          << callee->getQualifiedNameAsString()
+          << "\n";
+        if (relevantFunctions.find(callee) != relevantFunctions.end()) {
+          llvm::outs() << "DEBUG: FOUND NON-CANONICAL MATCH\n";
           relevantFunctionCalls[caller].push_back(callRecord.CallExpr);
+        } else if (relevantFunctions.find(canonicalCallee) != relevantFunctions.end()) {
+          llvm::outs() << "DEBUG: FOUND CANONICAL MATCH\n";
+          relevantFunctionCalls[caller].push_back(callRecord.CallExpr);
+        } else {
+          llvm::outs() << "DEBUG: NO MATCH\n";
+        }
       }
 
       llvm::outs()
