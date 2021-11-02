@@ -152,9 +152,11 @@ private:
     if (auto *memberCallExpr = clang::dyn_cast<clang::CXXMemberCallExpr>(expr)) {
       auto *methodDecl = memberCallExpr->getMethodDecl();
       auto methodName = methodDecl->getQualifiedNameAsString();
-      if (methodName == "nodelet::Nodelet::getNodeHandle") {
+      if (methodName == "nodelet::Nodelet::getNodeHandle"
+       || methodName == "nodelet::Nodelet::getMTNodeHandle") {
         return valueBuilder.publicNodeHandle();
-      } else if (methodName == "nodelet::Nodelet::getPrivateNodeHandle") {
+      } else if (methodName == "nodelet::Nodelet::getPrivateNodeHandle"
+       || methodName == "nodelet::Nodelet::getMTPrivateNodeHandle") {
         return valueBuilder.privateNodeHandle();
       }
     }
