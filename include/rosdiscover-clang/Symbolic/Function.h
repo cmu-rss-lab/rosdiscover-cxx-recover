@@ -103,12 +103,22 @@ private:
 
   void addParam(size_t index, clang::ParmVarDecl const *param) {
     // TODO does this have a default?
+    auto paramType = param->getOriginalType();
+    auto paramTypeName = paramType.getAsString();
     auto name = param->getNameAsString();
-    auto type = SymbolicValue::getSymbolicType(param->getOriginalType());
+    auto type = SymbolicValue::getSymbolicType(paramType);
 
-    if (type == SymbolicValueType::Unsupported)
+    if (type == SymbolicValueType::Unsupported) {
+      llvm::outs()
+        << "DEBUG: type ["
+        << paramTypeName
+        << "] of parameter ["
+        << name
+        << "] is unsupported\n";
       return;
+    }
 
+    llvm::outs() << "DEBUG: created symbolic parameter [" << name << "]\n";
     addParam(Parameter(index, name, type));
   }
 

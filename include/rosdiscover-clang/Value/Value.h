@@ -27,13 +27,14 @@ public:
   static SymbolicValueType getSymbolicType(clang::QualType clangType) {
     clangType = clangType.getUnqualifiedType();
     auto typeName = clangType.getAsString();
-    if (typeName == "std::string") {
+    llvm::outs() << "DEBUG: determining symbolic type for Clang type [" << typeName << "]\n";
+    if (typeName == "std::string" || typeName == "std::string &") {
       return SymbolicValueType::String;
     } else if (typeName == "bool") {
       return SymbolicValueType::Bool;
     } else if (typeName == "int") {
       return SymbolicValueType::Integer;
-    } else if (typeName == "ros::NodeHandle") {
+    } else if (typeName == "ros::NodeHandle" || typeName == "ros::NodeHandle &") {
       return SymbolicValueType::NodeHandle;
     } else {
       return SymbolicValueType::Unsupported;
