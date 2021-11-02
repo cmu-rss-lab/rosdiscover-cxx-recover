@@ -31,6 +31,22 @@ private:
   std::string const literal;
 };
 
+class NodeName : public virtual SymbolicString {
+public:
+  NodeName(){}
+  ~NodeName(){}
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(node-name)";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "node-name"}
+    };
+  }
+};
+
 class Concatenate : public virtual SymbolicString {
 public:
   Concatenate(

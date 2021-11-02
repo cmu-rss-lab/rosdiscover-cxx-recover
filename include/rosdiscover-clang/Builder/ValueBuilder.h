@@ -20,6 +20,10 @@ public:
     return std::make_unique<StringLiteral>(string);
   }
 
+  std::unique_ptr<NodeName> nodeName() const {
+    return std::make_unique<NodeName>();
+  }
+
   std::unique_ptr<SymbolicUnknown> unknown() const {
     return std::make_unique<SymbolicUnknown>();
   }
