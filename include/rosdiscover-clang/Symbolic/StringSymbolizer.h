@@ -26,13 +26,25 @@ public:
     expr = expr->IgnoreParenCasts();
 
     llvm::outs() << "symbolizing: ";
-    expr->dumpColor();
+    expr->dump();
     llvm::outs() << "\n";
 
-    // is this expression mapped to a ROS API call?
-    if (clang::CallExpr const *callExpr = clang::dyn_cast<clang::CallExpr>(expr)) {
-      if (apiCallToVar.find(callExpr) != apiCallToVar.end())
+    if (clang::CallExpr *callExpr = clang::dyn_cast<clang::CallExpr>(expr)) {
+      // is this expression mapped to a ROS API call?
+      if (apiCallToVar.find(callExpr) != apiCallToVar.end()) {
         return valueBuilder.varRef(apiCallToVar[callExpr]);
+      }
+
+      if (auto *callee = callExpr->getDirectCallee()) {
+        auto calleeName = callee->getQualifiedNameAsString();
+        llvm::outs() << "DEBUG: checking call to function [" << calleeName << "]\n";
+        if (calleeName == "ros::this_node::getName") {
+          return valueBuilder.nodeName();
+        } else if (calleeName == "std::operator+") {
+          return symbolizeConcatenation(callExpr);
+        }
+      }
+
     }
 
     if (clang::DeclRefExpr *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(expr)) {
@@ -71,7 +83,7 @@ private:
     if (constructorName == "std::__cxx11::basic_string" || constructorName == "std::basic_string") {
       if (expr->getNumArgs() == 0) {
         llvm::outs() << "DEBUG: unimplemented [resolve indirect string variable definition]: ";
-        expr->dumpColor();
+        expr->dump();
         llvm::outs() << "\n";
         return valueBuilder.unknown();
       }
@@ -81,6 +93,13 @@ private:
 
     llvm::outs() << "call to unknown constructor: " << constructorName << "\n";
     return valueBuilder.unknown();
+  }
+
+  std::unique_ptr<SymbolicString> symbolizeConcatenation(clang::CallExpr *expr) {
+    assert(expr->getNumArgs() == 2 && "string concentation should have two arguments");
+    auto lhs = symbolize(expr->getArg(0));
+    auto rhs = symbolize(expr->getArg(1));
+    return valueBuilder.concatenate(std::move(lhs), std::move(rhs));
   }
 
   std::unique_ptr<SymbolicString> symbolize(clang::ImplicitCastExpr *expr) {
