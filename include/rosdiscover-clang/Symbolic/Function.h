@@ -167,7 +167,7 @@ public:
     return {
       {"kind", "call"},
       {"callee", callee->getName()},
-      {"args", argsJson}
+      {"arguments", argsJson}
     };
   }
 
