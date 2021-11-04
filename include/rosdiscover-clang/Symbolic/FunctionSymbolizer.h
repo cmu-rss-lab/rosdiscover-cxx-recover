@@ -586,6 +586,7 @@ private:
 
   std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {
     auto *function = symContext.getDefinition(getCallee(callExpr));
+    llvm::outs() << "DEBUG: symbolizing call to function: " << function->getName() << "\n";
 
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
     for (
@@ -594,6 +595,9 @@ private:
       it++
     ) {
       auto &param = it->second;
+      llvm::outs() << "DEBUG: symbolizing function call parameter: ";
+      param.print(llvm::outs());
+      llvm::outs() << "\n";
 
       // fetch the expression for the associated parameter
       clang::Expr *paramExpr;
