@@ -160,7 +160,7 @@ public:
   }
 
   nlohmann::json toJson() const override {
-    nlohmann::json argsJson;
+    nlohmann::json argsJson = nlohmann::json::object();
     for (auto const &entry : args) {
       argsJson[entry.first] = entry.second->toJson();
     }
