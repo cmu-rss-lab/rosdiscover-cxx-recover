@@ -97,9 +97,9 @@ private:
     // group API calls by parent function
     llvm::outs() << "DEBUG: grouping ROS API calls by parent function...\n";
     for (auto *call : apiCalls) {
-      auto *callExpr = call->getCallExpr();
+      auto *expr = call->getExpr();
       llvm::outs() << "DEBUG: examining API call...\n";
-      auto *functionDecl = getParentFunctionDecl(astContext, callExpr);
+      auto *functionDecl = getParentFunctionDecl(astContext, expr);
       // llvm::outs() << "DEBUG: parent function for API call: ";
       // functionDecl->dump();
       // llvm::outs() << "\n";
@@ -115,7 +115,7 @@ private:
       if (!restrictAnalysisToPaths.empty()) {
         llvm::outs() << "DEBUG: finding name of file that API calls appears in...\n";
         auto filename = clang::FullSourceLoc(
-          callExpr->getBeginLoc(),
+          expr->getBeginLoc(),
           astContext.getSourceManager()
         ).getFileEntry()->getName().str();
         llvm::outs() << "DEBUG: API call belongs to file: " << filename << "\n";

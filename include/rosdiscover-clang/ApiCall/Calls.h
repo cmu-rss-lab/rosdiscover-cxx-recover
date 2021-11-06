@@ -16,6 +16,7 @@
 #include "Calls/HasParamCall.h"
 #include "Calls/Kind.h"
 #include "Calls/RosInitCall.h"
+#include "Calls/MessageFiltersSubscriberCall.h"
 #include "Calls/ServiceClientCall.h"
 #include "Calls/SetParamCall.h"
 #include "Calls/SubscribeTopicCall.h"

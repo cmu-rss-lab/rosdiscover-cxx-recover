@@ -53,7 +53,7 @@ public:
     api_call::RosApiCall const *apiCall,
     clang::FunctionDecl const *target
   ) {
-    auto *callExpr = apiCall->getCallExpr();
+    auto *callExpr = apiCall->getExpr();
     auto *parent = getParentFunctionDecl(context, callExpr);
     target = target->getCanonicalDecl();
     return new Callback(apiCall, parent, target);

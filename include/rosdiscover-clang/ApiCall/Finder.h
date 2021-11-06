@@ -54,6 +54,7 @@ private:
     addFinder(new GetParamWithDefaultCall::Finder(calls));
     addFinder(new HasParamCall::Finder(calls));
     addFinder(new RosInitCall::Finder(calls));
+    addFinder(new MessageFiltersSubscriberCall::Finder(calls));
     addFinder(new ServiceClientCall::Finder(calls));
     addFinder(new SetParamCall::Finder(calls));
     addFinder(new SubscribeTopicCall::Finder(calls));

@@ -10,6 +10,7 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include "../Helper/utils.h"
+#include "../Helper/CallOrConstructExpr.h"
 #include "Calls/Kind.h"
 
 namespace rosdiscover {
@@ -20,10 +21,13 @@ namespace api_call {
 
 class RosApiCall {
 public:
-  RosApiCall(clang::CallExpr const *call) : call(call) {}
-  virtual ~RosApiCall(){}
+  RosApiCall(CallOrConstructExpr const *call) : call(call) {}
+  virtual ~RosApiCall(){
+    delete call; // TODO use unique_ptr or shared_ptr
+  }
 
-  clang::CallExpr const * getCallExpr() const { return call; }
+  clang::Expr const * getExpr() const { return call->getExpr(); }
+  CallOrConstructExpr const * getCallOrConstructExpr() const { return call; }
 
   /** Returns the callback, if any, that is associated with this call. */
   virtual Callback* getCallback(clang::ASTContext &context) const {
@@ -56,7 +60,7 @@ public:
   public:
     void run(const clang::ast_matchers::MatchFinder::MatchResult &result) {
       if (auto *apiCall = build(result)) {
-        auto const *callExpr = apiCall->getCallExpr();
+        auto const *callExpr = apiCall->getCallOrConstructExpr();
 
         // NOTE c++20 provides std::string::ends_with
         // ignore any calls that happen within the ROS language bindings
@@ -88,7 +92,7 @@ public:
   virtual void print(llvm::raw_ostream &os) const {
     static clang::LangOptions langOptions;
     static clang::PrintingPolicy printPolicy(langOptions);
-    getCallExpr()->printPretty(os, nullptr, printPolicy);
+    call->getExpr()->printPretty(os, nullptr, printPolicy);
   }
 
 protected:
@@ -112,28 +116,52 @@ protected:
   }
 
 private:
-  clang::CallExpr const *call;
+  CallOrConstructExpr const *call;
 }; // RosApiCall
 
 
 class BareRosApiCall : public RosApiCall {
 public:
   virtual ~BareRosApiCall(){}
-  BareRosApiCall(clang::CallExpr const *call) : RosApiCall(call) {}
+
+  BareRosApiCall(clang::CallExpr const *call)
+    : BareRosApiCall(new rosdiscover::CallExpr(call))
+  {}
+
   bool hasNodeHandle() const override { return false; }
+
+  clang::CallExpr const * getCallExpr() const {
+    return static_cast<rosdiscover::CallExpr const *>(getCallOrConstructExpr())->getCallExpr();
+  }
+
+private:
+  BareRosApiCall(CallOrConstructExpr const *call)
+    : RosApiCall(call)
+  {}
+
 }; // BareRosApiCall
 
 
-class NodeHandleRosApiCall : public RosApiCall {
+class RosApiCallWithNodeHandle : public RosApiCall {
 public:
-  virtual ~NodeHandleRosApiCall(){}
-  NodeHandleRosApiCall(clang::CallExpr const *call) : RosApiCall(call) {}
+  virtual ~RosApiCallWithNodeHandle(){}
+
+  RosApiCallWithNodeHandle(CallOrConstructExpr const *call)
+    : RosApiCall(call)
+  {}
+  RosApiCallWithNodeHandle(clang::CallExpr const *call)
+    : RosApiCallWithNodeHandle(new rosdiscover::CallExpr(call))
+  {}
+  RosApiCallWithNodeHandle(clang::CXXConstructExpr const *call)
+    : RosApiCallWithNodeHandle(new rosdiscover::ConstructExpr(call))
+  {}
+
   bool hasNodeHandle() const override { return true; }
 
+  virtual clang::Expr const * getNodeHandleExpr() const = 0;
+
   clang::ValueDecl const * getNodeHandleDecl() const {
-    auto const *nodeHandleExpr = clang::dyn_cast<clang::MemberExpr>(getCallExpr()->getCallee())
-        ->getBase()
-        ->IgnoreImpCasts();
+    auto const *nodeHandleExpr = getNodeHandleExpr();
 
     // node handle is provided by a parameter or local variable
     if (auto const *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(nodeHandleExpr)) {
@@ -150,8 +178,27 @@ public:
       abort();
     }
   }
-}; // NodeHandleRosApiCall
+}; // RosApiCallWithNodeHandle
 
+
+class NodeHandleRosApiCall : public RosApiCallWithNodeHandle {
+public:
+  NodeHandleRosApiCall(clang::CallExpr const *call)
+    : RosApiCallWithNodeHandle(call)
+  {}
+
+  virtual ~NodeHandleRosApiCall(){}
+
+  clang::CallExpr const * getCallExpr() const {
+    return static_cast<rosdiscover::CallExpr const *>(getCallOrConstructExpr())->getCallExpr();
+  }
+
+  clang::Expr const * getNodeHandleExpr() const override {
+    return clang::dyn_cast<clang::MemberExpr>(getCallExpr()->getCallee())
+      ->getBase()
+      ->IgnoreImpCasts();
+  }
+}; // NodeHandleRosApiCall
 
 } // rosdiscover::api_call
 } // rosdiscover

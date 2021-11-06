@@ -30,7 +30,7 @@ public:
   }
 
   clang::Stmt* getUnderlyingStmt() override {
-    return const_cast<clang::CallExpr*>(apiCall->getCallExpr());
+    return const_cast<clang::Expr*>(apiCall->getExpr());
   }
 
   RawStatementKind getKind() override {
@@ -68,7 +68,7 @@ public:
   ~RawCallbackStatement(){}
 
   clang::Stmt* getUnderlyingStmt() override {
-    return const_cast<clang::CallExpr*>(callback->getApiCall()->getCallExpr());
+    return const_cast<clang::Expr*>(callback->getApiCall()->getExpr());
   }
 
   RawStatementKind getKind() override {

@@ -111,9 +111,25 @@ private:
     // TODO does this refer to a parameter?
 
     if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(nameExpr->getDecl())) {
+      llvm::outs() << "DEBUG: attempting to find definition for var: ";
+      varDecl->dump();
+      llvm::outs() << "\n";
+
+      auto *initExpr = varDecl->getInit();
+      if (initExpr != nullptr) {
+        auto symbolized = symbolize(initExpr);
+        if (!symbolized->isUnknown()) {
+          return symbolized;
+        }
+      }
+
       if (auto *def = findDef(varDecl, nameExpr)) {
         return symbolize(def);
       }
+
+      llvm::outs() << "WARNING: unable to find definition for var: ";
+      varDecl->dump();
+      llvm::outs() << "\n";
     }
 
     return valueBuilder.unknown();

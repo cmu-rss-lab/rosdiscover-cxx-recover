@@ -19,6 +19,7 @@ enum class RosApiCallKind {
   GetParamWithDefaultCall,
   HasParamCall,
   RosInitCall,
+  MessageFiltersSubscriberCall,
   ServiceClientCall,
   SetParamCall,
   SubscribeTopicCall
