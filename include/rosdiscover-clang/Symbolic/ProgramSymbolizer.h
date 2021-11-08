@@ -42,7 +42,9 @@ private:
   ) : tool(compilationDatabase, sourcePaths),
       program(std::make_unique<SymbolicProgram>()),
       restrictAnalysisToPaths(restrictAnalysisToPaths)
-  {}
+  {
+    tool.setDiagnosticConsumer(new clang::IgnoringDiagConsumer());
+  }
 
   void buildAST() {
     // build the AST for each translation unit
@@ -52,6 +54,32 @@ private:
     size_t numAsts = asts.size();
     llvm::outs() << "built " << numAsts << " ASTs\n";
     assert(numAsts > 0);
+
+    // the same source file may be compiled multiple times for different CMake build targets
+    // Clang doesn't know that, so, by default, it will include multiple copies of the same
+    // AST, which results in a failed merging process
+    std::set<std::string> representedSourceFiles;
+    std::vector<std::unique_ptr<clang::ASTUnit>> deduplicatedAsts;
+    for (auto i = 0; i < numAsts; i++) {
+      auto sourceFileName = asts[i].get()->getOriginalSourceFileName().str();
+      llvm::outs() << "AST[" << i << "]: " << sourceFileName << "\n";
+
+      if (representedSourceFiles.find(sourceFileName) != representedSourceFiles.end()) {
+        llvm::outs() << "ignoring duplicate AST: " << sourceFileName << "\n";
+      } else {
+        representedSourceFiles.insert(sourceFileName);
+        deduplicatedAsts.push_back(std::move(asts[i]));
+      }
+    }
+
+    llvm::outs() << "obtained " << deduplicatedAsts.size() << " deduplicated ASTs\n";
+    for (auto i = 0; i < deduplicatedAsts.size(); i++) {
+      auto sourceFileName = deduplicatedAsts[i].get()->getOriginalSourceFileName().str();
+      llvm::outs() << "deduplicated AST[" << i << "]: " << sourceFileName << "\n";
+    }
+    assert(deduplicatedAsts.size());
+    asts = std::move(deduplicatedAsts);
+    numAsts = deduplicatedAsts.size();
 
     // we merge all top-level decls into the first translation unit in our list
     // - we could check which TU is the main file AST (via isMainFileAST),
@@ -70,16 +98,25 @@ private:
         fromUnit->getFileManager(),
         /*MinimalImport=*/false
       );
+      llvm::outs() << "DEBUG: constructed AST importer\n";
       for (
         auto top_level_iterator = fromUnit->top_level_begin(), top_level_end = fromUnit->top_level_end();
         top_level_iterator != top_level_end;
         top_level_iterator++
       ) {
+        // ISSUE: we sometimes try to re-import existing definitions;
+        // we just want to skip those!
         clang::Decl *fromDecl = *top_level_iterator;
         llvm::Expected<clang::Decl*> importedOrError = importer.Import(fromDecl);
         if (!importedOrError) {
-          llvm::errs() << "FATAL ERROR: failed to merge ASTs\n";
-          abort();
+          llvm::Error error = importedOrError.takeError();
+          llvm::errs()
+            << "WARNING: error when attemping to merge decl ["
+            << toString(std::move(error))
+            << "]\n";
+          // fromDecl->dump();
+          // llvm::errs() << "\n";
+          // abort();
         }
       }
     }
@@ -90,7 +127,6 @@ private:
 
   void run() {
     buildAST();
-    // TODO obtain list of files to restrict our attention to
     Symbolizer::symbolize(
       mergedAst->getASTContext(),
       program->getContext(),

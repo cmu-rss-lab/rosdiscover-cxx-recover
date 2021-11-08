@@ -36,9 +36,14 @@ static llvm::cl::list<std::string> restrictAnalysisToPaths(
 int main(int argc, const char **argv) {
   CommonOptionsParser optionsParser(argc, argv, MyToolCategory);
 
+  auto sourcePaths = optionsParser.getSourcePathList();
+  for (auto const &sourcePath : sourcePaths) {
+    llvm::outs() << "DEBUG: using source path: " << sourcePath << "\n";
+  }
+
   auto program = ProgramSymbolizer::symbolize(
     optionsParser.getCompilations(),
-    optionsParser.getSourcePathList(),
+    sourcePaths,
     restrictAnalysisToPaths
   );
   auto json = program->toJson();
