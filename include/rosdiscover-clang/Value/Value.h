@@ -37,7 +37,8 @@ public:
     } else if (typeName == "int") {
       return SymbolicValueType::Integer;
     } else if (typeName == "ros::NodeHandle"
-            || typeName == "ros::NodeHandle &") {
+            || typeName == "ros::NodeHandle &"
+            || typeName == "ros::NodeHandle *") {
       return SymbolicValueType::NodeHandle;
     } else {
       return SymbolicValueType::Unsupported;
