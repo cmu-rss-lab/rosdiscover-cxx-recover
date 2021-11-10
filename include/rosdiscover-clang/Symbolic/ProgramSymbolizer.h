@@ -79,7 +79,7 @@ private:
     }
     assert(deduplicatedAsts.size());
     asts = std::move(deduplicatedAsts);
-    numAsts = deduplicatedAsts.size();
+    numAsts = asts.size();
 
     // we merge all top-level decls into the first translation unit in our list
     // - we could check which TU is the main file AST (via isMainFileAST),
