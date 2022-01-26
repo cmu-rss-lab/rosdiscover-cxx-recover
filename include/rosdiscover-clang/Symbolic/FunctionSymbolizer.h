@@ -162,6 +162,11 @@ private:
         return valueBuilder.privateNodeHandle();
       }
     }
+    if (auto *unaryOp = clang::dyn_cast<clang::UnaryOperator>(expr)) {
+      if (clang::UnaryOperator::getOpcodeStr(unaryOp->getOpcode()) == "&") {
+        return symbolizeNodeHandle(unaryOp->getSubExpr());
+      }
+    }
 
     if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(expr)) {
       llvm::outs() << "DEBUG: attempting to symbolize node handle DeclRefExpr\n";
