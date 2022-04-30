@@ -10,7 +10,7 @@
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/Rewrite/Core/Rewriter.h>
 
-#include <rosdiscover-clang/Symbolic/ProgramSymbolizer.h>
+#include <rosdiscover-clang/BackwardSymbolizer/ProgramSymbolizer.h>
 
 using namespace clang;
 using namespace clang::ast_matchers;
