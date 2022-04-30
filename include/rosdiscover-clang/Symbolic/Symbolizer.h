@@ -14,10 +14,10 @@
 
 #include "../ApiCall/Finder.h"
 #include "../ApiCall/RosApiCall.h"
+#include "../Ast/Context.h"
+#include "../Ast/Function.h"
 #include "../Helper/utils.h"
 #include "../Callback/Callback.h"
-#include "Context.h"
-#include "Function.h"
 #include "FunctionSymbolizer.h"
 
 namespace rosdiscover {
