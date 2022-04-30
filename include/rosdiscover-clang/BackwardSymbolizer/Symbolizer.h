@@ -14,8 +14,7 @@
 
 #include "../ApiCall/Finder.h"
 #include "../ApiCall/RosApiCall.h"
-#include "../Ast/Context.h"
-#include "../Ast/Function.h"
+#include "../Ast/Ast.h"
 #include "../Helper/utils.h"
 #include "../Callback/Callback.h"
 #include "FunctionSymbolizer.h"

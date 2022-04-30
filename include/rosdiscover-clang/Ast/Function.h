@@ -9,8 +9,8 @@
 #include <fmt/core.h>
 
 #include "../Value/Value.h"
-#include "../Variable/LocalVariable.h"
-#include "../Variable/Parameter.h"
+#include "Variable/LocalVariable.h"
+#include "Variable/Parameter.h"
 #include "Stmt/Stmt.h"
 #include "Stmt/Compound.h"
 

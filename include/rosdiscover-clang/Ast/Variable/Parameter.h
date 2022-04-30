@@ -17,7 +17,6 @@ public:
   Parameter(size_t index, std::string const &name, SymbolicValueType const type)
     : index(index), name(name), type(type)
   {}
-
   ~Parameter(){}
 
   nlohmann::json toJson() const {

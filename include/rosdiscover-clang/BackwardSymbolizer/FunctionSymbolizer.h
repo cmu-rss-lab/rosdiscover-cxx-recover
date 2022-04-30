@@ -9,14 +9,11 @@
 
 #include <fmt/core.h>
 
-#include "../Ast/Context.h"
-#include "../Ast/Function.h"
+#include "../Ast/Ast.h"
 #include "../Helper/StmtOrderingVisitor.h"
 #include "../RawStatement.h"
-#include "../Ast/Stmt/Stmts.h"
 #include "../Value/String.h"
 #include "../Value/Value.h"
-#include "../Variable/Variable.h"
 #include "StringSymbolizer.h"
 
 namespace rosdiscover {
