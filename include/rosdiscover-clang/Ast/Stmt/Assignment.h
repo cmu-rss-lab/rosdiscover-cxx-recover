@@ -3,7 +3,7 @@
 #include <string>
 
 #include "../../Value/Value.h"
-#include "../Variable/LocalVariable.h"
+#include "../Decl/LocalVariable.h"
 #include "Stmt.h"
 
 namespace rosdiscover {

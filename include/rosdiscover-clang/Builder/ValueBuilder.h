@@ -5,7 +5,7 @@
 #include "../Value/Bool.h"
 #include "../Value/String.h"
 #include "../Value/Value.h"
-#include "../Ast/Variable/Variable.h"
+#include "../Ast/Decl/Decls.h"
 
 namespace rosdiscover {
 namespace symbolic {
