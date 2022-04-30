@@ -9,7 +9,7 @@
 #include <nlohmann/json.hpp>
 
 #include "Function.h"
-#include "../Stmt/Stmt.h"
+#include "Stmt/Stmt.h"
 
 namespace rosdiscover {
 namespace symbolic {

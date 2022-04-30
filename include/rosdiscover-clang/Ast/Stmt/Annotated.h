@@ -3,8 +3,8 @@
 #include <clang/AST/ASTContext.h>
 
 #include "Stmt.h"
-#include "../RawStatement.h"
-#include "../Value/Value.h"
+#include "../../RawStatement.h"
+#include "../../Value/Value.h"
 
 namespace rosdiscover {
 namespace symbolic {
