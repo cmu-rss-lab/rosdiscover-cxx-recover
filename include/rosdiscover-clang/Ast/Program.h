@@ -9,7 +9,6 @@
 #include "Context.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class SymbolicProgram {
 public:
@@ -36,5 +35,4 @@ private:
   SymbolicContext context;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

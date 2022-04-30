@@ -5,7 +5,6 @@
 #include "Stmt.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class SymbolicCompound {
 public:
@@ -44,5 +43,4 @@ private:
   std::vector<std::unique_ptr<SymbolicStmt>> statements;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

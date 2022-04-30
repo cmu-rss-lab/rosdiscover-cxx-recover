@@ -7,7 +7,6 @@
 #include <llvm/Support/raw_ostream.h>
 
 namespace rosdiscover {
-namespace symbolic {
 
 enum class SymbolicValueType {
   String,
@@ -159,5 +158,4 @@ private:
   std::unique_ptr<SymbolicString> name;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

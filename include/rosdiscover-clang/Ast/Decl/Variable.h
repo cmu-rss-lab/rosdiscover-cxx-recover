@@ -5,7 +5,6 @@
 #include "../../Value/Value.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class SymbolicVariable {
 public:
@@ -48,6 +47,4 @@ private:
   SymbolicVariable const *variable;
 };
 
-
-} // rosdiscover::symbolic
 } // rosdiscover

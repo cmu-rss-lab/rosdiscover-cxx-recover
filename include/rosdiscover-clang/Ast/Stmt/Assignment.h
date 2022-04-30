@@ -7,7 +7,6 @@
 #include "Stmt.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class AssignmentStmt : public SymbolicStmt {
 public:
@@ -37,5 +36,4 @@ private:
   std::unique_ptr<SymbolicValue> value;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

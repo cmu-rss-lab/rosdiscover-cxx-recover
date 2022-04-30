@@ -5,7 +5,6 @@
 #include <llvm/Support/raw_ostream.h>
 
 namespace rosdiscover {
-namespace symbolic {
 
 class SymbolicStmt {
 public:
@@ -14,5 +13,4 @@ public:
   virtual nlohmann::json toJson() const = 0;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

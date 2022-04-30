@@ -5,7 +5,6 @@
 #include "../../Value/Value.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class SymbolicRosApiCall : public virtual SymbolicStmt {
 public:
@@ -259,5 +258,4 @@ private:
   std::unique_ptr<SymbolicValue> defaultValue;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

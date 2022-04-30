@@ -8,7 +8,6 @@
 #include "../Ast/Decl/Decls.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class ValueBuilder {
 public:
@@ -68,5 +67,4 @@ public:
   }
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

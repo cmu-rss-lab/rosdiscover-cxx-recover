@@ -11,7 +11,6 @@
 #include "Symbolizer.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class ProgramSymbolizer {
 public:
@@ -135,5 +134,4 @@ private:
   }
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

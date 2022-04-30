@@ -7,7 +7,6 @@
 #include "../../Value/Value.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class AnnotatedSymbolicStmt : public SymbolicStmt {
 public:
@@ -60,5 +59,4 @@ private:
   std::string const location;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

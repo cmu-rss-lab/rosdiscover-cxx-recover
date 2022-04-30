@@ -15,7 +15,6 @@
 #include "Stmt/Compound.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class SymbolicFunction {
 public:
@@ -176,5 +175,4 @@ private:
   std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

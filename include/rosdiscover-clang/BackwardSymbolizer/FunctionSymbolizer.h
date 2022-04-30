@@ -17,7 +17,6 @@
 #include "StringSymbolizer.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class FunctionSymbolizer {
 public:
@@ -760,5 +759,4 @@ private:
   }
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

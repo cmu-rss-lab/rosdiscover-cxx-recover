@@ -15,7 +15,7 @@
 using namespace clang;
 using namespace clang::ast_matchers;
 using namespace clang::tooling;
-using namespace rosdiscover::symbolic;
+using namespace rosdiscover;
 
 static llvm::cl::OptionCategory MyToolCategory("rosdiscover options");
 static llvm::cl::extrahelp CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);
