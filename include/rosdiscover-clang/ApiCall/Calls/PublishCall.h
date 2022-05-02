@@ -11,7 +11,7 @@ class PublishCall : public BareRosApiCall {
 public:
   using BareRosApiCall::BareRosApiCall;
 
-  PublishCallKind const getKind() const override {
+  RosApiCallKind const getKind() const override {
     return RosApiCallKind::PublishCall;
   }
 
@@ -33,7 +33,7 @@ public:
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
       auto *call = result.Nodes.getNodeAs<clang::CallExpr>("call");
-      return new PublishCallKind(call);
+      return new PublishCall(call);
     }
   };
 };
