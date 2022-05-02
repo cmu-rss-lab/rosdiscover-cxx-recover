@@ -26,14 +26,14 @@ public:
     const clang::ast_matchers::StatementMatcher getPattern() override {
       using namespace clang::ast_matchers;
       return callExpr(
-        callee(functionDecl(hasName("ros::publish")))
+        callee(cxxMethodDecl(hasName("publish"), ofClass(hasName("ros::Publisher"))))
       ).bind("call");
     }
 
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
       auto *call = result.Nodes.getNodeAs<clang::CallExpr>("call");
-      return new RosInitCall(call);
+      return new PublishCallKind(call);
     }
   };
 };
