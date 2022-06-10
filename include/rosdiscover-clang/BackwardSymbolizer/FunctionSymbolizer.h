@@ -582,7 +582,7 @@ private:
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(
     api_call::RateSleepCall *apiCall
   ) {
-    llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
+    llvm::outs() << "DEBUG: symbolizing RateSleepCall\n";
     return std::make_unique<RateSleep>(symbolizeApiCallName(apiCall));
   }
 
