@@ -16,7 +16,7 @@ public:
   }
 
   clang::Expr const * getNameExpr() const override {
-    return getCallExpr()->getArg(2);
+    return getCallExpr()->getArg(0);
   }
 
   class Finder : public RosApiCall::Finder {

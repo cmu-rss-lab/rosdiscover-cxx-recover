@@ -16,7 +16,27 @@ public:
   }
 
   clang::Expr const * getNameExpr() const override {
-    return getCallExpr()->getArg(2);
+    if (const auto *E = clang::dyn_cast<clang::CXXMemberCallExpr>(getCallExpr())) {
+      const clang::DeclRefExpr* declRef = nullptr;
+      if (const auto *ME = clang::dyn_cast<clang::ImplicitCastExpr>(E->getImplicitObjectArgument())) {
+        if (const auto *SE = clang::dyn_cast<clang::DeclRefExpr>(ME->getSubExpr())) {
+          declRef  = SE;
+        }
+      } 
+      else if (const auto *ME = clang::dyn_cast<clang::DeclRefExpr>(E->getImplicitObjectArgument())) {
+        declRef  = ME;
+      }
+      if (declRef && declRef->getDecl()) {
+        if (auto *vd = clang::dyn_cast<clang::VarDecl>(declRef->getDecl())) {
+          if (vd->hasInit()) {
+            if (const auto *constructor = clang::dyn_cast<clang::CXXConstructExpr>(vd->getInit())) {
+              return constructor->getArg(0);
+            }
+          }
+        }
+      }
+    }
+    return getCallExpr();
   }
 
   class Finder : public RosApiCall::Finder {

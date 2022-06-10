@@ -50,6 +50,8 @@ public:
       return symbolize(declRefExpr);
     } else if (clang::StringLiteral *literal = clang::dyn_cast<clang::StringLiteral>(expr)) {
       return symbolize(literal);
+    } else if (clang::IntegerLiteral *literal = clang::dyn_cast<clang::IntegerLiteral>(expr)) {
+      return symbolize(literal);
     } else if (clang::ImplicitCastExpr *implicitCastExpr = clang::dyn_cast<clang::ImplicitCastExpr>(expr)) {
       return symbolize(implicitCastExpr);
     } else if (clang::CXXConstructExpr *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(expr)) {
@@ -71,6 +73,10 @@ private:
 
   std::unique_ptr<SymbolicString> symbolize(clang::StringLiteral *literal) {
     return valueBuilder.stringLiteral(literal->getString().str());
+  }
+
+  std::unique_ptr<SymbolicString> symbolize(clang::IntegerLiteral *literal) {
+    return valueBuilder.stringLiteral(std::to_string(literal->getValue().getSExtValue()));
   }
 
   std::unique_ptr<SymbolicString> symbolize(clang::CXXConstructExpr *expr) {
