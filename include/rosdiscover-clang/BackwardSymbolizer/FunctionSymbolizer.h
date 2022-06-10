@@ -363,6 +363,10 @@ private:
         return symbolizeApiCall((BareSetParamCall*) apiCall);
       case RosApiCallKind::RosInitCall:
         return symbolizeApiCall((RosInitCall*) apiCall);
+      case RosApiCallKind::PublishCall:
+        return symbolizeApiCall((PublishCall*) apiCall);
+      case RosApiCallKind::RateSleepCall:
+        return symbolizeApiCall((RateSleepCall*) apiCall);        
       default:
         llvm::errs() << "unrecognized bare ROS API call: ";
         apiCall->print(llvm::outs());
@@ -573,6 +577,20 @@ private:
       symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
       apiCall->getFormatName()
     );
+  }
+
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    api_call::RateSleepCall *apiCall
+  ) {
+    llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
+    return std::make_unique<RateSleep>(symbolizeApiCallName(apiCall));
+  }
+
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    api_call::PublishCall *apiCall
+  ) {
+    llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
+    return std::make_unique<Publish>(symbolizeApiCallName(apiCall));
   }
 
   // TODO a unique_ptr should be passed in here!
