@@ -21,13 +21,22 @@ public:
     llvm::outs() << "\n";
 
     auto *unaryOp = clang::dyn_cast<clang::UnaryOperator>(argExpr);
+    clang::Expr const *subExpr;
     if (unaryOp == nullptr) {
-      return unableToResolve(argExpr);
-    }
+      auto *castExpr = clang::dyn_cast<clang::ImplicitCastExpr>(argExpr);
+      if (castExpr == nullptr) {
+        return unableToResolve(argExpr);
+      }
 
-    auto *subExpr = unaryOp->getSubExpr();
-    if (subExpr == nullptr) {
-      return unableToResolve(argExpr);
+      subExpr = castExpr->getSubExpr();
+      if (subExpr == nullptr) {
+        return unableToResolve(argExpr);
+      }
+    } else {
+      subExpr = unaryOp->getSubExpr();
+      if (subExpr == nullptr) {
+        return unableToResolve(argExpr);
+      }
     }
 
     auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(subExpr);

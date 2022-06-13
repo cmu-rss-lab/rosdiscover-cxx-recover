@@ -15,6 +15,24 @@ public:
   RosApiCallKind const getKind() const override {
     return RosApiCallKind::SubscribeTopicCall;
   }
+  
+  Callback* getCallback(clang::ASTContext &context) const override {
+    auto *callExpr = getCallExpr();
+    auto numArgs = callExpr->getNumArgs();
+
+    llvm::outs() << "[SubscribeTopicCall] Finding Callback (" << numArgs << ")\n";
+
+    // if the call only has one argument, then we don't know what the callback is for now
+    if (numArgs < 3) {
+      return nullptr;
+    }
+
+    // otherwise the callback should be given by the third argument
+    auto *callbackArg = callExpr->getArg(2);
+    auto callback = Callback::fromArgExpr(context, this, callbackArg);
+    //llvm::outs() << "[SubscribeTopicCall] Callback Found\n";
+    return callback;
+  }
 
   clang::Expr const * getNameExpr() const override {
     return getCallExpr()->getArg(0);
