@@ -6,7 +6,7 @@
 
 namespace rosdiscover {
 
-class IntegerLiteral : public virtual SymbolicString {
+class IntegerLiteral : public virtual SymbolicInteger {
 public:
   IntegerLiteral(int const &literal) : literal(literal) {}
   ~IntegerLiteral() {}
