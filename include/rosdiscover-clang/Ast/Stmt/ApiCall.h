@@ -87,23 +87,23 @@ private:
 
 class RateSleep : public SymbolicRosApiCall {
 public:
-  RateSleep(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
+  RateSleep(std::unique_ptr<SymbolicString> name, std::unique_ptr<SymbolicInteger> rate) : SymbolicRosApiCall(std::move(name)), rate(std::move(rate)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(ratesleep ";
-    getName()->print(os);
+    rate->print(os);
     os << ")";
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "ratesleep"},
-      {"name", getName()->toJson()}
+      {"rate", rate->toJson()}
     };
   }
 
 private:
-  std::string const format;
+  std::unique_ptr<SymbolicInteger> rate;
 };
 
 class Publish : public SymbolicRosApiCall {

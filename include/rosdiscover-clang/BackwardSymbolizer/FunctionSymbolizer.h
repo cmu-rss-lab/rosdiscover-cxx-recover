@@ -15,6 +15,7 @@
 #include "../Value/String.h"
 #include "../Value/Value.h"
 #include "StringSymbolizer.h"
+#include "IntSymbolizer.h"
 
 namespace rosdiscover {
 
@@ -79,6 +80,7 @@ private:
       functionCalls(functionCalls),
       apiCallToVar(),
       stringSymbolizer(astContext, apiCallToVar),
+      intSymbolizer(),
       valueBuilder(),
       symbolicArgNames(symbolicArgNames),
       callbacks(callbacks)
@@ -93,6 +95,7 @@ private:
   std::vector<clang::Expr *> &functionCalls;
   std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar;
   StringSymbolizer stringSymbolizer;
+  IntSymbolizer intSymbolizer;
   ValueBuilder valueBuilder;
   std::unordered_set<std::string> symbolicArgNames;
   [[maybe_unused]] std::vector<Callback*> &callbacks;
@@ -583,7 +586,10 @@ private:
     api_call::RateSleepCall *apiCall
   ) {
     llvm::outs() << "DEBUG: symbolizing RateSleepCall\n";
-    return std::make_unique<RateSleep>(symbolizeApiCallName(apiCall));
+    return std::make_unique<RateSleep>(
+        symbolizeApiCallName(apiCall),
+        intSymbolizer.symbolize(const_cast<clang::Expr*>(apiCall->getRateExpr()))
+    );
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(

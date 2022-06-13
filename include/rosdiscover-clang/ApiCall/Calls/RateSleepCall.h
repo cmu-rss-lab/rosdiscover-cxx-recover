@@ -17,6 +17,15 @@ public:
 
   clang::Expr const * getNameExpr() const override {
     if (const auto *E = clang::dyn_cast<clang::CXXMemberCallExpr>(getCallExpr())) {
+      if (const auto *ME = clang::dyn_cast<clang::ImplicitCastExpr>(E->getImplicitObjectArgument())) {
+        return E->getImplicitObjectArgument();
+      }
+    } 
+    return getCallExpr();
+  }
+
+  clang::Expr const * getRateExpr() const {
+    if (const auto *E = clang::dyn_cast<clang::CXXMemberCallExpr>(getCallExpr())) {
       const clang::DeclRefExpr* declRef = nullptr;
       if (const auto *ME = clang::dyn_cast<clang::ImplicitCastExpr>(E->getImplicitObjectArgument())) {
         if (const auto *SE = clang::dyn_cast<clang::DeclRefExpr>(ME->getSubExpr())) {
