@@ -588,7 +588,7 @@ private:
     llvm::outs() << "DEBUG: symbolizing RateSleepCall\n";
     return std::make_unique<RateSleep>(
         symbolizeApiCallName(apiCall),
-        intSymbolizer.symbolize(const_cast<clang::Expr*>(apiCall->getRateExpr()))
+        intSymbolizer.symbolize(apiCall->getRate(astContext))
     );
   }
 
