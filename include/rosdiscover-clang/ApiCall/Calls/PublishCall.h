@@ -1,7 +1,5 @@
 #pragma once
 
-#include <llvm/ADT/APInt.h>
-
 #include "../RosApiCall.h"
 
 namespace rosdiscover {
