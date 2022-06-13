@@ -20,10 +20,11 @@ public:
     auto *callExpr = getCallExpr();
     auto numArgs = callExpr->getNumArgs();
 
-    llvm::outs() << "[SubscribeTopicCall] Finding Callback (" << numArgs << ")\n";
+    llvm::outs() << "[SubscribeTopicCall] Finding Callback\n";
 
     // if the call only has one argument, then we don't know what the callback is for now
     if (numArgs < 3) {
+      llvm::outs() << "[SubscribeTopicCall] Incorrect number of arguments (" << numArgs << ")\n";
       return nullptr;
     }
 
