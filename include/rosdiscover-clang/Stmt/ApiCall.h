@@ -79,7 +79,7 @@ public:
       {"kind", "subscribes-to"},
       {"name", getName()->toJson()},
       {"format", format},
-      {"callback", callback->toJson()}
+      {"callback", (callback == nullptr) ? "unknown" : callback->toJson()}
     };
   }
 
