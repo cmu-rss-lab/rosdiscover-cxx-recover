@@ -75,33 +75,7 @@ public:
     //Get the frequency argument of the rate constructor
     const auto *frequencyArg = rateConstructor->getArg(0)->IgnoreImpCasts();
     llvm::outs() << "DEBUG [RateSleepCall]: Rate found (" << frequencyArg->getStmtClassName() << ")\n";
-
-    //Try evaluating the frequency as integer.
-    clang::Expr::EvalResult resultInt;
-    if (frequencyArg->EvaluateAsInt(resultInt, Ctx)) {
-      llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated INT: (" << resultInt.Val.getInt().getSExtValue() << ")\n";
-      return new clang::APValue(resultInt.Val);
-    }
-
-    //Try evaluating the frequency as float.
-    llvm::APFloat resultFloat(0.0);
-    if (frequencyArg->EvaluateAsFloat(resultFloat, Ctx)) {
-      llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated Float: (" << resultFloat.convertToDouble() << ")\n";
-      return new clang::APValue(resultFloat);
-    }
-
-    //Try evaluating the frequency as float.
-    clang::Expr::EvalResult resultFixed;
-    if (frequencyArg->EvaluateAsFixedPoint(resultFixed, Ctx)) {
-      llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated Fixed: (" << resultFixed.Val.getFixedPoint().toString() << ")\n";
-      return new clang::APValue(resultFixed.Val.getFixedPoint());
-    } 
-  
-    //All evaluation attempts have failed.
-    llvm::outs() << "DEBUG [RateSleepCall]: Rate has unsupported type: "; 
-    frequencyArg->dump();
-    llvm::outs() << "\n";
-    return nullptr;
+    return evaluateNumber("RateSleepCall", frequencyArg, Ctx);
   }
 
   class Finder : public RosApiCall::Finder {

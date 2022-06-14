@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../RosApiCall.h"
+#include "./Util.h"
 
 namespace rosdiscover {
 namespace api_call {
@@ -29,33 +30,11 @@ public:
       llvm::outs() << "\n";
       return nullptr;
     }
-
-    auto *callee = memberCall->getImplicitObjectArgument();
-    if (callee == nullptr) {
-      llvm::outs() << "ERROR [PublishCall] No callee on publish call: ";
-      memberCall->dump();
-      llvm::outs() << "\n";
-      return nullptr;
-    }
-
-    const auto *member = clang::dyn_cast<clang::MemberExpr>(callee->IgnoreImpCasts());
-
-    const clang::ValueDecl *decl;
-    if (member == nullptr) {
-      const auto *declRef = clang::dyn_cast<clang::DeclRefExpr>(callee->IgnoreImpCasts());
-      if (declRef == nullptr) {
-        llvm::outs() << "ERROR [PublishCall] Callee is neither MemberExpr nor DeclRefExpr: ";
-        callee->dump();
-        llvm::outs() << "\n";
-        return nullptr;
-      }
-      decl = declRef->getDecl();
-    } else {
-      decl = member->getMemberDecl();
-    }
+    
+    const clang::ValueDecl *decl = getCallerDecl("PublishCall", memberCall);
     if (decl == nullptr) {
       llvm::outs() << "ERROR [PublishCall] Decl is null: ";
-      callee->dump();
+      memberCall->dump();
       llvm::outs() << "\n";
       return nullptr;
     }
