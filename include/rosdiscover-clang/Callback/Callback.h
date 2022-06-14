@@ -37,7 +37,7 @@ public:
     }
 
     if (subExpr == nullptr) {
-        return unableToResolve(argExpr);
+      return unableToResolve(argExpr);
     }
 
     auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(subExpr);
