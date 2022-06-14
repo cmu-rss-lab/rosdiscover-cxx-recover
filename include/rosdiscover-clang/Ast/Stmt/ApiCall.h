@@ -108,7 +108,7 @@ private:
 
 class Publish : public SymbolicRosApiCall {
 public:
-  Publish(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
+  Publish(std::unique_ptr<SymbolicString> name, std::string const &publisher) : SymbolicRosApiCall(std::move(name)), publisher(publisher) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(publish ";
@@ -119,12 +119,12 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "publish"},
-      {"name", getName()->toJson()}
+      {"publisher", publisher}
     };
   }
 
 private:
-  std::string const format;
+  std::string const publisher;
 };
 
 class ServiceCaller : public SymbolicRosApiCall {

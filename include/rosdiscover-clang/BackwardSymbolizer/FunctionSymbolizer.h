@@ -599,7 +599,9 @@ private:
     api_call::PublishCall *apiCall
   ) {
     llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
-    return std::make_unique<Publish>(symbolizeApiCallName(apiCall));
+    return std::make_unique<Publish>(symbolizeApiCallName(apiCall), 
+        apiCall->getPublisher()
+    );
   }
 
   // TODO a unique_ptr should be passed in here!

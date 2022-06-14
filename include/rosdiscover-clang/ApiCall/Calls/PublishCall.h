@@ -14,23 +14,66 @@ public:
   }
 
   clang::Expr const * getNameExpr() const override {
+    return getCallExpr();
+  }
+
+  const std::string getPublisher() const {
+    llvm::outs() << "DEBUG [PublishCall] Publish call is : ";
+    getCallExpr()->dump();
+    llvm::outs() << "\n";
+
     const auto *memberCall = clang::dyn_cast<clang::CXXMemberCallExpr>(getCallExpr());
     if (memberCall == nullptr) {
-      llvm::outs() << "ERROR [PublishCall] publish call is no CXXMemberCallExpr\n";
+      llvm::outs() << "ERROR [PublishCall] Publish call is not a CXXMemberCallExpr: ";
+      getCallExpr()->dump();
+      llvm::outs() << "\n";
       return nullptr;
     }
 
     auto *callee = memberCall->getImplicitObjectArgument();
     if (callee == nullptr) {
-    llvm::outs() << "ERROR [PublishCall] no calle on publish call\n";
+      llvm::outs() << "ERROR [PublishCall] No callee on publish call: ";
+      memberCall->dump();
+      llvm::outs() << "\n";
       return nullptr;
     }
 
-    llvm::outs() << "DEBUG [PublishCall] Callee is: ";
-    callee->IgnoreImpCasts()->dump();
+    const auto *member = clang::dyn_cast<clang::MemberExpr>(callee->IgnoreImpCasts());
+
+    const clang::ValueDecl *decl;
+    if (member == nullptr) {
+      const auto *declRef = clang::dyn_cast<clang::DeclRefExpr>(callee->IgnoreImpCasts());
+      if (declRef == nullptr) {
+        llvm::outs() << "ERROR [PublishCall] Callee is neither MemberExpr nor DeclRefExpr: ";
+        callee->dump();
+        llvm::outs() << "\n";
+        return nullptr;
+      }
+      decl = declRef->getDecl();
+    } else {
+      decl = member->getMemberDecl();
+    }
+    if (decl == nullptr) {
+      llvm::outs() << "ERROR [PublishCall] Decl is null: ";
+      callee->dump();
+      llvm::outs() << "\n";
+      return nullptr;
+    }
+
+    llvm::outs() << "DEBUG [PublishCall] decl: ";
+    decl->dump();
     llvm::outs() << "\n";
 
-    return callee->IgnoreImpCasts();
+    const auto *identifier = decl->getIdentifier();
+    if (identifier == nullptr) {
+      llvm::outs() << "ERROR [PublishCall] Decl identifier is null: ";
+      decl->dump();
+      llvm::outs() << "\n";
+      return nullptr;
+    }
+    llvm::outs() << "DEBUG [PublishCall] Callee is: " << identifier->getName() << "\n";
+
+    return identifier->getName().str();
   }
 
   class Finder : public RosApiCall::Finder {
