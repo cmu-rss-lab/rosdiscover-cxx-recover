@@ -22,9 +22,14 @@ public:
   : astContext(astContext), apiCallToVar(apiCallToVar), valueBuilder() {}
 
   std::unique_ptr<SymbolicString> symbolize(clang::Expr *expr) {
+    if (expr == nullptr) {
+      llvm::outs() << "symbolizing (str): NULLPTR";
+      return valueBuilder.unknown();
+    }
+
     expr = expr->IgnoreParenCasts();
 
-    llvm::outs() << "symbolizing: ";
+    llvm::outs() << "symbolizing (str): ";
     expr->dump();
     llvm::outs() << "\n";
 

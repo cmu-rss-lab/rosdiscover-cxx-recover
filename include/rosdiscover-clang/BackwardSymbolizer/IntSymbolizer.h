@@ -20,9 +20,15 @@ public:
   : valueBuilder() {}
 
   std::unique_ptr<SymbolicInteger> symbolize(clang::Expr *expr) {
+
+    if (expr == nullptr) {
+      llvm::outs() << "symbolizing (int): NULLPTR";
+      return valueBuilder.unknown();
+    }
+
     expr = expr->IgnoreParenCasts();
 
-    llvm::outs() << "symbolizing: ";
+    llvm::outs() << "symbolizing (int): ";
     expr->dump();
     llvm::outs() << "\n";
 

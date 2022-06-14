@@ -2,6 +2,7 @@
 
 #include <clang/AST/APValue.h>
 #include <clang/AST/Expr.h>
+#include <llvm/ADT/APSInt.h>
 
 #include "../RosApiCall.h"
 
@@ -59,7 +60,7 @@ public:
         }
       }
     }
-    return clang::APValue();
+    return clang::APValue(llvm::APSInt("0"));
   }
 
   class Finder : public RosApiCall::Finder {
