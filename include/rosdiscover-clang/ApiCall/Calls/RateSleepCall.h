@@ -3,6 +3,7 @@
 #include <clang/AST/APValue.h>
 #include <clang/AST/Expr.h>
 #include <llvm/ADT/APSInt.h>
+#include <llvm/ADT/APFloat.h>
 
 #include "../RosApiCall.h"
 
@@ -27,6 +28,10 @@ public:
   }
 
   clang::APValue getRate(const clang::ASTContext &Ctx) const {
+    llvm::outs() << "DEBUG [RateSleepCall]: Getting Rate for: ";
+    getCallExpr()->dump();
+    llvm::outs() << "\n";
+
     if (const auto *E = clang::dyn_cast<clang::CXXMemberCallExpr>(getCallExpr())) {
       const clang::DeclRefExpr* declRef = nullptr;
       if (const auto *ME = clang::dyn_cast<clang::ImplicitCastExpr>(E->getImplicitObjectArgument())) {
@@ -42,17 +47,25 @@ public:
           if (vd->hasInit()) {
             if (const auto *constructor = clang::dyn_cast<clang::CXXConstructExpr>(vd->getInit())) {
               const auto *arg = constructor->getArg(0)->IgnoreImpCasts();
-              llvm::outs() << "Rate found (" << arg->getStmtClassName() << ")\n";
-              clang::Expr::EvalResult result;
-              arg->EvaluateAsInt(result, Ctx);
-              if (result.Val.isInt()) {
-                llvm::outs() << "Rate evaluated INT: (" << result.Val.getInt().getSExtValue() << ")\n";
-                return result.Val;
-              } else if (result.Val.isFloat()) {
-                llvm::outs() << "Rate evaluated Float: (" << result.Val.getFloat().convertToDouble() << ")\n";
-                return result.Val;
+              llvm::outs() << "DEBUG [RateSleepCall]: Rate found (" << arg->getStmtClassName() << ")\n";
+              clang::Expr::EvalResult resultInt;
+              if (arg->EvaluateAsInt(resultInt, Ctx)) {
+                llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated INT: (" << resultInt.Val.getInt().getSExtValue() << ")\n";
+                return resultInt.Val;
+              }
+              llvm::APFloat resultFloat(0.0);
+              if (arg->EvaluateAsFloat(resultFloat, Ctx)) {
+                llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated Float: (" << resultFloat.convertToDouble() << ")\n";
+                return clang::APValue(resultFloat);
+              }
+              clang::Expr::EvalResult resultFixed;
+              if (arg->EvaluateAsFixedPoint(resultFixed, Ctx)) {
+                llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated Fixed: (" << resultFixed.Val.getFixedPoint().toString() << ")\n";
+                return clang::APValue(resultFixed.Val.getFixedPoint());
               } else {
-                llvm::outs() << "Rate has unsupported type: (" << result.Val.getKind() << ")\n";
+                llvm::outs() << "DEBUG [RateSleepCall]: Rate has unsupported type: "; 
+                arg->dump();
+                llvm::outs() << "\n";
                 return clang::APValue();
               }           
             }

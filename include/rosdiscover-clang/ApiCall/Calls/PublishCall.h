@@ -14,7 +14,23 @@ public:
   }
 
   clang::Expr const * getNameExpr() const override {
-    return getCallExpr()->getArg(0);
+    const auto *memberCall = clang::dyn_cast<clang::CXXMemberCallExpr>(getCallExpr());
+    if (memberCall == nullptr) {
+      llvm::outs() << "ERROR [PublishCall] publish call is no CXXMemberCallExpr\n";
+      return nullptr;
+    }
+
+    auto *callee = memberCall->getImplicitObjectArgument();
+    if (callee == nullptr) {
+    llvm::outs() << "ERROR [PublishCall] no calle on publish call\n";
+      return nullptr;
+    }
+
+    llvm::outs() << "DEBUG [PublishCall] Callee is: ";
+    callee->IgnoreImpCasts()->dump();
+    llvm::outs() << "\n";
+
+    return callee->IgnoreImpCasts();
   }
 
   class Finder : public RosApiCall::Finder {
