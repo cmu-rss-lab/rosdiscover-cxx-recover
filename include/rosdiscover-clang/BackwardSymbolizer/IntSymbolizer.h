@@ -33,7 +33,10 @@ public:
     llvm::outs() << "unable to symbolize expression: treating as unknown\n";
     return valueBuilder.unknown();
   }
-
+  
+  std::unique_ptr<SymbolicInteger> symbolize(clang::APValue literal) {
+    return valueBuilder.integerLiteral(literal.getInt().getSExtValue());
+  }
 private:
   ValueBuilder valueBuilder;
 
@@ -41,8 +44,6 @@ private:
     return valueBuilder.integerLiteral(literal->getValue().getSExtValue());
   }
 
-  std::unique_ptr<SymbolicInteger> symbolize(clang::APValue literal) {
-    return valueBuilder.integerLiteral(literal->getInt()->getSExtValue());
-  }
+
 };
 } // rosdiscover

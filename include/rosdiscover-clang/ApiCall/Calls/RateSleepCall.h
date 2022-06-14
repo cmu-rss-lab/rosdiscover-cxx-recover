@@ -44,6 +44,7 @@ public:
               llvm::outs() << "Rate found (" << arg->getStmtClassName() << ")\n";
               clang::Expr::EvalResult result;
               arg->EvaluateAsInt(result, Ctx);
+              llvm::outs() << "Rate evaluated (" << result.Val.getInt().getSExtValue() << ")\n";
               return result.Val;
               /*clang::IntegerLiteral const *int_arg;
               if (const auto *argv = clang::dyn_cast<clang::DeclRefExpr>(arg)) {
@@ -72,7 +73,7 @@ public:
         }
       }
     }
-    return nullptr;
+    return clang::APValue();
   }
 
   class Finder : public RosApiCall::Finder {
