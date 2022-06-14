@@ -16,6 +16,7 @@
 #include "../Value/Value.h"
 #include "StringSymbolizer.h"
 #include "IntSymbolizer.h"
+#include "FloatSymbolizer.h"
 
 namespace rosdiscover {
 
@@ -81,6 +82,7 @@ private:
       apiCallToVar(),
       stringSymbolizer(astContext, apiCallToVar),
       intSymbolizer(),
+      floatSymbolizer(),
       valueBuilder(),
       symbolicArgNames(symbolicArgNames),
       callbacks(callbacks)
@@ -96,6 +98,7 @@ private:
   std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar;
   StringSymbolizer stringSymbolizer;
   IntSymbolizer intSymbolizer;
+  FloatSymbolizer floatSymbolizer;
   ValueBuilder valueBuilder;
   std::unordered_set<std::string> symbolicArgNames;
   [[maybe_unused]] std::vector<Callback*> &callbacks;
@@ -586,10 +589,21 @@ private:
     api_call::RateSleepCall *apiCall
   ) {
     llvm::outs() << "DEBUG: symbolizing RateSleepCall\n";
-    return std::make_unique<RateSleep>(
-        symbolizeApiCallName(apiCall),
-        intSymbolizer.symbolize(apiCall->getRate(astContext))
-    );
+    auto rate = apiCall->getRate(astContext);
+    if (rate.isInt()) {
+      return std::make_unique<RateSleep>(
+          symbolizeApiCallName(apiCall),
+          floatSymbolizer.symbolize(apiCall->getRate(astContext))
+      );
+    } else if (rate.isFloat()) {
+      return std::make_unique<RateSleep>(
+          symbolizeApiCallName(apiCall),
+          floatSymbolizer.symbolize(apiCall->getRate(astContext))
+      );
+    } else {
+      llvm::outs() << "ERROR: Rate type not s\n";
+      return nullptr;
+    }
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(
@@ -693,6 +707,9 @@ private:
         case SymbolicValueType::Integer:
           llvm::errs() << "WARNING: integer symbolization is currently unsupported\n";
           continue;
+        case SymbolicValueType::Float:
+          llvm::errs() << "WARNING: float symbolization is currently unsupported\n";
+          continue;          
         case SymbolicValueType::Unsupported:
           llvm::errs() << "ERROR: attempted to symbolize an unsupported type\n";
           abort();

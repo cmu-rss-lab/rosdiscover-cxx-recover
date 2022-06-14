@@ -87,11 +87,11 @@ private:
 
 class RateSleep : public SymbolicRosApiCall {
 public:
-  RateSleep(std::unique_ptr<SymbolicString> name, std::unique_ptr<SymbolicInteger> rate) : SymbolicRosApiCall(std::move(name)), rate(std::move(rate)) {}
+  RateSleep(std::unique_ptr<SymbolicString> name, std::unique_ptr<SymbolicFloat> rate) : SymbolicRosApiCall(std::move(name)), rate(std::move(rate)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(ratesleep ";
-    rate->print(os);
+    getName()->print(os);
     os << ")";
   }
 
@@ -103,7 +103,7 @@ public:
   }
 
 private:
-  std::unique_ptr<SymbolicInteger> rate;
+  std::unique_ptr<SymbolicFloat> rate;
 };
 
 class Publish : public SymbolicRosApiCall {
