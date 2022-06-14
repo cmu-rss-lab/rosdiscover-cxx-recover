@@ -40,11 +40,17 @@ public:
     return valueBuilder.unknown();
   }
   
-  std::unique_ptr<SymbolicFloat> symbolize(clang::APValue literal) {
-    if (literal.isFloat()) {
-      return valueBuilder.floatingLiteral(literal.getFloat().convertToDouble());
-    } else if (literal.isInt()) {
-      return valueBuilder.floatingLiteral(literal.getInt().getSExtValue());
+  std::unique_ptr<SymbolicFloat> symbolize(const clang::APValue *literal) {
+    if (literal == nullptr) {
+      llvm::outs() << "unable to symbolize value: treating as unknown\n";
+      return valueBuilder.unknown();
+    }
+
+
+    if (literal->isFloat()) {
+      return valueBuilder.floatingLiteral(literal->getFloat().convertToDouble());
+    } else if (literal->isInt()) {
+      return valueBuilder.floatingLiteral(literal->getInt().getSExtValue());
     } else {
       llvm::outs() << "unable to symbolize value: treating as unknown\n";
       return valueBuilder.unknown();
@@ -53,11 +59,11 @@ public:
 private:
   ValueBuilder valueBuilder;
 
-  std::unique_ptr<SymbolicFloat> symbolize(clang::FloatingLiteral *literal) {
+  std::unique_ptr<SymbolicFloat> symbolize(const clang::FloatingLiteral *literal) {
     return valueBuilder.floatingLiteral(literal->getValue().convertToDouble());
   }
 
-  std::unique_ptr<SymbolicFloat> symbolize(clang::IntegerLiteral *literal) {
+  std::unique_ptr<SymbolicFloat> symbolize(const clang::IntegerLiteral *literal) {
     return valueBuilder.floatingLiteral(literal->getValue().getSExtValue());
   }
 

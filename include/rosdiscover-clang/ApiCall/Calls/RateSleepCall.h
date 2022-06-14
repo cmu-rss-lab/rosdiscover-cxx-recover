@@ -5,6 +5,7 @@
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/APFloat.h>
 
+#include "./Util.h"
 #include "../RosApiCall.h"
 
 namespace rosdiscover {
@@ -27,53 +28,80 @@ public:
     return nullptr;
   }
 
-  clang::APValue getRate(const clang::ASTContext &Ctx) const {
+  clang::APValue const * getRate(const clang::ASTContext &Ctx) const {
     llvm::outs() << "DEBUG [RateSleepCall]: Getting Rate for: ";
     getCallExpr()->dump();
     llvm::outs() << "\n";
-
-    if (const auto *E = clang::dyn_cast<clang::CXXMemberCallExpr>(getCallExpr())) {
-      const clang::DeclRefExpr* declRef = nullptr;
-      if (const auto *ME = clang::dyn_cast<clang::ImplicitCastExpr>(E->getImplicitObjectArgument())) {
-        if (const auto *SE = clang::dyn_cast<clang::DeclRefExpr>(ME->getSubExpr())) {
-          declRef  = SE;
-        }
-      } 
-      else if (const auto *ME = clang::dyn_cast<clang::DeclRefExpr>(E->getImplicitObjectArgument())) {
-        declRef  = ME;
-      }
-      if (declRef && declRef->getDecl()) {
-        if (auto *vd = clang::dyn_cast<clang::VarDecl>(declRef->getDecl())) {
-          if (vd->hasInit()) {
-            if (const auto *constructor = clang::dyn_cast<clang::CXXConstructExpr>(vd->getInit())) {
-              const auto *arg = constructor->getArg(0)->IgnoreImpCasts();
-              llvm::outs() << "DEBUG [RateSleepCall]: Rate found (" << arg->getStmtClassName() << ")\n";
-              clang::Expr::EvalResult resultInt;
-              if (arg->EvaluateAsInt(resultInt, Ctx)) {
-                llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated INT: (" << resultInt.Val.getInt().getSExtValue() << ")\n";
-                return resultInt.Val;
-              }
-              llvm::APFloat resultFloat(0.0);
-              if (arg->EvaluateAsFloat(resultFloat, Ctx)) {
-                llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated Float: (" << resultFloat.convertToDouble() << ")\n";
-                return clang::APValue(resultFloat);
-              }
-              clang::Expr::EvalResult resultFixed;
-              if (arg->EvaluateAsFixedPoint(resultFixed, Ctx)) {
-                llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated Fixed: (" << resultFixed.Val.getFixedPoint().toString() << ")\n";
-                return clang::APValue(resultFixed.Val.getFixedPoint());
-              } else {
-                llvm::outs() << "DEBUG [RateSleepCall]: Rate has unsupported type: "; 
-                arg->dump();
-                llvm::outs() << "\n";
-                return clang::APValue();
-              }           
-            }
-          }
-        }
-      }
+    
+    //Check input
+    const auto *memberCallExpr = clang::dyn_cast<clang::CXXMemberCallExpr>(getCallExpr());
+    if (memberCallExpr == nullptr) {
+      llvm::outs() << "ERROR [RateSleepCall]: Sleep call is not a CXXMemberCallExpr: ";
+      getCallExpr()->dump();
+      llvm::outs() << "\n";
+      return nullptr;
     }
-    return clang::APValue(llvm::APSInt("0"));
+    
+    //Get rate declaration
+    const clang::Decl* decl = getCallerDecl("RateSleepCall", memberCallExpr);
+    if (decl == nullptr) {
+      return nullptr;
+    }
+
+    //check if declaration of rate object is a VarDecl,
+    auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl);
+    if (varDecl == nullptr) {
+      llvm::outs() << "ERROR [RateSleepCall]: Unsupported rate declaration type: ";
+      decl->dump();
+      return nullptr;
+    }
+
+    //Get the initialization of the the rate object.
+    if (!varDecl->hasInit()) {
+      llvm::outs() << "ERROR [RateSleepCall]: Rate declaration has no init: ";
+      decl->dump();
+      return nullptr;     
+    }
+    auto *rateInit = varDecl->getInit();
+
+    //Get the constructor of the rate object initializtion.
+    const auto *rateConstructor = clang::dyn_cast<clang::CXXConstructExpr>(rateInit);
+    if (rateConstructor == nullptr) {
+      llvm::outs() << "ERROR [RateSleepCall]: Decl has no init: ";
+      decl->dump();
+      return nullptr;         
+    }
+
+    //Get the frequency argument of the rate constructor
+    const auto *frequencyArg = rateConstructor->getArg(0)->IgnoreImpCasts();
+    llvm::outs() << "DEBUG [RateSleepCall]: Rate found (" << frequencyArg->getStmtClassName() << ")\n";
+
+    //Try evaluating the frequency as integer.
+    clang::Expr::EvalResult resultInt;
+    if (frequencyArg->EvaluateAsInt(resultInt, Ctx)) {
+      llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated INT: (" << resultInt.Val.getInt().getSExtValue() << ")\n";
+      return new clang::APValue(resultInt.Val);
+    }
+
+    //Try evaluating the frequency as float.
+    llvm::APFloat resultFloat(0.0);
+    if (frequencyArg->EvaluateAsFloat(resultFloat, Ctx)) {
+      llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated Float: (" << resultFloat.convertToDouble() << ")\n";
+      return new clang::APValue(resultFloat);
+    }
+
+    //Try evaluating the frequency as float.
+    clang::Expr::EvalResult resultFixed;
+    if (frequencyArg->EvaluateAsFixedPoint(resultFixed, Ctx)) {
+      llvm::outs() << "DEBUG [RateSleepCall]: Rate evaluated Fixed: (" << resultFixed.Val.getFixedPoint().toString() << ")\n";
+      return new clang::APValue(resultFixed.Val.getFixedPoint());
+    } 
+  
+    //All evaluation attempts have failed.
+    llvm::outs() << "DEBUG [RateSleepCall]: Rate has unsupported type: "; 
+    frequencyArg->dump();
+    llvm::outs() << "\n";
+    return nullptr;
   }
 
   class Finder : public RosApiCall::Finder {

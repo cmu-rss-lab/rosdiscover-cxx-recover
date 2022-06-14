@@ -40,13 +40,23 @@ public:
     return valueBuilder.unknown();
   }
   
-  std::unique_ptr<SymbolicInteger> symbolize(clang::APValue literal) {
-    return valueBuilder.integerLiteral(literal.getInt().getSExtValue());
+  std::unique_ptr<SymbolicInteger> symbolize(const clang::APValue *literal) {
+    if (literal == nullptr) {
+      llvm::outs() << "unable to symbolize value: treating as unknown\n";
+      return valueBuilder.unknown();
+    }
+
+    return valueBuilder.integerLiteral(literal->getInt().getSExtValue());
   }
 private:
   ValueBuilder valueBuilder;
 
-  std::unique_ptr<SymbolicInteger> symbolize(clang::IntegerLiteral *literal) {
+  std::unique_ptr<SymbolicInteger> symbolize(const clang::IntegerLiteral *literal) {
+    if (literal == nullptr) {
+      llvm::outs() << "unable to symbolize value: treating as unknown\n";
+      return valueBuilder.unknown();
+    }
+
     return valueBuilder.integerLiteral(literal->getValue().getSExtValue());
   }
 
