@@ -91,7 +91,7 @@ public:
 
   void print(llvm::raw_ostream &os) const override {
     os << "(ratesleep ";
-    getName()->print(os);
+    rate->print(os);
     os << ")";
   }
 

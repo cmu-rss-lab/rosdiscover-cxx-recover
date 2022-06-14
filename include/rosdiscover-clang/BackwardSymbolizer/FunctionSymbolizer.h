@@ -589,21 +589,10 @@ private:
     api_call::RateSleepCall *apiCall
   ) {
     llvm::outs() << "DEBUG: symbolizing RateSleepCall\n";
-    auto rate = apiCall->getRate(astContext);
-    if (rate.isInt()) {
-      return std::make_unique<RateSleep>(
-          symbolizeApiCallName(apiCall),
-          floatSymbolizer.symbolize(apiCall->getRate(astContext))
-      );
-    } else if (rate.isFloat()) {
-      return std::make_unique<RateSleep>(
-          symbolizeApiCallName(apiCall),
-          floatSymbolizer.symbolize(apiCall->getRate(astContext))
-      );
-    } else {
-      llvm::outs() << "ERROR: Rate type not s\n";
-      return nullptr;
-    }
+    return std::make_unique<RateSleep>(
+        symbolizeApiCallName(apiCall),
+        floatSymbolizer.symbolize(apiCall->getRate(astContext))
+    );    
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(
