@@ -22,7 +22,7 @@ public:
         return E->getImplicitObjectArgument();
       }
     } 
-    return getCallExpr();
+    return nullptr;
   }
 
   clang::APValue getRate(const clang::ASTContext &Ctx) const {
@@ -44,30 +44,16 @@ public:
               llvm::outs() << "Rate found (" << arg->getStmtClassName() << ")\n";
               clang::Expr::EvalResult result;
               arg->EvaluateAsInt(result, Ctx);
-              llvm::outs() << "Rate evaluated (" << result.Val.getInt().getSExtValue() << ")\n";
-              return result.Val;
-              /*clang::IntegerLiteral const *int_arg;
-              if (const auto *argv = clang::dyn_cast<clang::DeclRefExpr>(arg)) {
-                llvm::outs() << "RateDecl Type: (" << argv->getDecl()->getDeclKindName() << ")\n";
-                if (auto *argdecl = clang::dyn_cast<clang::VarDecl>(argv->getDecl())) {
-                    if (argdecl->hasInit()) {
-                      llvm::outs() << "RateDecl Init: (" << argdecl->getInit()->getStmtClassName() << ")\n";
-                      if (const auto *argv = clang::dyn_cast<clang::IntegerLiteral>(argdecl->getInit())) {
-                         int_arg = argv;
-                      }
-                    }
-                }
-                llvm::errs() << "Rate unknown: " << arg->getStmtClassName() << ")\n";
-                return arg;
-
-              } else if (const auto *argv = clang::dyn_cast<clang::IntegerLiteral>(arg)) {
-                int_arg = argv;
+              if (result.Val.isInt()) {
+                llvm::outs() << "Rate evaluated INT: (" << result.Val.getInt().getSExtValue() << ")\n";
+                return result.Val;
+              } else if (result.Val.isFloat()) {
+                llvm::outs() << "Rate evaluated Float: (" << result.Val.getFloat().convertToDouble() << ")\n";
+                return result.Val;
               } else {
-                llvm::errs() << "Rate type unknown: " << arg->getStmtClassName() << ")\n";
-                return arg;
-              }
-              
-              return int_arg;*/
+                llvm::outs() << "Rate has unsupported type: (" << result.Val.getKind() << ")\n";
+                return clang::APValue();
+              }           
             }
           }
         }
