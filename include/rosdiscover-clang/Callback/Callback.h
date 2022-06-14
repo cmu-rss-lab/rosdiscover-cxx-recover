@@ -28,7 +28,7 @@ public:
         return unableToResolve(argExpr);
       }
 
-      subExpr = castExpr->getSubExpr();
+      subExpr = argExpr->IgnoreImpCasts();
       if (subExpr == nullptr) {
         return unableToResolve(argExpr);
       }
