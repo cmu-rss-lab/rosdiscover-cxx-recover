@@ -111,9 +111,7 @@ public:
   Publish(std::unique_ptr<SymbolicString> name, std::string const &publisher) : SymbolicRosApiCall(std::move(name)), publisher(publisher) {}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(publish ";
-    getName()->print(os);
-    os << ")";
+    os << "(publish " << publisher << ")";
   }
 
   nlohmann::json toJson() const override {
