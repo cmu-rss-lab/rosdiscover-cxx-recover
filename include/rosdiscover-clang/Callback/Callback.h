@@ -20,6 +20,9 @@ public:
     argExpr->dump();
     llvm::outs() << "\n";
 
+    // Callbacks can either contain a reference to a member function of 
+    // a static class (e.g., ``&callback_name``) 
+    // or just the name of a static metod (e.g., ``callback_name``).
     auto *unaryOp = clang::dyn_cast<clang::UnaryOperator>(argExpr);
     clang::Expr const *subExpr;
     if (unaryOp == nullptr) {
@@ -29,14 +32,12 @@ public:
       }
 
       subExpr = argExpr->IgnoreImpCasts();
-      if (subExpr == nullptr) {
-        return unableToResolve(argExpr);
-      }
     } else {
       subExpr = unaryOp->getSubExpr();
-      if (subExpr == nullptr) {
+    }
+
+    if (subExpr == nullptr) {
         return unableToResolve(argExpr);
-      }
     }
 
     auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(subExpr);
