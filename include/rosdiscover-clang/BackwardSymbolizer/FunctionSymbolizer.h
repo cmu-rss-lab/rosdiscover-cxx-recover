@@ -600,7 +600,7 @@ private:
   ) {
     llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
     return std::make_unique<Publish>(symbolizeApiCallName(apiCall), 
-        apiCall->getPublisher()
+        apiCall->getPublisherName()
     );
   }
 
