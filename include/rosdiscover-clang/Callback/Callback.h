@@ -26,7 +26,7 @@ public:
         llvm::outs() << "[Callback] CallExpr: ";
         callExpr->dump();
         llvm::outs() << "\n";
-        // TODO: Read the other arguments of bind calls such as i, ``boost::bind(CmdCallBack, _1, accel_rate)`` 
+        // TODO: Read the other arguments of bind calls such as in, ``boost::bind(CmdCallBack, _1, accel_rate)`` 
         return callExpr->getArg(0);
       }
       auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(bindExpr->getSubExpr()->IgnoreImpCasts());
