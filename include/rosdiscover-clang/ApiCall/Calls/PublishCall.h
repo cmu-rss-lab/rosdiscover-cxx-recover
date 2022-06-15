@@ -18,7 +18,7 @@ public:
     return getCallExpr();
   }
 
-  const std::string getPublisher() const {
+  const std::string getPublisherName() const {
     llvm::outs() << "DEBUG [PublishCall] Publish call is : ";
     getCallExpr()->dump();
     llvm::outs() << "\n";
