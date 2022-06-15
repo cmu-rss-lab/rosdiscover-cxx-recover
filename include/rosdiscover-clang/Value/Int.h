@@ -8,10 +8,10 @@ namespace rosdiscover {
 
 class IntegerLiteral : public virtual SymbolicInteger {
 public:
-  IntegerLiteral(int const &literal) : literal(literal) {}
+  IntegerLiteral(long const &literal) : literal(literal) {}
   ~IntegerLiteral() {}
 
-  static IntegerLiteral* create(int const &literal) {
+  static IntegerLiteral* create(long const &literal) {
     return new IntegerLiteral(literal);
   }
 
@@ -27,7 +27,7 @@ public:
   }
 
 private:
-  int const literal;
+  long const literal;
 };
 
 } // rosdiscover
