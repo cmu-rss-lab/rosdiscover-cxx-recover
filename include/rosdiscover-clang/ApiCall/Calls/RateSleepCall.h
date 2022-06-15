@@ -28,7 +28,7 @@ public:
     return nullptr;
   }
 
-  clang::APValue const * getRate(const clang::ASTContext &Ctx) const {
+  clang::APValue const * getRate(const clang::ASTContext &ctx) const {
     llvm::outs() << "DEBUG [RateSleepCall]: Getting Rate for: ";
     getCallExpr()->dump();
     llvm::outs() << "\n";
@@ -75,7 +75,7 @@ public:
     //Get the frequency argument of the rate constructor
     const auto *frequencyArg = rateConstructor->getArg(0)->IgnoreImpCasts();
     llvm::outs() << "DEBUG [RateSleepCall]: Rate found (" << frequencyArg->getStmtClassName() << ")\n";
-    return evaluateNumber("RateSleepCall", frequencyArg, Ctx);
+    return evaluateNumber("RateSleepCall", frequencyArg, ctx);
   }
 
   class Finder : public RosApiCall::Finder {
