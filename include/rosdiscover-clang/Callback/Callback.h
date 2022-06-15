@@ -19,7 +19,7 @@ public:
       auto *bindExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(tempExpr->getSubExpr()->IgnoreImpCasts());
       if (bindExpr == nullptr) {
         auto *callExpr = clang::dyn_cast<clang::CallExpr>(tempExpr->getSubExpr()->IgnoreImpCasts());
-        if (callExpr == nullptr || callExpr->getNumArgs < 1) {
+        if (callExpr == nullptr || callExpr->getNumArgs() < 1) {
           unableToResolve(tempExpr);
           return nullptr;
         }
