@@ -14,14 +14,12 @@
 
 #include "../ApiCall/Finder.h"
 #include "../ApiCall/RosApiCall.h"
+#include "../Ast/Ast.h"
 #include "../Helper/utils.h"
 #include "../Callback/Callback.h"
-#include "Context.h"
-#include "Function.h"
 #include "FunctionSymbolizer.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class Symbolizer {
 public:
@@ -336,5 +334,4 @@ private:
   }
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

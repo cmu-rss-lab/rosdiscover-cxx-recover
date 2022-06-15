@@ -5,7 +5,6 @@
 #include "Value.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class StringLiteral : public virtual SymbolicString {
 public:
@@ -77,5 +76,4 @@ private:
   std::unique_ptr<SymbolicString> rhs;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

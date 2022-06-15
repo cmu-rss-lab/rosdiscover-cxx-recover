@@ -9,10 +9,9 @@
 #include <nlohmann/json.hpp>
 
 #include "Function.h"
-#include "../Stmt/Stmt.h"
+#include "Stmt/Stmt.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class SymbolicContext {
 public:
@@ -68,5 +67,4 @@ private:
   std::unordered_map<std::string, std::unique_ptr<SymbolicFunction>> nameToFunction;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

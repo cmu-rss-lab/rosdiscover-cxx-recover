@@ -10,12 +10,12 @@
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/Rewrite/Core/Rewriter.h>
 
-#include <rosdiscover-clang/Symbolic/ProgramSymbolizer.h>
+#include <rosdiscover-clang/BackwardSymbolizer/ProgramSymbolizer.h>
 
 using namespace clang;
 using namespace clang::ast_matchers;
 using namespace clang::tooling;
-using namespace rosdiscover::symbolic;
+using namespace rosdiscover;
 
 static llvm::cl::OptionCategory MyToolCategory("rosdiscover options");
 static llvm::cl::extrahelp CommonHelp(clang::tooling::CommonOptionsParser::HelpMessage);

@@ -1,11 +1,10 @@
 #pragma once
 
 #include "Stmt.h"
-#include "../Value/String.h"
-#include "../Value/Value.h"
+#include "../../Value/String.h"
+#include "../../Value/Value.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class SymbolicRosApiCall : public virtual SymbolicStmt {
 public:
@@ -261,5 +260,4 @@ private:
   std::unique_ptr<SymbolicValue> defaultValue;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

@@ -3,7 +3,6 @@
 #include "Value.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class BoolLiteral : public SymbolicBool {
 public:
@@ -29,5 +28,4 @@ private:
   bool literal;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

@@ -9,13 +9,12 @@
 #include <fmt/core.h>
 
 #include "../Value/Value.h"
-#include "../Variable/LocalVariable.h"
-#include "../Variable/Parameter.h"
-#include "../Stmt/Stmt.h"
-#include "../Stmt/Compound.h"
+#include "Decl/LocalVariable.h"
+#include "Decl/Parameter.h"
+#include "Stmt/Stmt.h"
+#include "Stmt/Compound.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class SymbolicFunction {
 public:
@@ -176,5 +175,4 @@ private:
   std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

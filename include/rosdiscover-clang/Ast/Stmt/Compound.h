@@ -5,7 +5,6 @@
 #include "Stmt.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class SymbolicCompound {
 public:
@@ -30,7 +29,6 @@ public:
   }
 
   nlohmann::json toJson() const {
-
     auto j_statements = nlohmann::json::array();
     for (auto const &statement : statements) {
       j_statements.push_back(statement->toJson());
@@ -45,5 +43,4 @@ private:
   std::vector<std::unique_ptr<SymbolicStmt>> statements;
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

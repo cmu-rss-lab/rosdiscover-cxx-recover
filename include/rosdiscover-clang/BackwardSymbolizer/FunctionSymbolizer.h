@@ -9,18 +9,14 @@
 
 #include <fmt/core.h>
 
+#include "../Ast/Ast.h"
 #include "../Helper/StmtOrderingVisitor.h"
 #include "../RawStatement.h"
-#include "../Stmt/Stmts.h"
 #include "../Value/String.h"
 #include "../Value/Value.h"
-#include "../Variable/Variable.h"
-#include "Context.h"
-#include "Function.h"
 #include "StringSymbolizer.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class FunctionSymbolizer {
 public:
@@ -160,6 +156,11 @@ private:
       } else if (methodName == "nodelet::Nodelet::getPrivateNodeHandle"
        || methodName == "nodelet::Nodelet::getMTPrivateNodeHandle") {
         return valueBuilder.privateNodeHandle();
+      }
+    }
+    if (auto *unaryOp = clang::dyn_cast<clang::UnaryOperator>(expr)) {
+      if (clang::UnaryOperator::getOpcodeStr(unaryOp->getOpcode()) == "&") {
+        return symbolizeNodeHandle(unaryOp->getSubExpr());
       }
     }
 
@@ -760,5 +761,4 @@ private:
   }
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

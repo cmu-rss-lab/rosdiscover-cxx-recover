@@ -12,7 +12,6 @@
 #include "../Helper/FindDefVisitor.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class StringSymbolizer {
 public:
@@ -148,5 +147,4 @@ private:
   }
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

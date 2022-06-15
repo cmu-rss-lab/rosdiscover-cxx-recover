@@ -9,7 +9,6 @@
 #include "../Symbolic/Function.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class StmtBuilder {
 public:
@@ -49,5 +48,4 @@ private:
   }
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

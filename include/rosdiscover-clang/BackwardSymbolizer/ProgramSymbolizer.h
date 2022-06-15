@@ -7,11 +7,10 @@
 #include <clang/AST/ASTImporter.h>
 #include <clang/Tooling/Tooling.h>
 
-#include "Program.h"
+#include "../Ast/Program.h"
 #include "Symbolizer.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class ProgramSymbolizer {
 public:
@@ -135,5 +134,4 @@ private:
   }
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover

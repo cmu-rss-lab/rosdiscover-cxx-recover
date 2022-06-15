@@ -5,10 +5,9 @@
 #include "../Value/Bool.h"
 #include "../Value/String.h"
 #include "../Value/Value.h"
-#include "../Variable/Variable.h"
+#include "../Ast/Decl/Decls.h"
 
 namespace rosdiscover {
-namespace symbolic {
 
 class ValueBuilder {
 public:
@@ -68,5 +67,4 @@ public:
   }
 };
 
-} // rosdiscover::symbolic
 } // rosdiscover
