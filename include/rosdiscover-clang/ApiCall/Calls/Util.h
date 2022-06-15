@@ -29,7 +29,7 @@ namespace api_call {
       return new clang::APValue(resultFloat);
     }
 
-    //Try evaluating the frequency as float.
+    //Try evaluating the frequency as fixed point.
     clang::Expr::EvalResult resultFixed;
     if (expr->EvaluateAsFixedPoint(resultFixed, Ctx)) {
       llvm::outs() << "DEBUG [" << debugTag << "]: evaluated Fixed: (" << resultFixed.Val.getFixedPoint().toString() << ")\n";
