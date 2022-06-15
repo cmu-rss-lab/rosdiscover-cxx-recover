@@ -22,7 +22,7 @@ public:
   std::unique_ptr<SymbolicFloat> symbolize(clang::Expr *expr) {
 
     if (expr == nullptr) {
-      llvm::outs() << "symbolizing (float): NULLPTR";
+      llvm::outs() << "ERROR! Symbolizing (float): NULLPTR";
       return valueBuilder.unknown();
     }
 

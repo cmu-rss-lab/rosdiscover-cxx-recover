@@ -23,7 +23,7 @@ public:
 
   std::unique_ptr<SymbolicString> symbolize(clang::Expr *expr) {
     if (expr == nullptr) {
-      llvm::outs() << "symbolizing (str): NULLPTR";
+      llvm::outs() << "ERROR! Symbolizing (str): NULLPTR";
       return valueBuilder.unknown();
     }
 
