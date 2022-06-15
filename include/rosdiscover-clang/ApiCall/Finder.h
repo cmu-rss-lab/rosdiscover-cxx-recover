@@ -53,6 +53,8 @@ private:
     addFinder(new GetParamCall::Finder(calls));
     addFinder(new GetParamWithDefaultCall::Finder(calls));
     addFinder(new HasParamCall::Finder(calls));
+    addFinder(new PublishCall::Finder(calls));
+    addFinder(new RateSleepCall::Finder(calls));  
     addFinder(new RosInitCall::Finder(calls));
     addFinder(new MessageFiltersSubscriberCall::Finder(calls));
     addFinder(new ServiceClientCall::Finder(calls));

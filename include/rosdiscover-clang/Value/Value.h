@@ -11,6 +11,7 @@ namespace rosdiscover {
 enum class SymbolicValueType {
   String,
   Bool,
+  Float,
   Integer,
   Unsupported,
   NodeHandle
@@ -35,6 +36,9 @@ public:
       return SymbolicValueType::Bool;
     } else if (typeName == "int") {
       return SymbolicValueType::Integer;
+    } else if (typeName == "float" 
+            || typeName == "double") {
+      return SymbolicValueType::Float;
     } else if (typeName == "ros::NodeHandle"
             || typeName == "ros::NodeHandle &"
             || typeName == "ros::NodeHandle *") {
@@ -50,6 +54,8 @@ public:
         return "string";
       case SymbolicValueType::Bool:
         return "bool";
+      case SymbolicValueType::Float:
+        return "float";        
       case SymbolicValueType::Integer:
         return "integer";
       case SymbolicValueType::Unsupported:
@@ -64,6 +70,8 @@ class SymbolicString : public virtual SymbolicValue {};
 
 class SymbolicBool : public virtual SymbolicValue {};
 
+class SymbolicFloat : public virtual SymbolicValue {};
+
 class SymbolicInteger : public virtual SymbolicValue {};
 
 class SymbolicNodeHandle :
@@ -75,6 +83,7 @@ class SymbolicUnknown :
   public virtual SymbolicString,
   public virtual SymbolicBool,
   public virtual SymbolicInteger,
+  public virtual SymbolicFloat,
   public virtual SymbolicNodeHandle
 {
 public:
@@ -99,6 +108,7 @@ public:
 class SymbolicArg:
   public virtual SymbolicString,
   public virtual SymbolicBool,
+  public virtual SymbolicFloat,
   public virtual SymbolicInteger,
   public virtual SymbolicNodeHandle
 {

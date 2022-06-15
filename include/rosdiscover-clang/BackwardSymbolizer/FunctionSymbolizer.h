@@ -15,6 +15,8 @@
 #include "../Value/String.h"
 #include "../Value/Value.h"
 #include "StringSymbolizer.h"
+#include "IntSymbolizer.h"
+#include "FloatSymbolizer.h"
 
 namespace rosdiscover {
 
@@ -79,6 +81,8 @@ private:
       functionCalls(functionCalls),
       apiCallToVar(),
       stringSymbolizer(astContext, apiCallToVar),
+      intSymbolizer(),
+      floatSymbolizer(),
       valueBuilder(),
       symbolicArgNames(symbolicArgNames),
       callbacks(callbacks)
@@ -93,6 +97,8 @@ private:
   std::vector<clang::Expr *> &functionCalls;
   std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar;
   StringSymbolizer stringSymbolizer;
+  IntSymbolizer intSymbolizer;
+  FloatSymbolizer floatSymbolizer;
   ValueBuilder valueBuilder;
   std::unordered_set<std::string> symbolicArgNames;
   [[maybe_unused]] std::vector<Callback*> &callbacks;
@@ -363,6 +369,10 @@ private:
         return symbolizeApiCall((BareSetParamCall*) apiCall);
       case RosApiCallKind::RosInitCall:
         return symbolizeApiCall((RosInitCall*) apiCall);
+      case RosApiCallKind::PublishCall:
+        return symbolizeApiCall((PublishCall*) apiCall);
+      case RosApiCallKind::RateSleepCall:
+        return symbolizeApiCall((RateSleepCall*) apiCall);        
       default:
         llvm::errs() << "unrecognized bare ROS API call: ";
         apiCall->print(llvm::outs());
@@ -577,6 +587,25 @@ private:
     );
   }
 
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    api_call::RateSleepCall *apiCall
+  ) {
+    llvm::outs() << "DEBUG: symbolizing RateSleepCall\n";
+    return std::make_unique<RateSleep>(
+        symbolizeApiCallName(apiCall),
+        floatSymbolizer.symbolize(apiCall->getRate(astContext))
+    );    
+  }
+
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    api_call::PublishCall *apiCall
+  ) {
+    llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
+    return std::make_unique<Publish>(symbolizeApiCallName(apiCall), 
+        apiCall->getPublisher()
+    );
+  }
+
   // TODO a unique_ptr should be passed in here!
   std::unique_ptr<SymbolicStmt> createAssignment(
     std::unique_ptr<SymbolicValue> value,
@@ -671,6 +700,9 @@ private:
         case SymbolicValueType::Integer:
           llvm::errs() << "WARNING: integer symbolization is currently unsupported\n";
           continue;
+        case SymbolicValueType::Float:
+          llvm::errs() << "WARNING: float symbolization is currently unsupported\n";
+          continue;          
         case SymbolicValueType::Unsupported:
           llvm::errs() << "ERROR: attempted to symbolize an unsupported type\n";
           abort();
