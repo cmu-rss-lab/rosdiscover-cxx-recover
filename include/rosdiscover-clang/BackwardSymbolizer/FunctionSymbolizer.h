@@ -423,7 +423,8 @@ private:
     llvm::outs() << "DEBUG [message_filters::Subscriber]: uses format: " << formatName << "\n";
     return std::make_unique<Subscriber>(
       symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
-      formatName
+      formatName,
+      symbolizeCallback(new RawCallbackStatement(apiCall->getCallback(astContext)))
     );
   }
 
@@ -571,7 +572,8 @@ private:
     llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
     return std::make_unique<Subscriber>(
       symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
-      apiCall->getFormatName()
+      apiCall->getFormatName(),
+      symbolizeCallback(new RawCallbackStatement(apiCall->getCallback(astContext)))
     );
   }
 

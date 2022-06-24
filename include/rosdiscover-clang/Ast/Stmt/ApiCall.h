@@ -64,8 +64,8 @@ private:
 
 class Subscriber : public SymbolicRosApiCall {
 public:
-  Subscriber(std::unique_ptr<SymbolicString> name, std::string const &format)
-  : SymbolicRosApiCall(std::move(name)), format(format) {}
+  Subscriber(std::unique_ptr<SymbolicString> name, std::string const &format, std::unique_ptr<SymbolicStmt> callback)
+  : SymbolicRosApiCall(std::move(name)), format(format), callback(std::move(callback)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(subscribes-to ";
@@ -77,12 +77,14 @@ public:
     return {
       {"kind", "subscribes-to"},
       {"name", getName()->toJson()},
-      {"format", format}
+      {"format", format},
+      {"callback", (callback == nullptr) ? "unknown" : callback->toJson()}
     };
   }
 
 private:
   std::string const format;
+  std::unique_ptr<SymbolicStmt> callback;
 };
 
 class ServiceCaller : public SymbolicRosApiCall {
