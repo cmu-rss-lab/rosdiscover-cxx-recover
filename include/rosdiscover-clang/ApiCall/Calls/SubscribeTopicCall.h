@@ -8,7 +8,7 @@
 namespace rosdiscover {
 namespace api_call {
 
-class SubscribeTopicCall : public NodeHandleRosApiCall {
+class SubscribeTopicCall : public NodeHandleRosApiCall, public NamedRosApiCall {
 public:
   using NodeHandleRosApiCall::NodeHandleRosApiCall;
 

@@ -5,7 +5,7 @@
 namespace rosdiscover {
 namespace api_call {
 
-class BareHasParamCall : public BareRosApiCall {
+class BareHasParamCall : public BareRosApiCall, public NamedRosApiCall {
 public:
   using BareRosApiCall::BareRosApiCall;
 
