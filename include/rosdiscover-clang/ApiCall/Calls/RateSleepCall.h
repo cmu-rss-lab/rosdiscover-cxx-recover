@@ -20,11 +20,7 @@ public:
   }
 
   clang::Expr const * getNameExpr() const override {
-    if (const auto *E = clang::dyn_cast<clang::CXXMemberCallExpr>(getCallExpr())) {
-      if (const auto *ME = clang::dyn_cast<clang::ImplicitCastExpr>(E->getImplicitObjectArgument())) {
-        return E->getImplicitObjectArgument();
-      }
-    } 
+    abort();
     return nullptr;
   }
 

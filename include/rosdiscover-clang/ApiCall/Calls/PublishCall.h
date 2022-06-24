@@ -15,7 +15,8 @@ public:
   }
 
   clang::Expr const * getNameExpr() const override {
-    return getCallExpr();
+    abort();
+    return nullptr;
   }
 
   const std::string getPublisherName() const {
