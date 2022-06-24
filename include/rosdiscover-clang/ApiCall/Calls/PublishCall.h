@@ -15,6 +15,7 @@ public:
   }
 
   clang::Expr const * getNameExpr() const override {
+    llvm::errs() << "ERROR: PublishCall does not have a NameExpr.\n";
     abort();
     return nullptr;
   }
