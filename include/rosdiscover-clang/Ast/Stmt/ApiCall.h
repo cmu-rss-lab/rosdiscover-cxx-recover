@@ -87,6 +87,46 @@ private:
   std::unique_ptr<SymbolicStmt> callback;
 };
 
+class RateSleep : public SymbolicRosApiCall {
+public:
+  RateSleep(std::unique_ptr<SymbolicString> name, std::unique_ptr<SymbolicFloat> rate) : SymbolicRosApiCall(std::move(name)), rate(std::move(rate)) {}
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(ratesleep ";
+    rate->print(os);
+    os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "ratesleep"},
+      {"rate", rate->toJson()}
+    };
+  }
+
+private:
+  std::unique_ptr<SymbolicFloat> rate;
+};
+
+class Publish : public SymbolicRosApiCall {
+public:
+  Publish(std::unique_ptr<SymbolicString> name, std::string const &publisher) : SymbolicRosApiCall(std::move(name)), publisher(publisher) {}
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(publish " << publisher << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "publish"},
+      {"publisher", publisher}
+    };
+  }
+
+private:
+  std::string const publisher;
+};
+
 class ServiceCaller : public SymbolicRosApiCall {
 public:
   ServiceCaller(std::unique_ptr<SymbolicString> name, std::string const &format)

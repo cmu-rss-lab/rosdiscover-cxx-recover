@@ -4,6 +4,8 @@
 
 #include "../Value/Bool.h"
 #include "../Value/String.h"
+#include "../Value/Int.h"
+#include "../Value/Float.h"
 #include "../Value/Value.h"
 #include "../Ast/Decl/Decls.h"
 
@@ -18,6 +20,14 @@ public:
   std::unique_ptr<StringLiteral> stringLiteral(std::string const &string) const {
     return std::make_unique<StringLiteral>(string);
   }
+
+  std::unique_ptr<FloatingLiteral> floatingLiteral(double const &i) const {
+    return std::make_unique<FloatingLiteral>(i);
+  }  
+
+  std::unique_ptr<IntegerLiteral> integerLiteral(int const &i) const {
+    return std::make_unique<IntegerLiteral>(i);
+  }  
 
   std::unique_ptr<NodeName> nodeName() const {
     return std::make_unique<NodeName>();
