@@ -11,6 +11,43 @@ namespace rosdiscover {
 
 class Callback {
 public:
+
+  // Used for unwrapping bind calls
+  static clang::Expr const * unwrapMaterializeTemporaryExpr(
+    clang::MaterializeTemporaryExpr const *tempExpr
+  ) {
+      auto *bindExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(tempExpr->getSubExpr()->IgnoreImpCasts());
+      if (bindExpr == nullptr) {
+        auto *callExpr = clang::dyn_cast<clang::CallExpr>(tempExpr->getSubExpr()->IgnoreImpCasts());
+        if (callExpr == nullptr || callExpr->getNumArgs() < 1) {
+          unableToResolve(tempExpr);
+          return nullptr;
+        }
+        llvm::outs() << "[Callback] CallExpr: ";
+        callExpr->dump();
+        llvm::outs() << "\n";
+        // TODO: Read the other arguments of bind calls such as in, ``boost::bind(CmdCallBack, _1, accel_rate)`` 
+        return callExpr->getArg(0);
+      }
+      auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(bindExpr->getSubExpr()->IgnoreImpCasts());
+      if (constructExpr == nullptr) {
+        unableToResolve(tempExpr);
+        return nullptr;
+      }
+      auto *constructExpr2 = clang::dyn_cast<clang::CXXConstructExpr>(constructExpr->getArg(0));
+      if (constructExpr2 == nullptr) {
+        unableToResolve(tempExpr);
+        return nullptr;
+      } 
+      auto *arg = clang::dyn_cast<clang::MaterializeTemporaryExpr>(constructExpr2->getArg(0));
+      if (arg == nullptr) {
+        unableToResolve(tempExpr);
+        return nullptr;
+      } 
+
+      return unwrapMaterializeTemporaryExpr(arg);
+  }
+  
   static Callback* fromArgExpr(
     clang::ASTContext &context,
     api_call::RosApiCall const *apiCall,
@@ -19,13 +56,37 @@ public:
     llvm::outs() << "DEBUG: attempting to extract callback from expr: ";
     argExpr->dump();
     llvm::outs() << "\n";
-
-    auto *unaryOp = clang::dyn_cast<clang::UnaryOperator>(argExpr);
-    if (unaryOp == nullptr) {
+    if (argExpr == nullptr) {
       return unableToResolve(argExpr);
     }
 
-    auto *subExpr = unaryOp->getSubExpr();
+    // Callbacks can either contain a reference to a member function of 
+    // a static class (e.g., ``&callback_name``) 
+    // or just the name of a static metod (e.g., ``callback_name``).
+    auto *unaryOp = clang::dyn_cast<clang::UnaryOperator>(argExpr);
+    clang::Expr const *subExpr;
+    if (unaryOp == nullptr) {
+      // The callback doesn't have an unary operator
+      auto *castExpr = clang::dyn_cast<clang::ImplicitCastExpr>(argExpr);
+      if (castExpr == nullptr) {
+        // It could be a MaterializeTemporaryExpr
+        auto *tempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(argExpr);
+        if (tempExpr == nullptr) {
+          return unableToResolve(argExpr);
+        }
+        llvm::outs() << "[Callback] is MaterializeTemporaryExpr";
+        tempExpr->dump();
+        llvm::outs() << "\n";
+
+        
+        return fromArgExpr(context, apiCall, unwrapMaterializeTemporaryExpr(tempExpr));
+      }
+
+      subExpr = castExpr->IgnoreImpCasts();
+    } else {
+      subExpr = unaryOp->getSubExpr();
+    }
+
     if (subExpr == nullptr) {
       return unableToResolve(argExpr);
     }
