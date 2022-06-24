@@ -69,7 +69,7 @@ public:
       // The callback doesn't have an unary operator
       auto *castExpr = clang::dyn_cast<clang::ImplicitCastExpr>(argExpr);
       if (castExpr == nullptr) {
-        // It could 
+        // It could be a MaterializeTemporaryExpr
         auto *tempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(argExpr);
         if (tempExpr == nullptr) {
           return unableToResolve(argExpr);
