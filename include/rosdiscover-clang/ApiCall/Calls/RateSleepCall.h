@@ -19,12 +19,6 @@ public:
     return RosApiCallKind::RateSleepCall;
   }
 
-  clang::Expr const * getNameExpr() const override {
-    llvm::errs() << "ERROR: RateSleepCall does not have a NameExpr.\n";
-    abort();
-    return nullptr;
-  }
-
   clang::APValue const * getRate(const clang::ASTContext &ctx) const {
     llvm::outs() << "DEBUG [RateSleepCall]: Getting Rate for: ";
     getCallExpr()->dump();

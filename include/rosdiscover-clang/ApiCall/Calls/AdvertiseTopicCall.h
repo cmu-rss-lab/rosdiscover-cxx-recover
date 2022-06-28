@@ -6,7 +6,7 @@
 namespace rosdiscover {
 namespace api_call {
 
-class AdvertiseTopicCall : public NodeHandleRosApiCall {
+class AdvertiseTopicCall : public NodeHandleRosApiCall, public NamedRosApiCall {
 public:
   using NodeHandleRosApiCall::NodeHandleRosApiCall;
 

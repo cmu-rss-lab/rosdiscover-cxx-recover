@@ -9,21 +9,26 @@ namespace rosdiscover {
 class SymbolicRosApiCall : public virtual SymbolicStmt {
 public:
   ~SymbolicRosApiCall(){}
+};
+
+class NamedSymbolicRosApiCall : public virtual SymbolicRosApiCall {
+public:
+  ~NamedSymbolicRosApiCall(){}
 
   SymbolicString const * getName() const {
     return name.get();
   }
 
 protected:
-  SymbolicRosApiCall(std::unique_ptr<SymbolicString> name) : name(std::move(name)) {}
+  NamedSymbolicRosApiCall(std::unique_ptr<SymbolicString> name) : name(std::move(name)) {}
 
 private:
   std::unique_ptr<SymbolicString> name;
 };
 
-class RosInit : public SymbolicRosApiCall {
+class RosInit : public NamedSymbolicRosApiCall {
 public:
-  RosInit(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
+  RosInit(std::unique_ptr<SymbolicString> name) : NamedSymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(ros-init ";
@@ -39,10 +44,10 @@ public:
   }
 };
 
-class Publisher : public SymbolicRosApiCall {
+class Publisher : public NamedSymbolicRosApiCall {
 public:
   Publisher(std::unique_ptr<SymbolicString> name, std::string const &format)
-  : SymbolicRosApiCall(std::move(name)), format(format) {}
+  : NamedSymbolicRosApiCall(std::move(name)), format(format) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(publishes-to ";
@@ -62,10 +67,10 @@ private:
   std::string const format;
 };
 
-class Subscriber : public SymbolicRosApiCall {
+class Subscriber : public NamedSymbolicRosApiCall {
 public:
   Subscriber(std::unique_ptr<SymbolicString> name, std::string const &format, std::unique_ptr<SymbolicStmt> callback)
-  : SymbolicRosApiCall(std::move(name)), format(format), callback(std::move(callback)) {}
+  : NamedSymbolicRosApiCall(std::move(name)), format(format), callback(std::move(callback)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(subscribes-to ";
@@ -89,7 +94,7 @@ private:
 
 class RateSleep : public SymbolicRosApiCall {
 public:
-  RateSleep(std::unique_ptr<SymbolicString> name, std::unique_ptr<SymbolicFloat> rate) : SymbolicRosApiCall(std::move(name)), rate(std::move(rate)) {}
+  RateSleep(std::unique_ptr<SymbolicFloat> rate) : SymbolicRosApiCall(), rate(std::move(rate)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(ratesleep ";
@@ -110,7 +115,7 @@ private:
 
 class Publish : public SymbolicRosApiCall {
 public:
-  Publish(std::unique_ptr<SymbolicString> name, std::string const &publisher) : SymbolicRosApiCall(std::move(name)), publisher(publisher) {}
+  Publish(std::string const &publisher) : SymbolicRosApiCall(), publisher(publisher) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(publish " << publisher << ")";
@@ -127,10 +132,10 @@ private:
   std::string const publisher;
 };
 
-class ServiceCaller : public SymbolicRosApiCall {
+class ServiceCaller : public NamedSymbolicRosApiCall {
 public:
   ServiceCaller(std::unique_ptr<SymbolicString> name, std::string const &format)
-  : SymbolicRosApiCall(std::move(name)), format(format) {}
+  : NamedSymbolicRosApiCall(std::move(name)), format(format) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(calls-service ";
@@ -150,13 +155,13 @@ private:
   std::string const format;
 };
 
-class ServiceProvider : public SymbolicRosApiCall {
+class ServiceProvider : public NamedSymbolicRosApiCall {
 public:
   ServiceProvider(
     std::unique_ptr<SymbolicString> name,
     std::string const &requestFormat,
     std::string const &responseFormat
-  ) : SymbolicRosApiCall(std::move(name)),
+  ) : NamedSymbolicRosApiCall(std::move(name)),
       requestFormat(requestFormat),
       responseFormat(responseFormat)
   {}
@@ -182,11 +187,11 @@ private:
 };
 
 class ReadParam :
-  public SymbolicRosApiCall,
+  public NamedSymbolicRosApiCall,
   public virtual SymbolicValue
 {
 public:
-  ReadParam(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
+  ReadParam(std::unique_ptr<SymbolicString> name) : NamedSymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(reads-param ";
@@ -202,10 +207,10 @@ public:
   }
 };
 
-class WriteParam : public SymbolicRosApiCall {
+class WriteParam : public NamedSymbolicRosApiCall {
 public:
   WriteParam(std::unique_ptr<SymbolicString> name, std::unique_ptr<SymbolicValue> value)
-    : SymbolicRosApiCall(std::move(name)), value(std::move(value))
+    : NamedSymbolicRosApiCall(std::move(name)), value(std::move(value))
   {}
 
   void print(llvm::raw_ostream &os) const override {
@@ -226,9 +231,9 @@ private:
   std::unique_ptr<SymbolicValue> value;
 };
 
-class DeleteParam : public SymbolicRosApiCall {
+class DeleteParam : public NamedSymbolicRosApiCall {
 public:
-  DeleteParam(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
+  DeleteParam(std::unique_ptr<SymbolicString> name) : NamedSymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(deletes-param ";
@@ -245,11 +250,11 @@ public:
 };
 
 class HasParam :
-  public SymbolicRosApiCall,
+  public NamedSymbolicRosApiCall,
   public virtual SymbolicBool
 {
 public:
-  HasParam(std::unique_ptr<SymbolicString> name) : SymbolicRosApiCall(std::move(name)) {}
+  HasParam(std::unique_ptr<SymbolicString> name) : NamedSymbolicRosApiCall(std::move(name)) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(checks-for-param ";
@@ -266,14 +271,14 @@ public:
 };
 
 class ReadParamWithDefault :
-  public SymbolicRosApiCall,
+  public NamedSymbolicRosApiCall,
   public virtual SymbolicValue
 {
 public:
   ReadParamWithDefault(
     std::unique_ptr<SymbolicString> name,
     std::unique_ptr<SymbolicValue> defaultValue
-  ) : SymbolicRosApiCall(std::move(name)), defaultValue(std::move(defaultValue))
+  ) : NamedSymbolicRosApiCall(std::move(name)), defaultValue(std::move(defaultValue))
   {}
 
   SymbolicValue const * getDefaultValue() const {

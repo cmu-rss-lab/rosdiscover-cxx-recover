@@ -384,13 +384,13 @@ private:
     }
   }
 
-  std::unique_ptr<SymbolicString> symbolizeApiCallName(api_call::RosApiCall *apiCall) {
+  std::unique_ptr<SymbolicString> symbolizeApiCallName(api_call::NamedRosApiCall *apiCall) {
     return stringSymbolizer.symbolize(const_cast<clang::Expr*>(apiCall->getNameExpr()));
   }
 
   std::unique_ptr<SymbolicString> symbolizeNodeHandleApiCallName(
     std::unique_ptr<SymbolicNodeHandle> nodeHandle,
-    api_call::RosApiCall *apiCall
+    api_call::NamedRosApiCall *apiCall
   ) {
     auto name = symbolizeApiCallName(apiCall);
 
@@ -595,7 +595,6 @@ private:
   ) {
     llvm::outs() << "DEBUG: symbolizing RateSleepCall\n";
     return std::make_unique<RateSleep>(
-        symbolizeApiCallName(apiCall),
         floatSymbolizer.symbolize(apiCall->getRate(astContext))
     );    
   }
@@ -604,7 +603,7 @@ private:
     api_call::PublishCall *apiCall
   ) {
     llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
-    return std::make_unique<Publish>(symbolizeApiCallName(apiCall), 
+    return std::make_unique<Publish>(
         apiCall->getPublisherName()
     );
   }

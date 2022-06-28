@@ -5,7 +5,7 @@
 namespace rosdiscover {
 namespace api_call {
 
-class GetParamWithDefaultCall : public NodeHandleRosApiCall {
+class GetParamWithDefaultCall : public NodeHandleRosApiCall, public NamedRosApiCall {
 public:
   using NodeHandleRosApiCall::NodeHandleRosApiCall;
 
