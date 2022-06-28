@@ -8,7 +8,7 @@
 namespace rosdiscover {
 namespace api_call {
 
-class ServiceClientCall : public NodeHandleRosApiCall {
+class ServiceClientCall : public NodeHandleRosApiCall, public NamedRosApiCall {
 public:
   using NodeHandleRosApiCall::NodeHandleRosApiCall;
 

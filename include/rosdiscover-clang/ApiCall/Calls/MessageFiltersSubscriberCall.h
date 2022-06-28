@@ -6,7 +6,7 @@
 namespace rosdiscover {
 namespace api_call {
 
-class MessageFiltersSubscriberCall : public RosApiCallWithNodeHandle {
+class MessageFiltersSubscriberCall : public RosApiCallWithNodeHandle, public NamedRosApiCall {
 public:
   using RosApiCallWithNodeHandle::RosApiCallWithNodeHandle;
 

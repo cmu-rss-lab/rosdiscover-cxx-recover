@@ -34,9 +34,6 @@ public:
     return nullptr;
   }
 
-  /** Returns the expression that provides the name associated with this call. */
-  virtual clang::Expr const * getNameExpr() const = 0;
-
   /** Indicates whether or not this API call has an associated node handle. */
   virtual bool hasNodeHandle() const = 0;
 
@@ -119,6 +116,14 @@ private:
   CallOrConstructExpr const *call;
 }; // RosApiCall
 
+
+class NamedRosApiCall {
+public:
+
+  /** Returns the expression that provides the name associated with this call. */
+  virtual clang::Expr const * getNameExpr() const = 0;
+  
+}; // NamedRosApiCall
 
 class BareRosApiCall : public RosApiCall {
 public:

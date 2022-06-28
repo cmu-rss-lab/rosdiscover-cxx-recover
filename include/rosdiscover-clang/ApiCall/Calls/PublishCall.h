@@ -14,12 +14,6 @@ public:
     return RosApiCallKind::PublishCall;
   }
 
-  clang::Expr const * getNameExpr() const override {
-    llvm::errs() << "ERROR: PublishCall does not have a NameExpr.\n";
-    abort();
-    return nullptr;
-  }
-
   const std::string getPublisherName() const {
     llvm::outs() << "DEBUG [PublishCall] Publish call is : ";
     getCallExpr()->dump();
