@@ -3,6 +3,8 @@
 #include <clang/AST/Stmt.h>
 
 #include "ApiCall/RosApiCall.h"
+#include "Ast/Stmt/If.h"
+#include "Ast/Stmt/While.h"
 #include "Callback/Callback.h"
 
 namespace rosdiscover {
@@ -10,7 +12,9 @@ namespace rosdiscover {
 enum class RawStatementKind {
   RosApiCall,
   FunctionCall,
-  Callback
+  Callback,
+  If,
+  While
 };
 
 class RawStatement {
@@ -18,6 +22,48 @@ public:
   virtual ~RawStatement(){}
   virtual clang::Stmt* getUnderlyingStmt() = 0;
   virtual RawStatementKind getKind() = 0;
+};
+
+class RawIfStatement : public RawStatement {
+public:
+  RawIfStatement(clang::IfStmt *ifStmt) : ifStmt(ifStmt) {}
+  ~RawIfStatement(){}
+
+  clang::Stmt* getUnderlyingStmt() override {
+    return ifStmt;
+  }
+
+  clang::IfStmt* getIfStmt() {
+    return ifStmt;
+  }
+
+  RawStatementKind getKind() override {
+    return RawStatementKind::If;
+  }
+
+private:
+  clang::IfStmt *ifStmt;
+};
+
+class RawWhileStatement : public RawStatement {
+public:
+  RawWhileStatement(clang::WhileStmt *whileStmt) : whileStmt(whileStmt) {}
+  ~RawWhileStatement(){}
+
+  clang::Stmt* getUnderlyingStmt() override {
+    return whileStmt;
+  }
+
+  clang::WhileStmt* getWhileStmt() {
+    return whileStmt;
+  }
+  
+  RawStatementKind getKind() override {
+    return RawStatementKind::While;
+  }
+
+private:
+  clang::WhileStmt *whileStmt;
 };
 
 class RawRosApiCallStatement : public RawStatement {

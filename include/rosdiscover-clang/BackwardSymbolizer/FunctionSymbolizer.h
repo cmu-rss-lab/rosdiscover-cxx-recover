@@ -16,6 +16,7 @@
 #include "../Value/Value.h"
 #include "StringSymbolizer.h"
 #include "IntSymbolizer.h"
+#include "BoolSymbolizer.h"
 #include "FloatSymbolizer.h"
 
 namespace rosdiscover {
@@ -82,6 +83,7 @@ private:
       apiCallToVar(),
       stringSymbolizer(astContext, apiCallToVar),
       intSymbolizer(),
+      boolSymbolizer(astContext),
       floatSymbolizer(),
       valueBuilder(),
       symbolicArgNames(symbolicArgNames),
@@ -98,6 +100,7 @@ private:
   std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar;
   StringSymbolizer stringSymbolizer;
   IntSymbolizer intSymbolizer;
+  BoolSymbolizer boolSymbolizer;
   FloatSymbolizer floatSymbolizer;
   ValueBuilder valueBuilder;
   std::unordered_set<std::string> symbolicArgNames;
@@ -719,6 +722,30 @@ private:
     return SymbolicFunctionCall::create(function, args);
   }
 
+
+  std::unique_ptr<SymbolicIfStmt> symbolizeIf(clang::IfStmt *stmt) {
+    llvm::outs() << "DEBUG: symbolizing if: ";
+    stmt->dump();
+    llvm::outs() << "\n";
+
+    auto value = boolSymbolizer.symbolize(stmt->getCond());
+    auto trueBranch = std::make_unique<SymbolicCompound>(); //TODO: Symbolize Body from stmt->getThen()
+    auto falseBranch = std::make_unique<SymbolicCompound>(); //TODO: Symbolize Body from stmt->getElse()
+
+    return std::make_unique<SymbolicIfStmt>(stmt, std::move(value), std::move(trueBranch), std::move(falseBranch));
+  }
+
+  std::unique_ptr<SymbolicWhileStmt> symbolizeWhile(clang::WhileStmt *stmt) {
+    llvm::outs() << "DEBUG: symbolizing while: ";
+    stmt->dump();
+    llvm::outs() << "\n";
+
+    auto value = boolSymbolizer.symbolize(stmt->getCond());
+    std::unique_ptr<SymbolicCompound> body;
+
+    //TODO: Symbolize Body from stmt->getBody()
+    return std::make_unique<SymbolicWhileStmt>(stmt, std::move(value), std::move(body));
+  }
   std::vector<std::unique_ptr<RawStatement>> computeStatementOrder() {
     // unify all of the statements in this function
     std::vector<RawStatement*> unordered;
@@ -772,6 +799,12 @@ private:
         break;
       case RawStatementKind::Callback:
         symbolic = symbolizeCallback((RawCallbackStatement*) statement);
+        break;
+      case RawStatementKind::If:
+        symbolic = symbolizeIf(((RawIfStatement*) statement)->getIfStmt());
+        break;
+      case RawStatementKind::While:
+        symbolic = symbolizeWhile(((RawWhileStatement*) statement)->getWhileStmt());
         break;
     }
     return AnnotatedSymbolicStmt::create(
