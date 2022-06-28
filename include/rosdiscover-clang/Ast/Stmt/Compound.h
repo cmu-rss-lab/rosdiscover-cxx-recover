@@ -6,7 +6,7 @@
 
 namespace rosdiscover {
 
-class SymbolicCompound {
+class SymbolicCompound : public SymbolicStmt {
 public:
   SymbolicCompound() : statements() {}
   ~SymbolicCompound(){}

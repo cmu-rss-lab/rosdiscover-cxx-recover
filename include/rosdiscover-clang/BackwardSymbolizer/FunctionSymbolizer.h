@@ -734,7 +734,14 @@ private:
 
     return std::make_unique<SymbolicIfStmt>(stmt, std::move(value), std::move(trueBranch), std::move(falseBranch));
   }
+  std::unique_ptr<SymbolicCompound> symbolizeCompound(RawCompound *stmt) {
+    auto result = std::make_unique<SymbolicCompound>();
+    for (auto &s: stmt->getStmts()) {
+      result->append(symbolizeStatement(s.get()));
+    }
 
+    return result;
+  }
   std::unique_ptr<SymbolicWhileStmt> symbolizeWhile(clang::WhileStmt *stmt) {
     llvm::outs() << "DEBUG: symbolizing while: ";
     stmt->dump();
@@ -805,6 +812,9 @@ private:
         break;
       case RawStatementKind::While:
         symbolic = symbolizeWhile(((RawWhileStatement*) statement)->getWhileStmt());
+        break;
+      case RawStatementKind::Compound:
+        symbolic = symbolizeCompound((RawCompound*) statement);
         break;
     }
     return AnnotatedSymbolicStmt::create(

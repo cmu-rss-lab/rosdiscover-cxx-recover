@@ -8,6 +8,18 @@
 #include "../RosApiCall.h"
 
 namespace rosdiscover {
+
+  static inline bool stmtContainsStmt(const clang::Stmt* parent, const clang::Stmt* child) {
+    for (auto c: parent->children()) {
+      if (c == child) {
+        return true;
+      } else if (stmtContainsStmt(c, child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
 namespace api_call {
 
   static clang::APValue const * evaluateNumber(

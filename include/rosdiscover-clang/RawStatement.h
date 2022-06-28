@@ -14,7 +14,8 @@ enum class RawStatementKind {
   FunctionCall,
   Callback,
   If,
-  While
+  While,
+  Compound
 };
 
 class RawStatement {
@@ -24,9 +25,42 @@ public:
   virtual RawStatementKind getKind() = 0;
 };
 
+class RawCompound: public RawStatement {
+public:
+  RawCompound(clang::Stmt* underlyingStmt) : underlyingStmt(underlyingStmt), statements() {}
+  ~RawCompound(){}
+
+  RawCompound(RawCompound&& other)
+  : underlyingStmt(other.underlyingStmt), statements(std::move(other.statements))
+  {}
+
+  void append(std::unique_ptr<RawStatement> statement) {
+    statements.push_back(std::move(statement));
+  }
+
+  clang::Stmt* getUnderlyingStmt() override {
+    return underlyingStmt;
+  }
+
+  std::vector<std::unique_ptr<RawStatement>> getStmts() {
+    return std::move(statements);
+  }
+
+  RawStatementKind getKind() override {
+    return RawStatementKind::Compound;
+  }
+
+private:
+  clang::Stmt* underlyingStmt; 
+  std::vector<std::unique_ptr<RawStatement>> statements;
+}; //RawCompound
+
 class RawIfStatement : public RawStatement {
 public:
-  RawIfStatement(clang::IfStmt *ifStmt) : ifStmt(ifStmt) {}
+  RawIfStatement(clang::IfStmt *ifStmt) : 
+    ifStmt(ifStmt), 
+    trueBody(new RawCompound(ifStmt->getThen())), 
+    falseBody(new RawCompound(ifStmt->getThen())) {}
   ~RawIfStatement(){}
 
   clang::Stmt* getUnderlyingStmt() override {
@@ -37,17 +71,29 @@ public:
     return ifStmt;
   }
 
+  RawCompound* getTrueBody() {
+    return trueBody;
+  }
+
+  RawCompound* getFalseBody() {
+    return falseBody;
+  }
+
   RawStatementKind getKind() override {
     return RawStatementKind::If;
   }
 
 private:
   clang::IfStmt *ifStmt;
+  RawCompound* trueBody;
+  RawCompound* falseBody;
 };
 
 class RawWhileStatement : public RawStatement {
 public:
-  RawWhileStatement(clang::WhileStmt *whileStmt) : whileStmt(whileStmt) {}
+  RawWhileStatement(clang::WhileStmt *whileStmt) : 
+    whileStmt(whileStmt), 
+    body(new RawCompound(whileStmt->getBody())) {}
   ~RawWhileStatement(){}
 
   clang::Stmt* getUnderlyingStmt() override {
@@ -57,6 +103,10 @@ public:
   clang::WhileStmt* getWhileStmt() {
     return whileStmt;
   }
+
+  RawCompound* getBody() {
+    return body;
+  }
   
   RawStatementKind getKind() override {
     return RawStatementKind::While;
@@ -64,6 +114,7 @@ public:
 
 private:
   clang::WhileStmt *whileStmt;
+  RawCompound* body;
 };
 
 class RawRosApiCallStatement : public RawStatement {
