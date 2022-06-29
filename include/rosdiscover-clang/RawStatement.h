@@ -25,7 +25,7 @@ public:
   virtual RawStatementKind getKind() = 0;
 };
 
-class RawCompound: public RawStatement {
+class RawCompound : public RawStatement {
 public:
   RawCompound(clang::Stmt* underlyingStmt) : underlyingStmt(underlyingStmt), statements() {}
   ~RawCompound(){}
