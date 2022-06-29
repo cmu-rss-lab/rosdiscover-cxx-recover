@@ -54,8 +54,6 @@ private:
   clang::Stmt* underlyingStmt; 
   std::vector<RawStatement*> statements;
 
-  //Todo destruct statements in destructor
-
 }; //RawCompound
 
 class RawIfStatement : public RawStatement {
