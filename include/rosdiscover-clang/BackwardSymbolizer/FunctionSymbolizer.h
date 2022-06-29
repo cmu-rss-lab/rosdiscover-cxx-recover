@@ -728,14 +728,16 @@ private:
   }
 
 
-  std::unique_ptr<SymbolicIfStmt> symbolizeIf(clang::IfStmt *stmt) {
+  std::unique_ptr<SymbolicIfStmt> symbolizeIf(RawIfStatement* rawIf) {
+    clang::IfStmt *stmt = rawIf->getIfStmt();
+
     llvm::outs() << "DEBUG: symbolizing if: ";
     stmt->dump();
     llvm::outs() << "\n";
 
     auto value = boolSymbolizer.symbolize(stmt->getCond());
-    auto trueBranch = std::make_unique<SymbolicCompound>(); //TODO: Symbolize Body from stmt->getThen()
-    auto falseBranch = std::make_unique<SymbolicCompound>(); //TODO: Symbolize Body from stmt->getElse()
+    auto trueBranch = symbolizeCompound(rawIf->getTrueBody());
+    auto falseBranch = symbolizeCompound(rawIf->getFalseBody());
 
     return std::make_unique<SymbolicIfStmt>(stmt, std::move(value), std::move(trueBranch), std::move(falseBranch));
   }
@@ -781,19 +783,19 @@ private:
       raw = whileMap[whileID];
     }
 
-    /*clang::IfStmt const *ifStmt = node.get<clang::IfStmt>();
+    clang::IfStmt const *ifStmt = node.get<clang::IfStmt>();
     if (ifStmt != nullptr) {
       llvm::outs() << "DEBUG FOUND IF!!!!";
 
       long ifID = ifStmt->getID(astContext);
       if (!ifMap.count(ifID)) {
-        ifMap.emplace(ifID, std::unique_ptr<RawIfStatement>(new RawIfStatement(const_cast<clang::IfStmt*>(ifStmt))));
+        ifMap.emplace(ifID, new RawIfStatement(const_cast<clang::IfStmt*>(ifStmt)));
       }
 
       //Add to if or else branch
-      if (stmtContainsStmt(ifStmt->getThen(), raw->getUnderlyingStmt())) { 
+      if (ifStmt->getThen() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getThen(), raw->getUnderlyingStmt())) { 
         ifMap.at(ifID)->getTrueBody()->append(raw);
-      } else if (stmtContainsStmt(ifStmt->getElse(), raw->getUnderlyingStmt())) { 
+      } else if (ifStmt->getElse() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getElse(), raw->getUnderlyingStmt())) { 
         ifMap.at(ifID)->getFalseBody()->append(raw);
       } else {
         llvm::outs() << "ERROR: raw is neither in then nor else! Raw: ";
@@ -801,9 +803,10 @@ private:
         llvm::outs() << "\n IfStmt: ";
         ifStmt->dump();
         llvm::outs() << "\n";
+        abort();
       }
-      raw = ifMap[ifID].get();
-    }*/
+      raw = ifMap[ifID];
+    }
 
     for (clang::DynTypedNode const parent : astContext.getParents(node)) {
       auto stmt = getParentStmt(parent, raw);
@@ -908,7 +911,7 @@ private:
         symbolic = symbolizeCallback((RawCallbackStatement*) statement);
         break;
       case RawStatementKind::If:
-        symbolic = symbolizeIf(((RawIfStatement*) statement)->getIfStmt());
+        symbolic = symbolizeIf(((RawIfStatement*) statement));
         break;
       case RawStatementKind::While:
         symbolic = symbolizeWhile(((RawWhileStatement*) statement));
