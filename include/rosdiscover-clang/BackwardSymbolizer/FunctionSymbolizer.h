@@ -875,8 +875,8 @@ private:
       auto rawWhile = it.second;
       ordered.push_back(std::unique_ptr<RawStatement>(rawWhile));
       llvm::outs() << "while body: ";
-      for (auto compound: rawWhile->getBody()->getStmts()) {
-        compound->getUnderlyingStmt()->dump();
+      for (auto compoundStmt : rawWhile->getBody()->getStmts()) {
+        compoundStmt->getUnderlyingStmt()->dump();
         llvm::outs() << ",\n";
       }
       llvm::outs() << ".\n";
