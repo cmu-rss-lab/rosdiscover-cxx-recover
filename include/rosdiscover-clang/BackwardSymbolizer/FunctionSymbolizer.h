@@ -773,12 +773,35 @@ private:
       if (!whileMap.count(whileID)) {
         std::unique_ptr<RawWhileStatement> rs = std::unique_ptr<RawWhileStatement>(new RawWhileStatement(const_cast<clang::WhileStmt*>(whileStmt)));
         whileMap.emplace(whileID, std::move(rs));
-
       }
 
       //Add to Body
       whileMap.at(whileID)->getBody()->append(raw);
       raw = whileMap[whileID].get();
+    }
+
+    clang::IfStmt const *ifStmt = node.get<clang::IfStmt>();
+    if (ifStmt != nullptr) {
+      llvm::outs() << "DEBUG FOUND IF!!!!";
+
+      long ifID = ifStmt->getID(astContext);
+      if (!ifMap.count(ifID)) {
+        ifMap.emplace(whileID, std::unique_ptr<RawIfStatement>(new RawIfStatement(const_cast<clang::IfStmt*>(ifStmt))));
+      }
+
+      //Add to if or else branch
+      if (stmtContainsStmt(ifStmt->getThen(), raw->getUnderlyingStmt())) { 
+        ifMap.at(ifID)->getTrue()->append(raw);
+      } else if (stmtContainsStmt(ifStmt->getElse(), raw->getUnderlyingStmt())) { 
+        ifMap.at(ifID)->getFalse()->append(raw);
+      } else {
+        llvm::outs() << "ERROR: raw is neither in then nor else! Raw: ";
+        raw->getUnderlyingStmt().dump();
+        llvm::outs() << "\n IfStmt: ";
+        ifStmt.dump();
+        llvm::outs() << "\n";
+      }
+      raw = ifMap[ifID].get();
     }
 
     for (clang::DynTypedNode const parent : astContext.getParents(node)) {
