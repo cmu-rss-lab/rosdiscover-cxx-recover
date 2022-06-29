@@ -105,9 +105,9 @@ private:
   IntSymbolizer intSymbolizer;
   FloatSymbolizer floatSymbolizer;
   BoolSymbolizer boolSymbolizer;
-  std::unordered_map<long, RawIfStatement*> ifMap;
-  std::unordered_map<long, RawWhileStatement*> whileMap;
-  std::unordered_map<long, RawCompound*> compoundMap;
+  std::unordered_map<long, RawIfStatement*> ifMap; //keys are the IDs of the corresponding clang stmts.
+  std::unordered_map<long, RawWhileStatement*> whileMap; //keys are the IDs of the corresponding clang stmts.
+  std::unordered_map<long, RawCompound*> compoundMap; //keys are the IDs of the corresponding clang stmts.
   ValueBuilder valueBuilder;
   std::unordered_set<std::string> symbolicArgNames;
   [[maybe_unused]] std::vector<Callback*> &callbacks;
