@@ -31,19 +31,19 @@ public:
   ~RawCompound(){}
 
   RawCompound(RawCompound&& other)
-  : underlyingStmt(other.underlyingStmt), statements(std::move(other.statements))
+  : underlyingStmt(other.underlyingStmt), statements(other.statements)
   {}
 
-  void append(std::unique_ptr<RawStatement> statement) {
-    statements.push_back(std::move(statement));
+  void append(RawStatement* statement) {
+    statements.push_back(statement);
   }
 
   clang::Stmt* getUnderlyingStmt() override {
     return underlyingStmt;
   }
 
-  std::vector<std::unique_ptr<RawStatement>> getStmts() {
-    return std::move(statements);
+  std::vector<RawStatement*> getStmts() {
+    return statements;
   }
 
   RawStatementKind getKind() override {
@@ -52,7 +52,10 @@ public:
 
 private:
   clang::Stmt* underlyingStmt; 
-  std::vector<std::unique_ptr<RawStatement>> statements;
+  std::vector<RawStatement*> statements;
+
+  //Todo destruct statements in destructor
+
 }; //RawCompound
 
 class RawIfStatement : public RawStatement {

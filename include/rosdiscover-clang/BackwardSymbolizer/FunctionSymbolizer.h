@@ -83,8 +83,11 @@ private:
       apiCallToVar(),
       stringSymbolizer(astContext, apiCallToVar),
       intSymbolizer(),
-      boolSymbolizer(astContext),
       floatSymbolizer(),
+      boolSymbolizer(astContext),
+      ifMap(),
+      whileMap(),
+      compoundMap(),
       valueBuilder(),
       symbolicArgNames(symbolicArgNames),
       callbacks(callbacks)
@@ -100,8 +103,11 @@ private:
   std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar;
   StringSymbolizer stringSymbolizer;
   IntSymbolizer intSymbolizer;
-  BoolSymbolizer boolSymbolizer;
   FloatSymbolizer floatSymbolizer;
+  BoolSymbolizer boolSymbolizer;
+  std::unordered_map<long, std::unique_ptr<RawIfStatement>> ifMap;
+  std::unordered_map<long, std::unique_ptr<RawWhileStatement>> whileMap;
+  std::unordered_map<long, std::unique_ptr<RawCompound>> compoundMap;
   ValueBuilder valueBuilder;
   std::unordered_set<std::string> symbolicArgNames;
   [[maybe_unused]] std::vector<Callback*> &callbacks;
@@ -736,7 +742,7 @@ private:
   std::unique_ptr<SymbolicCompound> symbolizeCompound(RawCompound *stmt) {
     auto result = std::make_unique<SymbolicCompound>();
     for (auto &s: stmt->getStmts()) {
-      result->append(symbolizeStatement(s.get()));
+      result->append(symbolizeStatement(s));
     }
 
     return result;
@@ -752,6 +758,46 @@ private:
     //TODO: Symbolize Body from stmt->getBody()
     return std::make_unique<SymbolicWhileStmt>(stmt, std::move(value), std::move(body));
   }
+  
+  RawStatement* getParentStmt(clang::DynTypedNode node, RawStatement* raw) {
+    clang::FunctionDecl const *functionDecl = node.get<clang::FunctionDecl>();
+    if (functionDecl != nullptr) {
+      return raw;
+    }
+    clang::WhileStmt const *whileStmt = node.get<clang::WhileStmt>();
+    if (whileStmt != nullptr) {
+      llvm::outs() << "DEBUG FOUND WHILE!!!!";
+
+      //construct RawWhile if not already built
+      long whileID = whileStmt->getID(astContext);
+      if (!whileMap.count(whileID)) {
+        std::unique_ptr<RawWhileStatement> rs = std::unique_ptr<RawWhileStatement>(new RawWhileStatement(const_cast<clang::WhileStmt*>(whileStmt)));
+        //auto pair = std::make_pair<long, std::unique_ptr<RawWhileStatement>>(whileID, std::move(rs));
+        //whileMap.insert(pair);
+
+      }
+
+      //Add to Body
+      whileMap.at(whileID)->getBody()->append(raw);
+      raw = whileMap[whileID].get();
+    }
+
+    for (clang::DynTypedNode const parent : astContext.getParents(node)) {
+      auto stmt = getParentStmt(parent, raw);
+      if (stmt != nullptr) {
+        return stmt;
+      }
+    }
+
+    return nullptr;
+  }
+
+  RawStatement* getParentStmt(RawStatement* raw) {
+    auto node = clang::DynTypedNode::create(*(raw->getUnderlyingStmt()));
+    return getParentStmt(node, raw);
+  }
+
+
   std::vector<std::unique_ptr<RawStatement>> computeStatementOrder() {
     // unify all of the statements in this function
     std::vector<RawStatement*> unordered;
@@ -784,6 +830,11 @@ private:
       for (auto *rawStatement : clangToRawStmts[clangStmt]) {
         ordered.push_back(std::unique_ptr<RawStatement>(rawStatement));
       }
+    }
+
+    std::vector<std::unique_ptr<RawStatement>> result;
+    for (auto &rawStmt : ordered) {
+      result.push_back(std::unique_ptr<RawStatement>(getParentStmt(rawStmt.get())));
     }
 
     return ordered;
