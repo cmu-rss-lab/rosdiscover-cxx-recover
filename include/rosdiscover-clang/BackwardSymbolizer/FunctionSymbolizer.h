@@ -741,6 +741,7 @@ private:
 
     return std::make_unique<SymbolicIfStmt>(stmt, std::move(value), std::move(trueBranch), std::move(falseBranch));
   }
+
   std::unique_ptr<SymbolicCompound> symbolizeCompound(RawCompound *stmt) {
     auto result = std::make_unique<SymbolicCompound>();
     for (auto &s: stmt->getStmts()) {
@@ -749,6 +750,7 @@ private:
 
     return result;
   }
+
   std::unique_ptr<SymbolicWhileStmt> symbolizeWhile(RawWhileStatement* rawWhile) {
 
     clang::WhileStmt *stmt = rawWhile->getWhileStmt();
@@ -822,7 +824,6 @@ private:
     auto node = clang::DynTypedNode::create(*(raw->getUnderlyingStmt()));
     return getParentStmt(node, raw);
   }
-
 
   std::vector<std::unique_ptr<RawStatement>> computeStatementOrder() {
     // unify all of the statements in this function
