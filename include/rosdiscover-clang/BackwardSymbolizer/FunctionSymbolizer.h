@@ -105,9 +105,9 @@ private:
   IntSymbolizer intSymbolizer;
   FloatSymbolizer floatSymbolizer;
   BoolSymbolizer boolSymbolizer;
-  std::unordered_map<long, std::unique_ptr<RawIfStatement>> ifMap;
-  std::unordered_map<long, std::unique_ptr<RawWhileStatement>> whileMap;
-  std::unordered_map<long, std::unique_ptr<RawCompound>> compoundMap;
+  std::unordered_map<long, RawIfStatement*> ifMap;
+  std::unordered_map<long, RawWhileStatement*> whileMap;
+  std::unordered_map<long, RawCompound*> compoundMap;
   ValueBuilder valueBuilder;
   std::unordered_set<std::string> symbolicArgNames;
   [[maybe_unused]] std::vector<Callback*> &callbacks;
@@ -755,7 +755,8 @@ private:
     llvm::outs() << "\n";
 
     auto symbolicWhile = std::make_unique<SymbolicWhileStmt>(stmt, boolSymbolizer.symbolize(stmt->getCond()), symbolizeCompound(rawWhile->getBody()));
-    llvm::outs() << "SymbolizedWhile\n";
+    llvm::outs() << "SymbolizedWhile: ";
+    symbolicWhile->print(llvm::outs());
     return symbolicWhile;
   }
   
@@ -772,12 +773,12 @@ private:
       long whileID = whileStmt->getID(astContext);
       if (!whileMap.count(whileID)) {
         std::unique_ptr<RawWhileStatement> rs = std::unique_ptr<RawWhileStatement>(new RawWhileStatement(const_cast<clang::WhileStmt*>(whileStmt)));
-        whileMap.emplace(whileID, std::move(rs));
+        whileMap.emplace(whileID, new RawWhileStatement(const_cast<clang::WhileStmt*>(whileStmt)));
       }
 
       //Add to Body
       whileMap.at(whileID)->getBody()->append(raw);
-      raw = whileMap[whileID].get();
+      raw = whileMap[whileID];
     }
 
     /*clang::IfStmt const *ifStmt = node.get<clang::IfStmt>();
@@ -876,7 +877,7 @@ private:
     }*/
 
     for (auto &it: whileMap) {
-      auto rawWhile = it.second.get();
+      auto rawWhile = it.second;
       ordered.push_back(std::unique_ptr<RawStatement>(rawWhile));
       llvm::outs() << "while body: ";
       for (auto compound: rawWhile->getBody()->getStmts()) {
@@ -930,6 +931,8 @@ private:
     for (auto &rawStmt : computeStatementOrder()) {
       compound->append(symbolizeStatement(rawStmt.get()));
     }
+
+    llvm::outs() << "Symbolized Function\n";
 
     symContext.define(function, std::move(compound));
   }
