@@ -772,8 +772,7 @@ private:
       long whileID = whileStmt->getID(astContext);
       if (!whileMap.count(whileID)) {
         std::unique_ptr<RawWhileStatement> rs = std::unique_ptr<RawWhileStatement>(new RawWhileStatement(const_cast<clang::WhileStmt*>(whileStmt)));
-        //auto pair = std::make_pair<long, std::unique_ptr<RawWhileStatement>>(whileID, std::move(rs));
-        //whileMap.insert(pair);
+        whileMap.emplace(whileID, std::move(rs));
 
       }
 
