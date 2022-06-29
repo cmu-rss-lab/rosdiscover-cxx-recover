@@ -854,10 +854,19 @@ private:
       }
     }
 
+
+    
     std::vector<std::unique_ptr<RawStatement>> result;
     for (auto &rawStmt : ordered) {
-      result.push_back(std::unique_ptr<RawStatement>(getParentStmt(rawStmt.get())));
+      auto r = getParentStmt(rawStmt.get());
+      if (r ==  nullptr) {
+        llvm::outs() << "ERROR. Could not find parent.\n";
+        continue;
+      }
+      result.push_back(std::unique_ptr<RawStatement>());
     }
+    
+
     /*llvm::outs() << "DEBUG computeStatementOrder results for: ";
     function->dump();
     llvm::outs() << "\n";
@@ -865,6 +874,8 @@ private:
       r->getUnderlyingStmt()->dump();
       llvm::outs() << "\n";
     }*/
+
+    /*
     for (auto &it: whileMap) {
       auto rawWhile = it.second.get();
       llvm::outs() << "while body: ";
@@ -873,7 +884,7 @@ private:
         llvm::outs() << ",\n";
       }
       llvm::outs() << ".\n";
-    }
+    }*/
 
     return ordered;
   }
