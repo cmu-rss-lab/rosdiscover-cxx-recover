@@ -870,15 +870,6 @@ private:
       result.push_back(std::unique_ptr<RawStatement>());
     }
     
-
-    /*llvm::outs() << "DEBUG computeStatementOrder results for: ";
-    function->dump();
-    llvm::outs() << "\n";
-    for (auto &r : result) {
-      r->getUnderlyingStmt()->dump();
-      llvm::outs() << "\n";
-    }*/
-
     for (auto &it: whileMap) {
       auto rawWhile = it.second;
       ordered.push_back(std::unique_ptr<RawStatement>(rawWhile));
