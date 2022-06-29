@@ -780,29 +780,29 @@ private:
       raw = whileMap[whileID].get();
     }
 
-    clang::IfStmt const *ifStmt = node.get<clang::IfStmt>();
+    /*clang::IfStmt const *ifStmt = node.get<clang::IfStmt>();
     if (ifStmt != nullptr) {
       llvm::outs() << "DEBUG FOUND IF!!!!";
 
       long ifID = ifStmt->getID(astContext);
       if (!ifMap.count(ifID)) {
-        ifMap.emplace(whileID, std::unique_ptr<RawIfStatement>(new RawIfStatement(const_cast<clang::IfStmt*>(ifStmt))));
+        ifMap.emplace(ifID, std::unique_ptr<RawIfStatement>(new RawIfStatement(const_cast<clang::IfStmt*>(ifStmt))));
       }
 
       //Add to if or else branch
       if (stmtContainsStmt(ifStmt->getThen(), raw->getUnderlyingStmt())) { 
-        ifMap.at(ifID)->getTrue()->append(raw);
+        ifMap.at(ifID)->getTrueBody()->append(raw);
       } else if (stmtContainsStmt(ifStmt->getElse(), raw->getUnderlyingStmt())) { 
-        ifMap.at(ifID)->getFalse()->append(raw);
+        ifMap.at(ifID)->getFalseBody()->append(raw);
       } else {
         llvm::outs() << "ERROR: raw is neither in then nor else! Raw: ";
-        raw->getUnderlyingStmt().dump();
+        raw->getUnderlyingStmt()->dump();
         llvm::outs() << "\n IfStmt: ";
-        ifStmt.dump();
+        ifStmt->dump();
         llvm::outs() << "\n";
       }
       raw = ifMap[ifID].get();
-    }
+    }*/
 
     for (clang::DynTypedNode const parent : astContext.getParents(node)) {
       auto stmt = getParentStmt(parent, raw);
@@ -857,6 +857,22 @@ private:
     std::vector<std::unique_ptr<RawStatement>> result;
     for (auto &rawStmt : ordered) {
       result.push_back(std::unique_ptr<RawStatement>(getParentStmt(rawStmt.get())));
+    }
+    /*llvm::outs() << "DEBUG computeStatementOrder results for: ";
+    function->dump();
+    llvm::outs() << "\n";
+    for (auto &r : result) {
+      r->getUnderlyingStmt()->dump();
+      llvm::outs() << "\n";
+    }*/
+    for (auto &it: whileMap) {
+      auto rawWhile = it.second.get();
+      llvm::outs() << "while body: ";
+      for (auto compound: rawWhile->getBody()->getStmts()) {
+        compound->getUnderlyingStmt()->dump();
+        llvm::outs() << ",\n";
+      }
+      llvm::outs() << ".\n";
     }
 
     return ordered;
