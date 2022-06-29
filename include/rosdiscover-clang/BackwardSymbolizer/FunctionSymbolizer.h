@@ -747,16 +747,16 @@ private:
 
     return result;
   }
-  std::unique_ptr<SymbolicWhileStmt> symbolizeWhile(clang::WhileStmt *stmt) {
+  std::unique_ptr<SymbolicWhileStmt> symbolizeWhile(RawWhileStatement* rawWhile) {
+
+    clang::WhileStmt *stmt = rawWhile->getWhileStmt();
     llvm::outs() << "DEBUG: symbolizing while: ";
     stmt->dump();
     llvm::outs() << "\n";
 
-    auto value = boolSymbolizer.symbolize(stmt->getCond());
-    std::unique_ptr<SymbolicCompound> body;
-
-    //TODO: Symbolize Body from stmt->getBody()
-    return std::make_unique<SymbolicWhileStmt>(stmt, std::move(value), std::move(body));
+    auto symbolicWhile = std::make_unique<SymbolicWhileStmt>(stmt, boolSymbolizer.symbolize(stmt->getCond()), symbolizeCompound(rawWhile->getBody()));
+    llvm::outs() << "SymbolizedWhile\n";
+    return symbolicWhile;
   }
   
   RawStatement* getParentStmt(clang::DynTypedNode node, RawStatement* raw) {
@@ -875,16 +875,16 @@ private:
       llvm::outs() << "\n";
     }*/
 
-    /*
     for (auto &it: whileMap) {
       auto rawWhile = it.second.get();
+      ordered.push_back(std::unique_ptr<RawStatement>(rawWhile));
       llvm::outs() << "while body: ";
       for (auto compound: rawWhile->getBody()->getStmts()) {
         compound->getUnderlyingStmt()->dump();
         llvm::outs() << ",\n";
       }
       llvm::outs() << ".\n";
-    }*/
+    }
 
     return ordered;
   }
@@ -910,7 +910,7 @@ private:
         symbolic = symbolizeIf(((RawIfStatement*) statement)->getIfStmt());
         break;
       case RawStatementKind::While:
-        symbolic = symbolizeWhile(((RawWhileStatement*) statement)->getWhileStmt());
+        symbolic = symbolizeWhile(((RawWhileStatement*) statement));
         break;
       case RawStatementKind::Compound:
         symbolic = symbolizeCompound((RawCompound*) statement);

@@ -38,7 +38,7 @@ public:
       valueBuilder.boolLiteral(result);
     }
 
-    llvm::outs() << "unable to symbolize expression: treating as unknown\n";
+    llvm::outs() << "unable to symbolize expression (bool): treating as unknown\n";
     return valueBuilder.unknown();
   }
 
