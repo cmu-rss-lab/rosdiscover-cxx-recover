@@ -6,9 +6,14 @@
 #include <clang/AST/ASTContext.h>
 #include <clang/AST/Decl.h>
 #include <clang/AST/DeclCXX.h>
+#include <clang/Analysis/CFG.h>
+#include <clang/Analysis/Analyses/Dominators.h>
+#include <clang/Analysis/CFGStmtMap.h>
+#include <clang/AST/ParentMap.h>
 
 #include <fmt/core.h>
 
+#include "../ApiCall/Calls/Util.h"
 #include "../Ast/Ast.h"
 #include "../Helper/StmtOrderingVisitor.h"
 #include "../RawStatement.h"
@@ -608,7 +613,10 @@ private:
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(
     api_call::PublishCall *apiCall
   ) {
-    llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
+    llvm::outs() << "DEBUG: symbolizing PublishCall\n";
+
+    //getControlDependencies(apiCall->getCallExpr());
+
     return std::make_unique<Publish>(
         apiCall->getPublisherName()
     );
@@ -662,14 +670,43 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
+  const llvm::SmallVector<clang::CFGBlock *, 4> getControlDependencies(const clang::Stmt* stmt) {
+
+    std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
+          function, function->getBody(), &astContext, clang::CFG::BuildOptions());
+    //auto langOpt = astContext.getLangOpts();
+    //sourceCFG->dump(langOpt, true);
+    //apiCall->getControlDependencies(std::move(sourceCFG));
+    clang::ControlDependencyCalculator cdc(sourceCFG.get());
+    llvm::outs() << "getControlDependencies: ";
+    std::unique_ptr<clang::ParentMap> PM = std::make_unique<clang::ParentMap>(function->getBody());
+    auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
+    // do your traversal and for a given Stmt `stmt` you can get
+    // its containing block:
+    auto stmt_block = CM->getBlock(stmt); 
+    auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
+    llvm::outs() << "getControlDependencies("<< deps.size() <<"): ";
+    for (auto d: deps) {
+      d->dump();
+    }
+    llvm::outs() << "getControlDependencies end\n";
+    return deps;
+  }
+
+
   std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {
-    auto *function = symContext.getDefinition(getCallee(callExpr));
-    llvm::outs() << "DEBUG: symbolizing call to function: " << function->getName() << "\n";
+    auto *calledFunction = symContext.getDefinition(getCallee(callExpr));
+    llvm::outs() << "DEBUG: symbolizing call to function: " << calledFunction->getName() << "\n";
+
+    auto deps = getControlDependencies(callExpr);
+    for (auto d: deps) {
+      d->getTerminatorCondition()->dump();
+    }
 
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
     for (
-      auto it = function->params_begin();
-      it != function->params_end();
+      auto it = calledFunction->params_begin();
+      it != calledFunction->params_end();
       it++
     ) {
       auto &param = it->second;
@@ -724,7 +761,7 @@ private:
       args.emplace(param.getName(), std::move(symbolicParam));
     }
 
-    return SymbolicFunctionCall::create(function, args);
+    return SymbolicFunctionCall::create(calledFunction, args);
   }
 
 
@@ -793,12 +830,17 @@ private:
       if (!ifMap.count(ifID)) {
         ifMap.emplace(ifID, new RawIfStatement(const_cast<clang::IfStmt*>(ifStmt)));
       }
+      llvm::outs() << "DEBUG FOUND IF (2)!!!!";
 
       //Add to if or else branch
       if (ifStmt->getThen() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getThen(), raw->getUnderlyingStmt())) { 
+        llvm::outs() << "DEBUG FOUND IF (add then)!!!!";
         ifMap.at(ifID)->getTrueBody()->append(raw);
+        llvm::outs() << "DEBUG FOUND IF (add then2)!!!!";
       } else if (ifStmt->getElse() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getElse(), raw->getUnderlyingStmt())) { 
+        llvm::outs() << "DEBUG FOUND IF (add else)!!!!";
         ifMap.at(ifID)->getFalseBody()->append(raw);
+        llvm::outs() << "DEBUG FOUND IF (add else2)!!!!";
       } else {
         llvm::outs() << "ERROR: raw is neither in then nor else! Raw: ";
         raw->getUnderlyingStmt()->dump();
@@ -808,6 +850,7 @@ private:
         abort();
       }
       raw = ifMap[ifID];
+      llvm::outs() << "DEBUG FOUND IF (3)!!!!";
     }
 
     for (clang::DynTypedNode const parent : astContext.getParents(node)) {
