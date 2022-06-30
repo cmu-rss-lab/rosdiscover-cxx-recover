@@ -1,6 +1,7 @@
 #pragma once
 
 #include <unordered_set>
+#include <string> 
 #include <vector>
 
 #include <clang/AST/ASTContext.h>
@@ -674,15 +675,10 @@ private:
 
     std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
           function, function->getBody(), &astContext, clang::CFG::BuildOptions());
-    //auto langOpt = astContext.getLangOpts();
-    //sourceCFG->dump(langOpt, true);
-    //apiCall->getControlDependencies(std::move(sourceCFG));
     clang::ControlDependencyCalculator cdc(sourceCFG.get());
     llvm::outs() << "getControlDependencies: ";
     std::unique_ptr<clang::ParentMap> PM = std::make_unique<clang::ParentMap>(function->getBody());
     auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
-    // do your traversal and for a given Stmt `stmt` you can get
-    // its containing block:
     auto stmt_block = CM->getBlock(stmt); 
     auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
     llvm::outs() << "getControlDependencies("<< deps.size() <<"): ";
@@ -699,8 +695,28 @@ private:
     llvm::outs() << "DEBUG: symbolizing call to function: " << calledFunction->getName() << "\n";
 
     auto deps = getControlDependencies(callExpr);
+    std::vector<std::string> depsStrings;
     for (auto d: deps) {
-      d->getTerminatorCondition()->dump();
+      for (auto delcRef : getTransitiveChildenByType(d->getTerminatorCondition(), true)) {
+        std::string depString = "";
+        auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
+        if (declRefExpr->hasQualifier()) {
+          depString = depString + declRefExpr->getQualifier()->getAsNamespace()->getNameAsString() + "::";
+        } 
+         depString = depString + declRefExpr->getNameInfo().getAsString();
+        if (declRefExpr->getDecl() != nullptr)  {
+          auto decl = declRefExpr->getDecl();
+          if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
+             depString = depString + "[var] ";
+          } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
+             depString = depString + "(<?>)";
+          }
+          depString = depString +  " getVisibility: " + std::to_string(decl->getVisibility());
+          depString = depString +  " isCXXClassMember: " + std::to_string(decl->isCXXClassMember());
+          depString = depString +  " isCXXInstanceMember: " + std::to_string(decl->isCXXInstanceMember());
+        }
+        depsStrings.push_back(depString);
+      }
     }
 
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
@@ -761,7 +777,7 @@ private:
       args.emplace(param.getName(), std::move(symbolicParam));
     }
 
-    return SymbolicFunctionCall::create(calledFunction, args);
+    return SymbolicFunctionCall::create(calledFunction, args, depsStrings);
   }
 
 

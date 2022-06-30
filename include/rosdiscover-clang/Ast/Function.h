@@ -130,22 +130,24 @@ class SymbolicFunctionCall : public virtual SymbolicStmt {
 public:
   SymbolicFunctionCall(
     SymbolicFunction *callee,
-    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args
-  ) : callee(callee), args(std::move(args)) {}
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
+    std::vector<std::string> controlDependencies = {}
+  ) : callee(callee), args(std::move(args)), controlDependencies(controlDependencies) {}
   ~SymbolicFunctionCall(){}
 
   static std::unique_ptr<SymbolicFunctionCall> create(
     SymbolicFunction *function,
-    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
+    std::vector<std::string> controlDependencies
   ) {
-    return std::make_unique<SymbolicFunctionCall>(function, args);
+    return std::make_unique<SymbolicFunctionCall>(function, args, controlDependencies);
   }
 
   static std::unique_ptr<SymbolicFunctionCall> create(
     SymbolicFunction *function
   ) {
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> emptyArgs;
-    return create(function, emptyArgs);
+    return create(function, emptyArgs, {});
   }
 
   void print(llvm::raw_ostream &os) const override {
@@ -166,13 +168,15 @@ public:
     return {
       {"kind", "call"},
       {"callee", callee->getName()},
-      {"arguments", argsJson}
+      {"arguments", argsJson},
+      {"control_dependencies", controlDependencies},
     };
   }
 
 private:
   SymbolicFunction *callee;
   std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
+  std::vector<std::string> controlDependencies;
 };
 
 } // rosdiscover
