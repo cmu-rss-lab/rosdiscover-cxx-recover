@@ -616,10 +616,11 @@ private:
   ) {
     llvm::outs() << "DEBUG: symbolizing PublishCall\n";
 
-    //getControlDependencies(apiCall->getCallExpr());
+    auto deps = getControlDependenciesString(getControlDependencies(apiCall->getCallExpr()));
 
     return std::make_unique<Publish>(
-        apiCall->getPublisherName()
+        apiCall->getPublisherName(),
+        deps
     );
   }
 
@@ -671,30 +672,7 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  const llvm::SmallVector<clang::CFGBlock *, 4> getControlDependencies(const clang::Stmt* stmt) {
-
-    std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
-          function, function->getBody(), &astContext, clang::CFG::BuildOptions());
-    clang::ControlDependencyCalculator cdc(sourceCFG.get());
-    llvm::outs() << "getControlDependencies: ";
-    std::unique_ptr<clang::ParentMap> PM = std::make_unique<clang::ParentMap>(function->getBody());
-    auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
-    auto stmt_block = CM->getBlock(stmt); 
-    auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
-    llvm::outs() << "getControlDependencies("<< deps.size() <<"): ";
-    for (auto d: deps) {
-      d->dump();
-    }
-    llvm::outs() << "getControlDependencies end\n";
-    return deps;
-  }
-
-
-  std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {
-    auto *calledFunction = symContext.getDefinition(getCallee(callExpr));
-    llvm::outs() << "DEBUG: symbolizing call to function: " << calledFunction->getName() << "\n";
-
-    auto deps = getControlDependencies(callExpr);
+  std::vector<std::string> getControlDependenciesString(llvm::SmallVector<clang::CFGBlock *, 4> deps) {
     std::vector<std::string> depsStrings;
     for (auto d: deps) {
       for (auto delcRef : getTransitiveChildenByType(d->getTerminatorCondition(), true)) {
@@ -718,6 +696,34 @@ private:
         depsStrings.push_back(depString);
       }
     }
+    return depsStrings;
+  }
+
+  const llvm::SmallVector<clang::CFGBlock *, 4> getControlDependencies(const clang::Stmt* stmt) {
+
+    std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
+          function, function->getBody(), &astContext, clang::CFG::BuildOptions());
+    clang::ControlDependencyCalculator cdc(sourceCFG.get());
+    llvm::outs() << "getControlDependencies: ";
+    std::unique_ptr<clang::ParentMap> PM = std::make_unique<clang::ParentMap>(function->getBody());
+    auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
+    auto stmt_block = CM->getBlock(stmt); 
+    auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
+    llvm::outs() << "getControlDependencies("<< deps.size() <<"): ";
+    for (auto d: deps) {
+      d->dump();
+    }
+    llvm::outs() << "getControlDependencies end\n";
+    return deps;
+  }
+
+
+  std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {
+    auto *calledFunction = symContext.getDefinition(getCallee(callExpr));
+    llvm::outs() << "DEBUG: symbolizing call to function: " << calledFunction->getName() << "\n";
+
+    auto deps = getControlDependenciesString(getControlDependencies(callExpr));
+    
 
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
     for (
@@ -777,7 +783,7 @@ private:
       args.emplace(param.getName(), std::move(symbolicParam));
     }
 
-    return SymbolicFunctionCall::create(calledFunction, args, depsStrings);
+    return SymbolicFunctionCall::create(calledFunction, args, deps);
   }
 
 
