@@ -864,14 +864,16 @@ private:
     }
  
     std::vector<RawStatement*> result;
-    for (auto &rawStmt : ordered) {
+    for (auto &rawStmt : ordered) { //In lexical order look for control flow parents and add them to result
       auto highestLevelParent = constructParentControlFlow(rawStmt);
+
+      //avoid duplication in the result
       if (std::find(result.begin(), result.end(), highestLevelParent) == result.end()) {
-        result.push_back(highestLevelParent);
+        result.push_back(highestLevelParent); 
       }
     }
-    llvm::outs() << "return result\n";
     
+    //For compatibiliy, include the leaves for now. TODO: Fix rosdisover python to find leaves in control flow.
     ordered.insert( ordered.end(), result.begin(), result.end() );
     return ordered;
   }
@@ -915,7 +917,6 @@ private:
     auto compound = std::make_unique<SymbolicCompound>();
 
     for (auto &rawStmt : computeStatementOrder()) {
-      llvm::outs() << "return computeStatementOrder\n";
       compound->append(symbolizeStatement(rawStmt));
     }
 
