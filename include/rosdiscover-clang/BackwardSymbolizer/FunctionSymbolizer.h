@@ -16,6 +16,7 @@
 #include "../Value/Value.h"
 #include "StringSymbolizer.h"
 #include "IntSymbolizer.h"
+#include "BoolSymbolizer.h"
 #include "FloatSymbolizer.h"
 
 namespace rosdiscover {
@@ -83,6 +84,10 @@ private:
       stringSymbolizer(astContext, apiCallToVar),
       intSymbolizer(),
       floatSymbolizer(),
+      boolSymbolizer(astContext),
+      ifMap(),
+      whileMap(),
+      compoundMap(),
       valueBuilder(),
       symbolicArgNames(symbolicArgNames),
       callbacks(callbacks)
@@ -99,6 +104,10 @@ private:
   StringSymbolizer stringSymbolizer;
   IntSymbolizer intSymbolizer;
   FloatSymbolizer floatSymbolizer;
+  BoolSymbolizer boolSymbolizer;
+  std::unordered_map<long, RawIfStatement*> ifMap; //keys are the IDs of the corresponding clang stmts.
+  std::unordered_map<long, RawWhileStatement*> whileMap; //keys are the IDs of the corresponding clang stmts.
+  std::unordered_map<long, RawCompound*> compoundMap; //keys are the IDs of the corresponding clang stmts.
   ValueBuilder valueBuilder;
   std::unordered_set<std::string> symbolicArgNames;
   [[maybe_unused]] std::vector<Callback*> &callbacks;
@@ -718,7 +727,115 @@ private:
     return SymbolicFunctionCall::create(function, args);
   }
 
-  std::vector<std::unique_ptr<RawStatement>> computeStatementOrder() {
+
+  std::unique_ptr<SymbolicIfStmt> symbolizeIf(RawIfStatement* rawIf) {
+    clang::IfStmt *stmt = rawIf->getIfStmt();
+
+    llvm::outs() << "DEBUG: symbolizing if: ";
+    stmt->dump();
+    llvm::outs() << "\n";
+
+    auto value = boolSymbolizer.symbolize(stmt->getCond());
+    auto trueBranch = symbolizeCompound(rawIf->getTrueBody());
+    auto falseBranch = symbolizeCompound(rawIf->getFalseBody());
+
+    return std::make_unique<SymbolicIfStmt>(stmt, std::move(value), std::move(trueBranch), std::move(falseBranch));
+  }
+
+  std::unique_ptr<SymbolicCompound> symbolizeCompound(RawCompound *stmt) {
+    auto result = std::make_unique<SymbolicCompound>();
+    for (auto &s: stmt->getStmts()) {
+      result->append(symbolizeStatement(s));
+    }
+
+    return result;
+  }
+
+  std::unique_ptr<SymbolicWhileStmt> symbolizeWhile(RawWhileStatement* rawWhile) {
+
+    clang::WhileStmt *stmt = rawWhile->getWhileStmt();
+    llvm::outs() << "DEBUG: symbolizing while: ";
+    stmt->dump();
+    llvm::outs() << "\n";
+
+    auto symbolicWhile = std::make_unique<SymbolicWhileStmt>(stmt, boolSymbolizer.symbolize(stmt->getCond()), symbolizeCompound(rawWhile->getBody()));
+    llvm::outs() << "SymbolizedWhile: ";
+    symbolicWhile->print(llvm::outs());
+    return symbolicWhile;
+  }
+  
+  /* 
+  Recursively adds the given statement to the control flow nodes of its parents and returns the highest level control flow parent.
+  */
+  RawStatement* constructParentControlFlow(clang::DynTypedNode node, RawStatement* raw) {
+
+    // Stop the recursion if the function level has been reached.
+    clang::FunctionDecl const *functionDecl = node.get<clang::FunctionDecl>();
+    if (functionDecl != nullptr) {
+      return raw;
+    }
+    
+    clang::WhileStmt const *whileStmt = node.get<clang::WhileStmt>();
+    if (whileStmt != nullptr) {
+      llvm::outs() << "DEBUG FOUND WHILE!!!!";
+
+      //construct RawWhile if not already built
+      long whileID = whileStmt->getID(astContext);
+      if (!whileMap.count(whileID)) {
+        std::unique_ptr<RawWhileStatement> rs = std::unique_ptr<RawWhileStatement>(new RawWhileStatement(const_cast<clang::WhileStmt*>(whileStmt)));
+        whileMap.emplace(whileID, new RawWhileStatement(const_cast<clang::WhileStmt*>(whileStmt)));
+      }
+
+      //Add to Body
+      whileMap.at(whileID)->getBody()->append(raw);
+      raw = whileMap[whileID]; // continue recursion with the parents of the while statement.
+    }
+
+    clang::IfStmt const *ifStmt = node.get<clang::IfStmt>();
+    if (ifStmt != nullptr) {
+      llvm::outs() << "DEBUG FOUND IF!!!!";
+
+      //construct RawIf if not already built
+      long ifID = ifStmt->getID(astContext);
+      if (!ifMap.count(ifID)) {
+        ifMap.emplace(ifID, new RawIfStatement(const_cast<clang::IfStmt*>(ifStmt)));
+      }
+
+      //Add to if or else branch
+      if (ifStmt->getThen() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getThen(), raw->getUnderlyingStmt())) { 
+        llvm::outs() << "Debug: Add to then";
+        ifMap.at(ifID)->getTrueBody()->append(raw);
+        raw = ifMap[ifID];
+      } else if (ifStmt->getElse() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getElse(), raw->getUnderlyingStmt())) { 
+        llvm::outs() << "Debug: Add to else";
+        ifMap.at(ifID)->getFalseBody()->append(raw);
+        raw = ifMap[ifID];
+      } else if (ifStmt->getCond() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getCond(), raw->getUnderlyingStmt())) { 
+        llvm::outs() << "Debug: In condition, treat as outside of if";
+      } else {
+        llvm::outs() << "ERROR: raw is neither in then nor else! Raw: ";
+        raw->getUnderlyingStmt()->dump();
+        llvm::outs() << "\n IfStmt: ";
+        ifStmt->dump();
+        llvm::outs() << "\n";
+        abort();
+      }
+      raw = ifMap[ifID];
+    }
+    RawStatement* result = raw;
+    for (clang::DynTypedNode const parent : astContext.getParents(node)) {
+      result = constructParentControlFlow(parent, raw);
+    }
+
+    return result;
+  }
+
+  RawStatement* constructParentControlFlow(RawStatement* raw) {
+    auto node = clang::DynTypedNode::create(*(raw->getUnderlyingStmt()));
+    return constructParentControlFlow(node, raw);
+  }
+
+  std::vector<RawStatement*> computeStatementOrder() {
     // unify all of the statements in this function
     std::vector<RawStatement*> unordered;
     for (auto *apiCall : apiCalls) {
@@ -744,14 +861,26 @@ private:
     }
 
     // find the ordering of underlying stmts
-    std::vector<std::unique_ptr<RawStatement>> ordered;
+    std::vector<RawStatement*> ordered;
     auto orderedClangStmts = StmtOrderingVisitor::computeOrder(astContext, function, unorderedClangStmts);
     for (auto *clangStmt : orderedClangStmts) {
       for (auto *rawStatement : clangToRawStmts[clangStmt]) {
-        ordered.push_back(std::unique_ptr<RawStatement>(rawStatement));
+        ordered.push_back(rawStatement);
       }
     }
+ 
+    std::vector<RawStatement*> result;
+    for (auto &rawStmt : ordered) { //In lexical order look for control flow parents and add them to result
+      auto highestLevelParent = constructParentControlFlow(rawStmt);
 
+      //avoid duplication in the result
+      if (std::find(result.begin(), result.end(), highestLevelParent) == result.end()) {
+        result.push_back(highestLevelParent); 
+      }
+    }
+    
+    //For compatibiliy, include the leaves for now. TODO: Fix rosdisover python to find leaves in control flow.
+    ordered.insert( ordered.end(), result.begin(), result.end() );
     return ordered;
   }
 
@@ -772,6 +901,15 @@ private:
       case RawStatementKind::Callback:
         symbolic = symbolizeCallback((RawCallbackStatement*) statement);
         break;
+      case RawStatementKind::If:
+        symbolic = symbolizeIf(((RawIfStatement*) statement));
+        break;
+      case RawStatementKind::While:
+        symbolic = symbolizeWhile(((RawWhileStatement*) statement));
+        break;
+      case RawStatementKind::Compound:
+        symbolic = symbolizeCompound((RawCompound*) statement);
+        break;
     }
     return AnnotatedSymbolicStmt::create(
       astContext,
@@ -785,8 +923,10 @@ private:
     auto compound = std::make_unique<SymbolicCompound>();
 
     for (auto &rawStmt : computeStatementOrder()) {
-      compound->append(symbolizeStatement(rawStmt.get()));
+      compound->append(symbolizeStatement(rawStmt));
     }
+
+    llvm::outs() << "Symbolized Function\n";
 
     symContext.define(function, std::move(compound));
   }
