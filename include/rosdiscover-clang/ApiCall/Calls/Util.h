@@ -10,6 +10,10 @@
 namespace rosdiscover {
 
   static inline bool stmtContainsStmt(const clang::Stmt* parent, const clang::Stmt* child) {
+    int i = 0;
+    if (parent == nullptr || child == nullptr) {
+      return false;
+    }
     for (auto c: parent->children()) {
       if (c == child) {
         return true;
