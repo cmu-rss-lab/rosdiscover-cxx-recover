@@ -803,9 +803,15 @@ private:
 
       //Add to if or else branch
       if (ifStmt->getThen() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getThen(), raw->getUnderlyingStmt())) { 
+        llvm::outs() << "Debug: Add to then";
         ifMap.at(ifID)->getTrueBody()->append(raw);
+        raw = ifMap[ifID];
       } else if (ifStmt->getElse() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getElse(), raw->getUnderlyingStmt())) { 
+        llvm::outs() << "Debug: Add to else";
         ifMap.at(ifID)->getFalseBody()->append(raw);
+        raw = ifMap[ifID];
+      } else if (ifStmt->getCond() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getCond(), raw->getUnderlyingStmt())) { 
+        llvm::outs() << "Debug: In condition, treat as outside of if";
       } else {
         llvm::outs() << "ERROR: raw is neither in then nor else! Raw: ";
         raw->getUnderlyingStmt()->dump();
