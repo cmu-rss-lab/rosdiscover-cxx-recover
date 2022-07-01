@@ -764,11 +764,17 @@ private:
     return symbolicWhile;
   }
   
-  RawStatement* getParentStmt(clang::DynTypedNode node, RawStatement* raw) {
+  /* 
+  Recursively adds the given statement to the control flow nodes of its parents and returns the highest level control flow parent.
+  */
+  RawStatement* constructParentControlFlow(clang::DynTypedNode node, RawStatement* raw) {
+
+    // Stop the recursion if the function level has been reached.
     clang::FunctionDecl const *functionDecl = node.get<clang::FunctionDecl>();
     if (functionDecl != nullptr) {
       return raw;
     }
+    
     clang::WhileStmt const *whileStmt = node.get<clang::WhileStmt>();
     if (whileStmt != nullptr) {
       llvm::outs() << "DEBUG FOUND WHILE!!!!";
@@ -782,13 +788,14 @@ private:
 
       //Add to Body
       whileMap.at(whileID)->getBody()->append(raw);
-      raw = whileMap[whileID];
+      raw = whileMap[whileID]; // continue recursion with the parents of the while statement.
     }
 
     clang::IfStmt const *ifStmt = node.get<clang::IfStmt>();
     if (ifStmt != nullptr) {
       llvm::outs() << "DEBUG FOUND IF!!!!";
 
+      //construct RawIf if not already built
       long ifID = ifStmt->getID(astContext);
       if (!ifMap.count(ifID)) {
         ifMap.emplace(ifID, new RawIfStatement(const_cast<clang::IfStmt*>(ifStmt)));
@@ -809,23 +816,20 @@ private:
       }
       raw = ifMap[ifID];
     }
-
+    RawStatement* result = raw;
     for (clang::DynTypedNode const parent : astContext.getParents(node)) {
-      auto stmt = getParentStmt(parent, raw);
-      if (stmt != nullptr) {
-        return stmt;
-      }
+      result = constructParentControlFlow(parent, raw);
     }
 
-    return nullptr;
+    return result;
   }
 
-  RawStatement* getParentStmt(RawStatement* raw) {
+  RawStatement* constructParentControlFlow(RawStatement* raw) {
     auto node = clang::DynTypedNode::create(*(raw->getUnderlyingStmt()));
-    return getParentStmt(node, raw);
+    return constructParentControlFlow(node, raw);
   }
 
-  std::vector<std::unique_ptr<RawStatement>> computeStatementOrder() {
+  std::vector<RawStatement*> computeStatementOrder() {
     // unify all of the statements in this function
     std::vector<RawStatement*> unordered;
     for (auto *apiCall : apiCalls) {
@@ -851,37 +855,24 @@ private:
     }
 
     // find the ordering of underlying stmts
-    std::vector<std::unique_ptr<RawStatement>> ordered;
+    std::vector<RawStatement*> ordered;
     auto orderedClangStmts = StmtOrderingVisitor::computeOrder(astContext, function, unorderedClangStmts);
     for (auto *clangStmt : orderedClangStmts) {
       for (auto *rawStatement : clangToRawStmts[clangStmt]) {
-        ordered.push_back(std::unique_ptr<RawStatement>(rawStatement));
+        ordered.push_back(rawStatement);
       }
     }
-
-
-    
-    std::vector<std::unique_ptr<RawStatement>> result;
+ 
+    std::vector<RawStatement*> result;
     for (auto &rawStmt : ordered) {
-      auto r = getParentStmt(rawStmt.get());
-      if (r ==  nullptr) {
-        llvm::outs() << "ERROR. Could not find parent.\n";
-        continue;
+      auto highestLevelParent = constructParentControlFlow(rawStmt);
+      if (std::find(result.begin(), result.end(), highestLevelParent) == result.end()) {
+        result.push_back(highestLevelParent);
       }
-      result.push_back(std::unique_ptr<RawStatement>());
     }
+    llvm::outs() << "return result\n";
     
-    for (auto &it: whileMap) {
-      auto rawWhile = it.second;
-      ordered.push_back(std::unique_ptr<RawStatement>(rawWhile));
-      llvm::outs() << "while body: ";
-      for (auto compoundStmt : rawWhile->getBody()->getStmts()) {
-        compoundStmt->getUnderlyingStmt()->dump();
-        llvm::outs() << ",\n";
-      }
-      llvm::outs() << ".\n";
-    }
-
+    ordered.insert( ordered.end(), result.begin(), result.end() );
     return ordered;
   }
 
@@ -924,7 +915,8 @@ private:
     auto compound = std::make_unique<SymbolicCompound>();
 
     for (auto &rawStmt : computeStatementOrder()) {
-      compound->append(symbolizeStatement(rawStmt.get()));
+      llvm::outs() << "return computeStatementOrder\n";
+      compound->append(symbolizeStatement(rawStmt));
     }
 
     llvm::outs() << "Symbolized Function\n";
