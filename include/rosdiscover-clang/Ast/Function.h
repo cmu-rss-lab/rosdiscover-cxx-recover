@@ -13,6 +13,7 @@
 #include "Decl/Parameter.h"
 #include "Stmt/Stmt.h"
 #include "Stmt/Compound.h"
+#include "Stmt/ControlDependency.h"
 
 namespace rosdiscover {
 
@@ -131,16 +132,16 @@ public:
   SymbolicFunctionCall(
     SymbolicFunction *callee,
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
-    std::vector<std::string> controlDependencies = {}
-  ) : callee(callee), args(std::move(args)), controlDependencies(controlDependencies) {}
+    std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies = {}
+  ) : callee(callee), args(std::move(args)), controlDependencies(std::move(controlDependencies)) {}
   ~SymbolicFunctionCall(){}
 
   static std::unique_ptr<SymbolicFunctionCall> create(
     SymbolicFunction *function,
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
-    std::vector<std::string> controlDependencies
+    std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies
   ) {
-    return std::make_unique<SymbolicFunctionCall>(function, args, controlDependencies);
+    return std::make_unique<SymbolicFunctionCall>(function, args, std::move(controlDependencies));
   }
 
   static std::unique_ptr<SymbolicFunctionCall> create(
@@ -165,18 +166,22 @@ public:
     for (auto const &entry : args) {
       argsJson[entry.first] = entry.second->toJson();
     }
+    auto j_deps = nlohmann::json::array();
+    for (auto const &controlDependency : controlDependencies) {
+      j_deps.push_back(controlDependency->toJson());
+    }
     return {
       {"kind", "call"},
       {"callee", callee->getName()},
       {"arguments", argsJson},
-      {"control_dependencies", controlDependencies},
+      {"control_dependencies", j_deps},
     };
   }
 
 private:
   SymbolicFunction *callee;
   std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
-  std::vector<std::string> controlDependencies;
+  std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies;
 };
 
 } // rosdiscover

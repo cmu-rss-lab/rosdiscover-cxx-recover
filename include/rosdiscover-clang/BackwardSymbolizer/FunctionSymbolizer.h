@@ -617,11 +617,9 @@ private:
   ) {
     llvm::outs() << "DEBUG: symbolizing PublishCall\n";
 
-    auto deps = getControlDependenciesString(getControlDependencies(apiCall->getCallExpr()));
-
     return std::make_unique<Publish>(
         apiCall->getPublisherName(),
-        deps
+        getControlDependenciesObjects(getControlDependencies(apiCall->getCallExpr()))
     );
   }
 
@@ -699,7 +697,7 @@ private:
           std::move(functionCalls), 
           std::move(variableReferences)
         )
-      ); 
+      );
     }
     return results;
   }
@@ -766,9 +764,6 @@ private:
     auto *calledFunction = symContext.getDefinition(getCallee(callExpr));
     llvm::outs() << "DEBUG: symbolizing call to function: " << calledFunction->getName() << "\n";
 
-    auto deps = getControlDependenciesString(getControlDependencies(callExpr));
-    
-
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
     for (
       auto it = calledFunction->params_begin();
@@ -827,7 +822,7 @@ private:
       args.emplace(param.getName(), std::move(symbolicParam));
     }
 
-    return SymbolicFunctionCall::create(calledFunction, args, deps);
+    return SymbolicFunctionCall::create(calledFunction, args, getControlDependenciesObjects(getControlDependencies(callExpr)));
   }
 
 
