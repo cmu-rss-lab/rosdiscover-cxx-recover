@@ -20,6 +20,18 @@ namespace rosdiscover {
     return false;
   }
 
+  static std::vector<clang::Stmt*> getTransitiveChildenByType(clang::Stmt* parent, bool includeDeclRefExpr) {
+    std::vector<clang::Stmt*> result;
+    for (auto c: parent->children()) {
+      if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(c)) {
+        result.push_back(declRefExpr);
+      } 
+      auto childResult = getTransitiveChildenByType(c,  includeDeclRefExpr);
+      result.insert(result.end(), childResult.begin(), childResult.end());
+    }
+    return result;
+  }
+  
 namespace api_call {
 
   static clang::APValue const * evaluateNumber(
