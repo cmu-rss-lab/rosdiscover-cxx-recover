@@ -16,6 +16,7 @@
 
 #include "../ApiCall/Calls/Util.h"
 #include "../Ast/Ast.h"
+#include "../Ast/Stmt/ControlDependency.h"
 #include "../Helper/StmtOrderingVisitor.h"
 #include "../RawStatement.h"
 #include "../Value/String.h"
@@ -672,39 +673,35 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  std::vector<std::string> getControlDependencyObjects(llvm::SmallVector<clang::CFGBlock *, 4> deps) {
-    std::vector<std::string> depsStrings;
+  std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(llvm::SmallVector<clang::CFGBlock *, 4> deps) {
+    std::vector<std::unique_ptr<SymbolicControlDependency>> results;
     for (auto d: deps) {
-      d->getTerminatorCondition()->getSourceRange().printToString(astContext.getSourceManager());
+      if (d->getTerminatorCondition() == nullptr) {
+        continue;
+      }
+      //auto sourceRange = d->getTerminatorCondition()->getSourceRange().printToString(astContext.getSourceManager());
+      std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
+      std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
       for (auto delcRef : getTransitiveChildenByType(d->getTerminatorCondition(), true)) {
-        std::string depString = "";
-
         auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
-        if (declRefExpr->hasQualifier()) {
-          depString = depString + declRefExpr->getQualifier()->getAsNamespace()->getNameAsString() + "::";
-        } 
-         depString = depString + declRefExpr->getNameInfo().getAsString();
         if (declRefExpr->getDecl() != nullptr)  {
           auto decl = declRefExpr->getDecl();
           if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
-             depString = depString + "[var] (" + varDecl->getType().getAsString() + ")";
-             depString = depString + "type: (" + decl->getType().getAsString() + ")";
-             depString = depString +  " isFileVarDecl: " + std::to_string(varDecl->isFileVarDecl());
-             depString = depString +  " isLocalVarDeclOrParm: " + std::to_string(varDecl->isLocalVarDeclOrParm());
-             depString = depString +  " isModulePrivate: " + std::to_string(varDecl->isModulePrivate());
-
-
+            variableReferences.push_back(std::make_unique<SymbolicVariableReference>(declRefExpr));
           } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
-             depString = depString + "(<?>)";
+            functionCalls.push_back(std::make_unique<SymbolicCall>(declRefExpr));
           }
-          depString = depString +  " getVisibility: " + std::to_string(decl->getVisibility());
-          depString = depString +  " isCXXClassMember: " + std::to_string(decl->isCXXClassMember());
-          depString = depString +  " isCXXInstanceMember: " + std::to_string(decl->isCXXInstanceMember());
         }
-        depsStrings.push_back(depString);
       }
+      results.push_back(
+        std::make_unique<SymbolicControlDependency>(
+          d->getTerminatorCondition(), 
+          std::move(functionCalls), 
+          std::move(variableReferences)
+        )
+      ); 
     }
-    return depsStrings;
+    return results;
   }
 
   std::vector<std::string> getControlDependenciesString(llvm::SmallVector<clang::CFGBlock *, 4> deps) {
