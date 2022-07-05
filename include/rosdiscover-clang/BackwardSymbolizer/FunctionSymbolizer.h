@@ -672,6 +672,39 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
+  std::vector<std::string> getControlDependencyObjects(llvm::SmallVector<clang::CFGBlock *, 4> deps) {
+    std::vector<std::string> depsStrings;
+    for (auto d: deps) {
+      for (auto delcRef : getTransitiveChildenByType(d->getTerminatorCondition(), true)) {
+        std::string depString = "";
+        auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
+        if (declRefExpr->hasQualifier()) {
+          depString = depString + declRefExpr->getQualifier()->getAsNamespace()->getNameAsString() + "::";
+        } 
+         depString = depString + declRefExpr->getNameInfo().getAsString();
+        if (declRefExpr->getDecl() != nullptr)  {
+          auto decl = declRefExpr->getDecl();
+          if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
+             depString = depString + "[var] (" + varDecl->getType().getAsString() + ")";
+             depString = depString + "type: (" + decl->getType().getAsString() + ")";
+             depString = depString +  " isFileVarDecl: " + std::to_string(varDecl->isFileVarDecl());
+             depString = depString +  " isLocalVarDeclOrParm: " + std::to_string(varDecl->isLocalVarDeclOrParm());
+             depString = depString +  " isModulePrivate: " + std::to_string(varDecl->isModulePrivate());
+
+
+          } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
+             depString = depString + "(<?>)";
+          }
+          depString = depString +  " getVisibility: " + std::to_string(decl->getVisibility());
+          depString = depString +  " isCXXClassMember: " + std::to_string(decl->isCXXClassMember());
+          depString = depString +  " isCXXInstanceMember: " + std::to_string(decl->isCXXInstanceMember());
+        }
+        depsStrings.push_back(depString);
+      }
+    }
+    return depsStrings;
+  }
+
   std::vector<std::string> getControlDependenciesString(llvm::SmallVector<clang::CFGBlock *, 4> deps) {
     std::vector<std::string> depsStrings;
     for (auto d: deps) {
@@ -685,13 +718,17 @@ private:
         if (declRefExpr->getDecl() != nullptr)  {
           auto decl = declRefExpr->getDecl();
           if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
-             depString = depString + "[var] ";
+             depString = depString + " isFileVarDecl: " + std::to_string(varDecl->isFileVarDecl());
+             depString = depString + " isLocalVarDeclOrParm: " + std::to_string(varDecl->isLocalVarDeclOrParm());
+             depString = depString + " isModulePrivate: " + std::to_string(varDecl->isModulePrivate());
+
           } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
              depString = depString + "(<?>)";
           }
-          depString = depString +  " getVisibility: " + std::to_string(decl->getVisibility());
-          depString = depString +  " isCXXClassMember: " + std::to_string(decl->isCXXClassMember());
-          depString = depString +  " isCXXInstanceMember: " + std::to_string(decl->isCXXInstanceMember());
+          depString = depString + "type: (" + decl->getType().getAsString() + ")";
+          depString = depString + " getVisibility: " + std::to_string(decl->getVisibility());
+          depString = depString + " isCXXClassMember: " + std::to_string(decl->isCXXClassMember());
+          depString = depString + " isCXXInstanceMember: " + std::to_string(decl->isCXXInstanceMember());
         }
         depsStrings.push_back(depString);
       }
