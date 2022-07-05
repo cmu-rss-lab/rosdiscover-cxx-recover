@@ -675,8 +675,10 @@ private:
   std::vector<std::string> getControlDependencyObjects(llvm::SmallVector<clang::CFGBlock *, 4> deps) {
     std::vector<std::string> depsStrings;
     for (auto d: deps) {
+      d->getTerminatorCondition()->getSourceRange().printToString(astContext.getSourceManager());
       for (auto delcRef : getTransitiveChildenByType(d->getTerminatorCondition(), true)) {
         std::string depString = "";
+
         auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
         if (declRefExpr->hasQualifier()) {
           depString = depString + declRefExpr->getQualifier()->getAsNamespace()->getNameAsString() + "::";
@@ -706,9 +708,17 @@ private:
   }
 
   std::vector<std::string> getControlDependenciesString(llvm::SmallVector<clang::CFGBlock *, 4> deps) {
+    llvm::outs() << "[Debug] getControlDependenciesString begin\n";
     std::vector<std::string> depsStrings;
     for (auto d: deps) {
+      if (d->getTerminatorCondition() == nullptr) {
+        continue;
+      }
+      llvm::outs() << "[Debug] getTerminatorCondition: ";
+      d->getTerminatorCondition()->dump();
+      llvm::outs() << "\n";
       for (auto delcRef : getTransitiveChildenByType(d->getTerminatorCondition(), true)) {
+        delcRef->dump();
         std::string depString = "";
         auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
         if (declRefExpr->hasQualifier()) {
