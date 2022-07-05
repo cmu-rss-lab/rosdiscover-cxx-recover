@@ -927,7 +927,78 @@ private:
     return getParentStmt(node, raw);
   }
 
-  std::vector<std::unique_ptr<RawStatement>> computeStatementOrder() {
+  /* 
+  Recursively adds the given statement to the control flow nodes of its parents and returns the highest level control flow parent.
+  */
+  RawStatement* constructParentControlFlow(clang::DynTypedNode node, RawStatement* raw) {
+
+    // Stop the recursion if the function level has been reached.
+    clang::FunctionDecl const *functionDecl = node.get<clang::FunctionDecl>();
+    if (functionDecl != nullptr) {
+      return raw;
+    }
+    
+    clang::WhileStmt const *whileStmt = node.get<clang::WhileStmt>();
+    if (whileStmt != nullptr) {
+      llvm::outs() << "DEBUG FOUND WHILE!!!!";
+
+      //construct RawWhile if not already built
+      long whileID = whileStmt->getID(astContext);
+      if (!whileMap.count(whileID)) {
+        std::unique_ptr<RawWhileStatement> rs = std::unique_ptr<RawWhileStatement>(new RawWhileStatement(const_cast<clang::WhileStmt*>(whileStmt)));
+        whileMap.emplace(whileID, new RawWhileStatement(const_cast<clang::WhileStmt*>(whileStmt)));
+      }
+
+      //Add to Body
+      whileMap.at(whileID)->getBody()->append(raw);
+      raw = whileMap[whileID]; // continue recursion with the parents of the while statement.
+    }
+
+    clang::IfStmt const *ifStmt = node.get<clang::IfStmt>();
+    if (ifStmt != nullptr) {
+      llvm::outs() << "DEBUG FOUND IF!!!!";
+
+      //construct RawIf if not already built
+      long ifID = ifStmt->getID(astContext);
+      if (!ifMap.count(ifID)) {
+        ifMap.emplace(ifID, new RawIfStatement(const_cast<clang::IfStmt*>(ifStmt)));
+      }
+
+      //Add to if or else branch
+      if (ifStmt->getThen() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getThen(), raw->getUnderlyingStmt())) { 
+        llvm::outs() << "Debug: Add to then";
+        ifMap.at(ifID)->getTrueBody()->append(raw);
+        raw = ifMap[ifID];
+      } else if (ifStmt->getElse() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getElse(), raw->getUnderlyingStmt())) { 
+        llvm::outs() << "Debug: Add to else";
+        ifMap.at(ifID)->getFalseBody()->append(raw);
+        raw = ifMap[ifID];
+      } else if (ifStmt->getCond() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getCond(), raw->getUnderlyingStmt())) { 
+        llvm::outs() << "Debug: In condition, treat as outside of if";
+      } else {
+        llvm::outs() << "ERROR: raw is neither in then nor else! Raw: ";
+        raw->getUnderlyingStmt()->dump();
+        llvm::outs() << "\n IfStmt: ";
+        ifStmt->dump();
+        llvm::outs() << "\n";
+        abort();
+      }
+      raw = ifMap[ifID];
+    }
+    RawStatement* result = raw;
+    for (clang::DynTypedNode const parent : astContext.getParents(node)) {
+      result = constructParentControlFlow(parent, raw);
+    }
+
+    return result;
+  }
+
+  RawStatement* constructParentControlFlow(RawStatement* raw) {
+    auto node = clang::DynTypedNode::create(*(raw->getUnderlyingStmt()));
+    return constructParentControlFlow(node, raw);
+  }
+
+  std::vector<RawStatement*> computeStatementOrder() {
     // unify all of the statements in this function
     std::vector<RawStatement*> unordered;
     for (auto *apiCall : apiCalls) {
@@ -953,37 +1024,26 @@ private:
     }
 
     // find the ordering of underlying stmts
-    std::vector<std::unique_ptr<RawStatement>> ordered;
+    std::vector<RawStatement*> ordered;
     auto orderedClangStmts = StmtOrderingVisitor::computeOrder(astContext, function, unorderedClangStmts);
     for (auto *clangStmt : orderedClangStmts) {
       for (auto *rawStatement : clangToRawStmts[clangStmt]) {
-        ordered.push_back(std::unique_ptr<RawStatement>(rawStatement));
+        ordered.push_back(rawStatement);
       }
     }
+ 
+    std::vector<RawStatement*> result;
+    for (auto &rawStmt : ordered) { //In lexical order look for control flow parents and add them to result
+      auto highestLevelParent = constructParentControlFlow(rawStmt);
 
-
-    
-    std::vector<std::unique_ptr<RawStatement>> result;
-    for (auto &rawStmt : ordered) {
-      auto r = getParentStmt(rawStmt.get());
-      if (r ==  nullptr) {
-        llvm::outs() << "ERROR. Could not find parent.\n";
-        continue;
+      //avoid duplication in the result
+      if (std::find(result.begin(), result.end(), highestLevelParent) == result.end()) {
+        result.push_back(highestLevelParent); 
       }
-      result.push_back(std::unique_ptr<RawStatement>());
     }
     
-    for (auto &it: whileMap) {
-      auto rawWhile = it.second;
-      ordered.push_back(std::unique_ptr<RawStatement>(rawWhile));
-      llvm::outs() << "while body: ";
-      for (auto compoundStmt : rawWhile->getBody()->getStmts()) {
-        compoundStmt->getUnderlyingStmt()->dump();
-        llvm::outs() << ",\n";
-      }
-      llvm::outs() << ".\n";
-    }
-
+    //For compatibiliy, include the leaves for now. TODO: Fix rosdisover python to find leaves in control flow.
+    ordered.insert( ordered.end(), result.begin(), result.end() );
     return ordered;
   }
 
@@ -1026,7 +1086,7 @@ private:
     auto compound = std::make_unique<SymbolicCompound>();
 
     for (auto &rawStmt : computeStatementOrder()) {
-      compound->append(symbolizeStatement(rawStmt.get()));
+      compound->append(symbolizeStatement(rawStmt));
     }
 
     llvm::outs() << "Symbolized Function\n";
