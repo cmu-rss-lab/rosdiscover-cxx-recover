@@ -703,45 +703,6 @@ private:
     return results;
   }
 
-  std::vector<std::string> getControlDependenciesString(llvm::SmallVector<clang::CFGBlock *, 4> deps) {
-    llvm::outs() << "[Debug] getControlDependenciesString begin\n";
-    std::vector<std::string> depsStrings;
-    for (auto d: deps) {
-      if (d->getTerminatorCondition() == nullptr) {
-        continue;
-      }
-      llvm::outs() << "[Debug] getTerminatorCondition: ";
-      d->getTerminatorCondition()->dump();
-      llvm::outs() << "\n";
-      for (auto delcRef : getTransitiveChildenByType(d->getTerminatorCondition(), true)) {
-        delcRef->dump();
-        std::string depString = "";
-        auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
-        if (declRefExpr->hasQualifier()) {
-          depString = depString + declRefExpr->getQualifier()->getAsNamespace()->getNameAsString() + "::";
-        } 
-         depString = depString + declRefExpr->getNameInfo().getAsString();
-        if (declRefExpr->getDecl() != nullptr)  {
-          auto decl = declRefExpr->getDecl();
-          if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
-             depString = depString + " isFileVarDecl: " + std::to_string(varDecl->isFileVarDecl());
-             depString = depString + " isLocalVarDeclOrParm: " + std::to_string(varDecl->isLocalVarDeclOrParm());
-             depString = depString + " isModulePrivate: " + std::to_string(varDecl->isModulePrivate());
-
-          } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
-             depString = depString + "(<?>)";
-          }
-          depString = depString + "type: (" + decl->getType().getAsString() + ")";
-          depString = depString + " getVisibility: " + std::to_string(decl->getVisibility());
-          depString = depString + " isCXXClassMember: " + std::to_string(decl->isCXXClassMember());
-          depString = depString + " isCXXInstanceMember: " + std::to_string(decl->isCXXInstanceMember());
-        }
-        depsStrings.push_back(depString);
-      }
-    }
-    return depsStrings;
-  }
-
   const llvm::SmallVector<clang::CFGBlock *, 4> getControlDependencies(const clang::Stmt* stmt) {
 
     std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
