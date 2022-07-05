@@ -695,7 +695,8 @@ private:
         std::make_unique<SymbolicControlDependency>(
           d->getTerminatorCondition(), 
           std::move(functionCalls), 
-          std::move(variableReferences)
+          std::move(variableReferences),
+          d->getTerminatorCondition()->getSourceRange().printToString(astContext.getSourceManager())
         )
       );
     }

@@ -15,8 +15,9 @@ public:
   SymbolicControlDependency(
     clang::Stmt* stmt,
     std::vector<std::unique_ptr<SymbolicCall>> functionCalls,
-    std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences
-  ) : stmt(stmt), functionCalls(std::move(functionCalls)), variableReferences(std::move(variableReferences)) {}
+    std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences, 
+    std::string const location
+  ) : stmt(stmt), functionCalls(std::move(functionCalls)), variableReferences(std::move(variableReferences)), location(location) {}
   ~SymbolicControlDependency(){}
 
   void print(llvm::raw_ostream &os) const override {
@@ -36,6 +37,7 @@ public:
       {"kind", "controlDependency"},
       {"calls", j_calls},
       {"variableReferences", j_varrefs},
+      {"source-location", location},
     };
   }
 
@@ -47,6 +49,7 @@ private:
   clang::Stmt* stmt;
   std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
   std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
+  std::string const location;
 };
 
 } // rosdiscover
