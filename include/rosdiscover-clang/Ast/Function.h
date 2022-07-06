@@ -170,6 +170,10 @@ public:
     };
   }
 
+  std::string const getCalleeName() const {
+    return callee->getName();
+  }
+
 private:
   SymbolicFunction *callee;
   std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;

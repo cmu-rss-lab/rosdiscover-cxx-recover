@@ -69,7 +69,7 @@ private:
 
 class Subscriber : public NamedSymbolicRosApiCall {
 public:
-  Subscriber(std::unique_ptr<SymbolicString> name, std::string const &format, std::unique_ptr<SymbolicStmt> callback)
+  Subscriber(std::unique_ptr<SymbolicString> name, std::string const &format, std::unique_ptr<SymbolicFunctionCall> callback)
   : NamedSymbolicRosApiCall(std::move(name)), format(format), callback(std::move(callback)) {}
 
   void print(llvm::raw_ostream &os) const override {
@@ -83,13 +83,13 @@ public:
       {"kind", "subscribes-to"},
       {"name", getName()->toJson()},
       {"format", format},
-      {"callback", (callback == nullptr) ? "unknown" : callback->toJson()}
+      {"callback-name", (callback == nullptr) ? "unknown" : callback->getCalleeName()}
     };
   }
 
 private:
   std::string const format;
-  std::unique_ptr<SymbolicStmt> callback;
+  std::unique_ptr<SymbolicFunctionCall> callback;
 };
 
 class RateSleep : public SymbolicRosApiCall {
