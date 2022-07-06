@@ -1,7 +1,12 @@
 #pragma once
 
+#include <clang/AST/ASTContext.h>
 #include <clang/AST/APValue.h>
 #include <clang/AST/Expr.h>
+#include <clang/Basic/LangOptions.h>
+#include <clang/Basic/SourceLocation.h>
+#include <clang/Lex/Lexer.h>
+
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/APFloat.h>
 
@@ -21,6 +26,15 @@ namespace rosdiscover {
       }
     }
     return false;
+  }
+
+  static std::string prettyPrint(clang::Stmt* statement, clang::ASTContext &context) {
+    llvm::StringRef ref = clang::Lexer::getSourceText(
+      clang::CharSourceRange::getCharRange(statement->getSourceRange()), 
+      context.getSourceManager(), 
+      clang::LangOptions()
+    );
+    return ref.str();
   }
 
   static std::vector<clang::Stmt*> getTransitiveChildenByType(clang::Stmt* parent, bool includeDeclRefExpr) {

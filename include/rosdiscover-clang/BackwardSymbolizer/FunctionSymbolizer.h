@@ -691,12 +691,14 @@ private:
           }
         }
       }
+
       results.push_back(
         std::make_unique<SymbolicControlDependency>(
           d->getTerminatorCondition(), 
           std::move(functionCalls), 
           std::move(variableReferences),
-          d->getTerminatorCondition()->getSourceRange().printToString(astContext.getSourceManager())
+          d->getTerminatorCondition()->getSourceRange().printToString(astContext.getSourceManager()),
+          prettyPrint(d->getTerminatorCondition(), astContext)
         )
       );
     }
