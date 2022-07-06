@@ -884,7 +884,7 @@ private:
     return ordered;
   }
 
-  std::unique_ptr<SymbolicStmt> symbolizeCallback(RawCallbackStatement *statement) {
+  std::unique_ptr<SymbolicFunctionCall> symbolizeCallback(RawCallbackStatement *statement) {
     auto *function = symContext.getDefinition(statement->getTargetFunction());
     return SymbolicFunctionCall::create(function);
   }
