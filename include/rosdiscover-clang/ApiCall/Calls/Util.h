@@ -28,16 +28,17 @@ namespace rosdiscover {
     return false;
   }
 
-  static std::string prettyPrint(clang::Stmt* statement, clang::ASTContext &context) {
+  static std::string prettyPrint(clang::Stmt* const statement, clang::ASTContext const &context) {
+    auto range = clang::CharSourceRange::getTokenRange(statement->getSourceRange());
     llvm::StringRef ref = clang::Lexer::getSourceText(
-      clang::CharSourceRange::getCharRange(statement->getSourceRange()), 
+      range, 
       context.getSourceManager(), 
       clang::LangOptions()
     );
     return ref.str();
   }
 
-  static std::vector<clang::Stmt*> getTransitiveChildenByType(clang::Stmt* parent, bool includeDeclRefExpr) {
+  static std::vector<clang::Stmt*> getTransitiveChildenByType(clang::Stmt* const parent, bool const includeDeclRefExpr) {
     std::vector<clang::Stmt*> result;
     for (auto c: parent->children()) {
       if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(c)) {

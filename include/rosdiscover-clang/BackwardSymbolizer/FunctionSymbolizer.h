@@ -674,13 +674,13 @@ private:
   std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(llvm::SmallVector<clang::CFGBlock *, 4> deps) {
     std::vector<std::unique_ptr<SymbolicControlDependency>> results;
     for (auto d: deps) {
-      if (d->getTerminatorCondition() == nullptr) {
+      auto const condition = d->getTerminatorCondition(false);
+      if (condition == nullptr) {
         continue;
       }
-      //auto sourceRange = d->getTerminatorCondition()->getSourceRange().printToString(astContext.getSourceManager());
       std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
       std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
-      for (auto delcRef : getTransitiveChildenByType(d->getTerminatorCondition(), true)) {
+      for (auto delcRef : getTransitiveChildenByType(condition, true)) {
         auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
         if (declRefExpr->getDecl() != nullptr)  {
           auto decl = declRefExpr->getDecl();
@@ -694,11 +694,11 @@ private:
 
       results.push_back(
         std::make_unique<SymbolicControlDependency>(
-          d->getTerminatorCondition(), 
+          condition, 
           std::move(functionCalls), 
           std::move(variableReferences),
-          d->getTerminatorCondition()->getSourceRange().printToString(astContext.getSourceManager()),
-          prettyPrint(d->getTerminatorCondition(), astContext)
+          condition->getSourceRange().printToString(astContext.getSourceManager()),
+          prettyPrint(condition, astContext)
         )
       );
     }
