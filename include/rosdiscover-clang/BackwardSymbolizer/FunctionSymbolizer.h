@@ -696,7 +696,7 @@ private:
           if (declRefExpr != nullptr && declRefExpr->getDecl() != nullptr)  {
             auto decl = declRefExpr->getDecl();
             if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
-              variableReferences.push_back(std::make_unique<SymbolicVariableReference>(declRefExpr));
+              variableReferences.push_back(std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl));
             } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
               functionCalls.push_back(std::make_unique<SymbolicCall>(declRefExpr));
             }

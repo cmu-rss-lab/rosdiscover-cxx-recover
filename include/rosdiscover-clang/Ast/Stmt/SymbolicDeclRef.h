@@ -12,42 +12,59 @@ namespace rosdiscover {
 class SymbolicDeclRef : public SymbolicStmt {
 public:
   SymbolicDeclRef(
-    clang::DeclRefExpr* declRef
-  ) : declRef(declRef) {}
+    bool isInstanceMember,
+    bool isClassMember,
+    std::string typeName,
+    std::string name
+  ) : isInstanceMember(isInstanceMember),
+      isClassMember(isClassMember),
+      typeName(typeName),
+      name(name)
+   {}
+
   ~SymbolicDeclRef(){}
 
+  static std::string createName(clang::DeclRefExpr* declRef) {
+    std::string name = declRef->getNameInfo().getAsString();
+    if (declRef->hasQualifier()) {
+      name = declRef->getQualifier()->getAsNamespace()->getNameAsString() + "::" + name;
+    }
+    return name;
+  }
+
+  SymbolicDeclRef(clang::DeclRefExpr* declRef
+  ) : isInstanceMember(declRef->getDecl()->isCXXInstanceMember()), 
+      isClassMember(declRef->getDecl()->isCXXClassMember()),
+      typeName(declRef->getType().getAsString()),
+      name(createName(declRef)) {}
+
   void print(llvm::raw_ostream &os) const override {
-    os << "(declRef " << getName() << " : " << getType().getAsString() << ")";
+    os << "(declRef " << name << " : " << typeName << ")";
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "declRef"},
-      {"isCXXInstanceMember", declRef->getDecl()->isCXXInstanceMember()},
-      {"isCXXClassMember", declRef->getDecl()->isCXXInstanceMember()},
-      {"type", getType().getAsString()},
-      {"name", getName()},
+      {"isInstanceMember", isInstanceMember},
+      {"isClassMember", isClassMember},
+      {"type", typeName},
+      {"name", name},
     };
   }
-
-  clang::QualType getType() const {
-    return declRef->getType();
+    
+  std::string getTypeName() const {
+    return typeName;
   }
 
   std::string getName() const {
-    std::string name = declRef->getNameInfo().getAsString();
-    if (declRef->hasQualifier()) {
-      return declRef->getQualifier()->getAsNamespace()->getNameAsString() + "::" + name;
-    }
     return name;
   }
 
-  clang::DeclRefExpr* getDeclRef() const {
-    return declRef;
-  }
-
 private:
-  clang::DeclRefExpr* declRef;
+  bool isInstanceMember;
+  bool isClassMember;
+  std::string typeName;
+  std::string name;
 };
 
 } // rosdiscover

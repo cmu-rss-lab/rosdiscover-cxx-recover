@@ -14,7 +14,7 @@ public:
   ~SymbolicCall(){}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(call " << getName() << " : " << getType().getAsString() << ")";
+    os << "(call " << getName() << " : " << getTypeName() << ")";
   }
 
   nlohmann::json toJson() const override {

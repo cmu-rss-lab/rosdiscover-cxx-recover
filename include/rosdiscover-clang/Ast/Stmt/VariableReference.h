@@ -11,39 +11,44 @@ namespace rosdiscover {
 class SymbolicVariableReference : public SymbolicDeclRef {
 public:
   SymbolicVariableReference(
-    clang::DeclRefExpr* varRef
-  ) : SymbolicDeclRef(varRef) {}
+    clang::DeclRefExpr* varRef,
+    clang::VarDecl* varDecl
+  ) : SymbolicDeclRef(varRef),
+      isFileVarDecl(varDecl->isFileVarDecl()),
+      isLocalVarDeclOrParm(varDecl->isLocalVarDeclOrParm()),
+      isModulePrivate(varDecl->isModulePrivate())
+  {}
   ~SymbolicVariableReference(){}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(varRef " << getName() << " : " << getType().getAsString() << ")";
+    os << "(varRef " << getName() << " : " << getTypeName() << ")";
   }
 
   nlohmann::json toJson() const override {
     auto j = SymbolicDeclRef::toJson();
     j["kind"] = "varRef";
-    j["isFileVarDecl"] = isFileVarDecl();
-    j["isLocalVarDeclOrParm"] = isLocalVarDeclOrParm();
-    j["isModulePrivate"] = isModulePrivate();
+    j["isFileVarDecl"] = isFileVarDecl;
+    j["isLocalVarDeclOrParm"] = isLocalVarDeclOrParm;
+    j["isModulePrivate"] = isModulePrivate;
     return j;
   }
 
-  bool isFileVarDecl() const {
-    return getVarDecl()->isFileVarDecl();
+  bool getIsFileVarDecl() const {
+    return isFileVarDecl;
   }
 
-  bool isLocalVarDeclOrParm() const {
-    return getVarDecl()->isLocalVarDeclOrParm();
+  bool getIsLocalVarDeclOrParm() const {
+    return isLocalVarDeclOrParm;
   }
 
-  bool isModulePrivate() const {
-    return getVarDecl()->isModulePrivate();
+  bool getIsModulePrivate() const {
+    return isModulePrivate;
   }
 
-  clang::VarDecl* getVarDecl() const {
-    return clang::dyn_cast<clang::VarDecl>(getDeclRef()->getDecl());
-  }
-
+private: 
+  bool isFileVarDecl;
+  bool isLocalVarDeclOrParm;
+  bool isModulePrivate;
 };
 
 } // rosdiscover
