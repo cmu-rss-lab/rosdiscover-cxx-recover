@@ -618,7 +618,7 @@ private:
     llvm::outs() << "DEBUG: symbolizing PublishCall\n";
 
     return std::make_unique<Publish>(
-        apiCall->getPublisherName(),
+        apiCall->getPublisherName(astContext),
         getControlDependenciesObjects(getControlDependencies(apiCall->getCallExpr()))
     );
   }
@@ -710,7 +710,7 @@ private:
             std::move(functionCalls), 
             std::move(variableReferences),
             condition->getSourceRange().printToString(astContext.getSourceManager()),
-            prettyPrint(condition, astContext)
+            rosdiscover::prettyPrint(condition, astContext)
           )
         );
 

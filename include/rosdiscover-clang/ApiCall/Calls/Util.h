@@ -38,6 +38,16 @@ namespace rosdiscover {
     return ref.str();
   }
 
+  static std::string prettyPrint(const clang::Expr* expr, clang::ASTContext const &context) {
+    auto range = clang::CharSourceRange::getTokenRange(expr->getSourceRange());
+    llvm::StringRef ref = clang::Lexer::getSourceText(
+      range, 
+      context.getSourceManager(), 
+      clang::LangOptions()
+    );
+    return ref.str();
+  }
+
   static std::vector<clang::Stmt*> getTransitiveChildenByType(clang::Stmt* const parent, bool const includeDeclRefExpr) {
     std::vector<clang::Stmt*> result;
     for (auto c: parent->children()) {
