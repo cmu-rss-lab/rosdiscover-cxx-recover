@@ -17,7 +17,7 @@ public:
     std::vector<std::unique_ptr<SymbolicCall>> functionCalls,
     std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences, 
     std::string const location,
-    std::string const condition
+    std::string const condition=""
   ) : stmt(stmt), functionCalls(std::move(functionCalls)), variableReferences(std::move(variableReferences)), location(location), condition(condition) {}
   ~SymbolicControlDependency(){}
 
