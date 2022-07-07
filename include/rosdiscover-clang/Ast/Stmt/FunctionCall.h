@@ -22,7 +22,6 @@ public:
     j["kind"] = "call";
     return j;
   }
-
 };
 
 } // rosdiscover

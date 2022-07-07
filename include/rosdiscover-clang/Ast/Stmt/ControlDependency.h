@@ -18,7 +18,11 @@ public:
     std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences, 
     std::string const location,
     std::string const condition=""
-  ) : stmt(stmt), functionCalls(std::move(functionCalls)), variableReferences(std::move(variableReferences)), location(location), condition(condition) {}
+  ) : stmt(stmt), 
+    functionCalls(std::move(functionCalls)), 
+    variableReferences(std::move(variableReferences)), 
+    location(location), 
+    condition(condition) {}
   ~SymbolicControlDependency(){}
 
   void print(llvm::raw_ostream &os) const override {
