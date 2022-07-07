@@ -707,7 +707,6 @@ private:
         
         results.push_back(
           std::make_unique<SymbolicControlDependency>(
-            condition, 
             std::move(functionCalls), 
             std::move(variableReferences),
             condition->getSourceRange().printToString(astContext.getSourceManager()),

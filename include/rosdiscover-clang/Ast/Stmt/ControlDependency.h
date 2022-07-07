@@ -13,16 +13,14 @@ namespace rosdiscover {
 class SymbolicControlDependency : public SymbolicStmt {
 public:
   SymbolicControlDependency(
-    clang::Stmt* stmt,
     std::vector<std::unique_ptr<SymbolicCall>> functionCalls,
     std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences, 
     std::string const location,
     std::string const condition=""
-  ) : stmt(stmt), 
-    functionCalls(std::move(functionCalls)), 
-    variableReferences(std::move(variableReferences)), 
-    location(location), 
-    condition(condition) {}
+  ) : functionCalls(std::move(functionCalls)), 
+      variableReferences(std::move(variableReferences)), 
+      location(location), 
+      condition(condition) {}
   ~SymbolicControlDependency(){}
 
   void print(llvm::raw_ostream &os) const override {
@@ -47,12 +45,7 @@ public:
     };
   }
 
-  clang::Stmt* getStmt() {
-    return stmt;
-  }
-
 private:
-  clang::Stmt* stmt;
   std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
   std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
   std::string const location;
