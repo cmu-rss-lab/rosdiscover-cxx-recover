@@ -41,9 +41,11 @@ namespace rosdiscover {
   static std::vector<clang::Stmt*> getTransitiveChildenByType(clang::Stmt* const parent, bool const includeDeclRefExpr) {
     std::vector<clang::Stmt*> result;
     for (auto c: parent->children()) {
-      if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(c)) {
-        result.push_back(declRefExpr);
-      } 
+      if (includeDeclRefExpr) {
+        if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(c)) {
+          result.push_back(declRefExpr);
+        } 
+      }
       auto childResult = getTransitiveChildenByType(c,  includeDeclRefExpr);
       result.insert(result.end(), childResult.begin(), childResult.end());
     }
