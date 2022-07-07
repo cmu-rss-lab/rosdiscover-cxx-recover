@@ -671,37 +671,58 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(llvm::SmallVector<clang::CFGBlock *, 4> deps) {
+  std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const llvm::SmallVector<clang::CFGBlock *, 4> deps) {
     std::vector<std::unique_ptr<SymbolicControlDependency>> results;
-    for (auto d: deps) {
-      auto const condition = d->getTerminatorCondition(false);
-      if (condition == nullptr) {
-        continue;
-      }
-      std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
-      std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
-      for (auto delcRef : getTransitiveChildenByType(condition, true)) {
-        auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
-        if (declRefExpr->getDecl() != nullptr)  {
-          auto decl = declRefExpr->getDecl();
-          if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
-            variableReferences.push_back(std::make_unique<SymbolicVariableReference>(declRefExpr));
-          } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
-            functionCalls.push_back(std::make_unique<SymbolicCall>(declRefExpr));
+    for (const auto d: deps) {
+      try {
+        if (d == nullptr || d->empty() || d->size() < 1 || d->size() > 1000)  {
+          continue;
+        }
+        llvm::outs() << "size " << d->size() << "\n";
+        llvm::outs() << "looking for terminator condition\n";
+
+        auto *condition = d->getTerminatorCondition();
+        if (condition == nullptr) {
+          llvm::outs() << "no terminator condition\n";
+          continue;
+        }
+        
+        llvm::outs() << "terminator condition found: \n";
+
+        std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
+        std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
+        for (auto delcRef : getTransitiveChildenByType(condition, true)) {
+          auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
+          if (declRefExpr != nullptr && declRefExpr->getDecl() != nullptr)  {
+            auto decl = declRefExpr->getDecl();
+            if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
+              variableReferences.push_back(std::make_unique<SymbolicVariableReference>(declRefExpr));
+            } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
+              functionCalls.push_back(std::make_unique<SymbolicCall>(declRefExpr));
+            }
           }
         }
-      }
 
-      results.push_back(
-        std::make_unique<SymbolicControlDependency>(
-          condition, 
-          std::move(functionCalls), 
-          std::move(variableReferences),
-          condition->getSourceRange().printToString(astContext.getSourceManager()),
-          prettyPrint(condition, astContext)
-        )
-      );
+        llvm::outs() << "variableReferences and functionCalls created\n";
+        
+        results.push_back(
+          std::make_unique<SymbolicControlDependency>(
+            condition, 
+            std::move(functionCalls), 
+            std::move(variableReferences),
+            condition->getSourceRange().printToString(astContext.getSourceManager()),
+            prettyPrint(condition, astContext)
+          )
+        );
+
+        llvm::outs() << "SymbolicControlDependency created\n";
+      } catch (...) {
+        llvm::outs() << "[Error] Failed to create SymbolicControlDependency";
+      }
     }
+
+    llvm::outs() << "getControlDependenciesObjects end\n";
+
     return results;
   }
 
@@ -715,8 +736,7 @@ private:
     auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
     auto stmt_block = CM->getBlock(stmt); 
     auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
-    llvm::outs() << "getControlDependencies("<< deps.size() <<"): ";
-    for (auto d: deps) {
+    for (auto d : deps) {
       d->dump();
     }
     llvm::outs() << "getControlDependencies end\n";
