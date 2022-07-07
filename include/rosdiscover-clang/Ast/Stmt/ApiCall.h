@@ -128,14 +128,14 @@ public:
   }
 
   nlohmann::json toJson() const override {
-    auto j_deps = nlohmann::json::array();
+    auto jDeps = nlohmann::json::array();
     for (auto const &controlDependency : controlDependencies) {
-      j_deps.push_back(controlDependency->toJson());
+      jDeps.push_back(controlDependency->toJson());
     }
     return {
       {"kind", "publish"},
       {"publisher", publisher},
-      {"control_dependencies", j_deps}
+      {"control_dependencies", jDeps}
     };
   }
 

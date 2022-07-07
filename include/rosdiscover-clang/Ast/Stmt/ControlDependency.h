@@ -30,18 +30,18 @@ public:
   }
 
   nlohmann::json toJson() const override {
-    auto j_calls = nlohmann::json::array();
+    auto jCalls = nlohmann::json::array();
     for (auto const &functionCall : functionCalls) {
-      j_calls.push_back(functionCall->toJson());
+      jCalls.push_back(functionCall->toJson());
     }
-    auto j_varrefs = nlohmann::json::array();
+    auto jVarrefs = nlohmann::json::array();
     for (auto const &variableReference : variableReferences) {
-      j_varrefs.push_back(variableReference->toJson());
+      jVarrefs.push_back(variableReference->toJson());
     }
     return {
       {"kind", "controlDependency"},
-      {"calls", j_calls},
-      {"variableReferences", j_varrefs},
+      {"calls", jCalls},
+      {"variableReferences", jVarrefs},
       {"source-location", location},
       {"condition", condition},
     };

@@ -166,15 +166,15 @@ public:
     for (auto const &entry : args) {
       argsJson[entry.first] = entry.second->toJson();
     }
-    auto j_deps = nlohmann::json::array();
+    auto jDeps = nlohmann::json::array();
     for (auto const &controlDependency : controlDependencies) {
-      j_deps.push_back(controlDependency->toJson());
+      jDeps.push_back(controlDependency->toJson());
     }
     return {
       {"kind", "call"},
       {"callee", callee->getName()},
       {"arguments", argsJson},
-      {"control_dependencies", j_deps},
+      {"control_dependencies", jDeps},
     };
   }
 
