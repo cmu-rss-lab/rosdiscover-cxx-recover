@@ -31,17 +31,39 @@ public:
       }
       auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(bindExpr->getSubExpr()->IgnoreImpCasts());
       if (constructExpr == nullptr) {
-        unableToResolve(tempExpr);
-        return nullptr;
+        auto *callExpr = clang::dyn_cast<clang::CallExpr>(bindExpr->getSubExpr()->IgnoreImpCasts());
+        if (callExpr == nullptr || callExpr->getNumArgs() < 1) {
+          unableToResolve(bindExpr);
+          return nullptr;
+        }
+        llvm::outs() << "[Callback] CallExpr: ";
+        callExpr->dump();
+        llvm::outs() << "\n";
+        // TODO: Read the other arguments of bind calls such as in, ``boost::bind(CmdCallBack, _1, accel_rate)`` 
+        return callExpr->getArg(0);
       }
-      auto *constructExpr2 = clang::dyn_cast<clang::CXXConstructExpr>(constructExpr->getArg(0));
+      clang::CXXConstructExpr* constructExpr2 = clang::dyn_cast<clang::CXXConstructExpr>(constructExpr->getArg(0));
       if (constructExpr2 == nullptr) {
-        unableToResolve(tempExpr);
-        return nullptr;
+
+        auto *bindExpr2 = clang::dyn_cast<clang::CXXBindTemporaryExpr>(constructExpr->getArg(0));
+        if (bindExpr2 != nullptr) {
+          if (auto *subExpr = clang::dyn_cast<clang::CXXConstructExpr>(bindExpr2->getSubExpr()->IgnoreImpCasts())) {
+            constructExpr2 = subExpr;
+          } else {
+            llvm::outs() << "[Callback] subExpr was expecting CXXConstructExpr";
+            unableToResolve(constructExpr->getArg(0));
+            return nullptr;
+          }
+        } else {
+          llvm::outs() << "[Callback] constructExpr2 was expecting CXXConstructExpr or CXXBindTemporaryExpr";
+          unableToResolve(constructExpr->getArg(0));
+          return nullptr;
+        }
       } 
       auto *arg = clang::dyn_cast<clang::MaterializeTemporaryExpr>(constructExpr2->getArg(0));
       if (arg == nullptr) {
-        unableToResolve(tempExpr);
+        llvm::outs() << "[Callback] arg was expecting MaterializeTemporaryExpr";
+        unableToResolve(constructExpr2->getArg(0));
         return nullptr;
       } 
 
@@ -74,7 +96,7 @@ public:
         if (tempExpr == nullptr) {
           return unableToResolve(argExpr);
         }
-        llvm::outs() << "[Callback] is MaterializeTemporaryExpr";
+        llvm::outs() << "[Callback] is MaterializeTemporaryExpr: ";
         tempExpr->dump();
         llvm::outs() << "\n";
 
