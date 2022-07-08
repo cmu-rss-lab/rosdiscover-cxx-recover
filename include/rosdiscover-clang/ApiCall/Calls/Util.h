@@ -17,9 +17,7 @@ namespace rosdiscover {
 
   
   static std::string createName(clang::DeclRefExpr* declRef) {
-    llvm::outs() << "name: ";
     std::string name = declRef->getNameInfo().getAsString();
-    llvm::outs() << name << "\n";
     if (declRef->hasQualifier()) {
       name = "";
       llvm::raw_string_ostream os(name);
