@@ -405,6 +405,7 @@ private:
     std::unique_ptr<SymbolicNodeHandle> nodeHandle,
     api_call::NamedRosApiCall *apiCall
   ) {
+    llvm::outs() << "DEBUG: symbolizing NodeHandleApiCallName\n";
     auto name = symbolizeApiCallName(apiCall);
 
     // FIXME: since we use unique_ptr, we need to use a separate node handle
@@ -596,10 +597,17 @@ private:
     api_call::SubscribeTopicCall *apiCall
   ) {
     llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
+    auto* callback = apiCall->getCallback(astContext);
+    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    if (callback == nullptr) {
+      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+    } else {
+      symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
+    }
     return std::make_unique<Subscriber>(
       symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
       apiCall->getFormatName(),
-      symbolizeCallback(new RawCallbackStatement(apiCall->getCallback(astContext)))
+      std::move(symbolicCallBack)
     );
   }
 
@@ -963,8 +971,21 @@ private:
   }
 
   std::unique_ptr<SymbolicFunctionCall> symbolizeCallback(RawCallbackStatement *statement) {
+    llvm::outs() << "DEBUG: symbolizing callback\n";
+    if (statement == nullptr) {
+      llvm::outs() << "ERROR: callback statement\n";
+    }
+    if (statement->getTargetFunction() == nullptr) {
+      llvm::outs() << "ERROR: no target function\n";
+    }
     auto *function = symContext.getDefinition(statement->getTargetFunction());
-    return SymbolicFunctionCall::create(function);
+    if (function == nullptr) {
+      llvm::outs() << "ERROR: target function definition not found\n";
+    }
+    llvm::outs() << "DEBUG: target function definition found\n";
+    auto result = SymbolicFunctionCall::create(function);
+    llvm::outs() << "DEBUG: symbolized callback\n";
+    return result;
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeStatement(RawStatement *statement) {
