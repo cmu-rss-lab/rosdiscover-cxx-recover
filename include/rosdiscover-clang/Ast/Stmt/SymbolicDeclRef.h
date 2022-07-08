@@ -26,6 +26,7 @@ public:
   ~SymbolicDeclRef(){}
 
   SymbolicDeclRef(clang::DeclRefExpr* declRef
+  // Complex logic needed here to avoid duplication in sub-classes.
   ) : isInstanceMember(declRef->getDecl()->isCXXInstanceMember()), 
       isClassMember(declRef->getDecl()->isCXXClassMember()),
       typeName(declRef->getType().getAsString()),
