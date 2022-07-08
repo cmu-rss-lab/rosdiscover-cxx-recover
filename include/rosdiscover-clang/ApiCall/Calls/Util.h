@@ -7,12 +7,27 @@
 #include <clang/Basic/SourceLocation.h>
 #include <clang/Lex/Lexer.h>
 
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/APFloat.h>
 
 #include "../RosApiCall.h"
 
 namespace rosdiscover {
+
+  
+  static std::string createName(clang::DeclRefExpr* declRef) {
+    std::string name = declRef->getNameInfo().getAsString();
+    if (declRef->hasQualifier()) {
+      name = "";
+      llvm::raw_string_ostream os(name);
+      static clang::LangOptions langOptions;
+      static clang::PrintingPolicy printPolicy(langOptions);
+      declRef->getQualifier()->print(os, printPolicy);
+      name = os.str();
+    }
+    return name;
+  }
 
   static inline bool stmtContainsStmt(const clang::Stmt* parent, const clang::Stmt* child) {
     if (parent == nullptr || child == nullptr) {

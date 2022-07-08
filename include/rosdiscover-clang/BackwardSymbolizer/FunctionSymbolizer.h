@@ -675,11 +675,11 @@ private:
     std::vector<std::unique_ptr<SymbolicControlDependency>> results;
     for (const auto d: deps) {
       try {
-        if (d == nullptr || d->empty() || d->size() < 1 || d->size() > 1000)  {
+        if (d == nullptr || d->empty() || d->size() < 1 || d->size() > 1000 || d->getTerminatorStmt() == nullptr )   {
           continue;
         }
         llvm::outs() << "size " << d->size() << "\n";
-        llvm::outs() << "looking for terminator condition\n";
+        llvm::outs() << "looking for terminator condition in " << d->getTerminatorStmt()->getStmtClassName();
 
         auto *condition = d->getTerminatorCondition();
         if (condition == nullptr) {
@@ -735,9 +735,6 @@ private:
     auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
     auto stmt_block = CM->getBlock(stmt); 
     auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
-    for (auto d : deps) {
-      d->dump();
-    }
     llvm::outs() << "getControlDependencies end\n";
     return deps;
   }
