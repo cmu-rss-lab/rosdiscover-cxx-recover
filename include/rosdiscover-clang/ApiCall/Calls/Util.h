@@ -1,13 +1,33 @@
 #pragma once
 
+#include <clang/AST/ASTContext.h>
 #include <clang/AST/APValue.h>
 #include <clang/AST/Expr.h>
+#include <clang/Basic/LangOptions.h>
+#include <clang/Basic/SourceLocation.h>
+#include <clang/Lex/Lexer.h>
+
+#include <llvm/Support/raw_ostream.h>
 #include <llvm/ADT/APSInt.h>
 #include <llvm/ADT/APFloat.h>
 
 #include "../RosApiCall.h"
 
 namespace rosdiscover {
+
+  
+  static std::string createName(clang::DeclRefExpr* declRef) {
+    std::string name = declRef->getNameInfo().getAsString();
+    if (declRef->hasQualifier()) {
+      name = "";
+      llvm::raw_string_ostream os(name);
+      static clang::LangOptions langOptions;
+      static clang::PrintingPolicy printPolicy(langOptions);
+      declRef->getQualifier()->print(os, printPolicy);
+      name = os.str();
+    }
+    return name;
+  }
 
   static inline bool stmtContainsStmt(const clang::Stmt* parent, const clang::Stmt* child) {
     if (parent == nullptr || child == nullptr) {
@@ -23,6 +43,30 @@ namespace rosdiscover {
     return false;
   }
 
+  static std::string prettyPrint(clang::Stmt* const statement, clang::ASTContext const &context) {
+    auto range = clang::CharSourceRange::getTokenRange(statement->getSourceRange());
+    llvm::StringRef ref = clang::Lexer::getSourceText(
+      range, 
+      context.getSourceManager(), 
+      clang::LangOptions()
+    );
+    return ref.str();
+  }
+
+  static std::vector<clang::Stmt*> getTransitiveChildenByType(clang::Stmt* const parent, bool const includeDeclRefExpr) {
+    std::vector<clang::Stmt*> result;
+    for (auto c: parent->children()) {
+      if (includeDeclRefExpr) {
+        if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(c)) {
+          result.push_back(declRefExpr);
+        } 
+      }
+      auto childResult = getTransitiveChildenByType(c,  includeDeclRefExpr);
+      result.insert(result.end(), childResult.begin(), childResult.end());
+    }
+    return result;
+  }
+  
 namespace api_call {
 
   static clang::APValue const * evaluateNumber(

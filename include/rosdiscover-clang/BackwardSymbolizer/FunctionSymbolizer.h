@@ -1,15 +1,22 @@
 #pragma once
 
 #include <unordered_set>
+#include <string> 
 #include <vector>
 
 #include <clang/AST/ASTContext.h>
 #include <clang/AST/Decl.h>
 #include <clang/AST/DeclCXX.h>
+#include <clang/Analysis/CFG.h>
+#include <clang/Analysis/Analyses/Dominators.h>
+#include <clang/Analysis/CFGStmtMap.h>
+#include <clang/AST/ParentMap.h>
 
 #include <fmt/core.h>
 
+#include "../ApiCall/Calls/Util.h"
 #include "../Ast/Ast.h"
+#include "../Ast/Stmt/ControlDependency.h"
 #include "../Helper/StmtOrderingVisitor.h"
 #include "../RawStatement.h"
 #include "../Value/String.h"
@@ -608,9 +615,11 @@ private:
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(
     api_call::PublishCall *apiCall
   ) {
-    llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
+    llvm::outs() << "DEBUG: symbolizing PublishCall\n";
+
     return std::make_unique<Publish>(
-        apiCall->getPublisherName()
+        apiCall->getPublisherName(),
+        getControlDependenciesObjects(getControlDependencies(apiCall->getCallExpr()))
     );
   }
 
@@ -662,14 +671,83 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
+  std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const llvm::SmallVector<clang::CFGBlock *, 4> deps) {
+    std::vector<std::unique_ptr<SymbolicControlDependency>> results;
+    for (const auto d: deps) {
+      try {
+        if (d == nullptr || d->empty() || d->size() < 1 || d->size() > 1000 || d->getTerminatorStmt() == nullptr )   {
+          continue;
+        }
+        llvm::outs() << "size " << d->size() << "\n";
+        llvm::outs() << "looking for terminator condition in " << d->getTerminatorStmt()->getStmtClassName();
+
+        auto *condition = d->getTerminatorCondition();
+        if (condition == nullptr) {
+          llvm::outs() << "no terminator condition\n";
+          continue;
+        }
+        
+        llvm::outs() << "terminator condition found: \n";
+
+        std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
+        std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
+        for (auto delcRef : getTransitiveChildenByType(condition, true)) {
+          auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
+          if (declRefExpr != nullptr && declRefExpr->getDecl() != nullptr)  {
+            auto decl = declRefExpr->getDecl();
+            if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
+              variableReferences.push_back(std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl));
+            } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
+              functionCalls.push_back(std::make_unique<SymbolicCall>(declRefExpr));
+            }
+          }
+        }
+
+        llvm::outs() << "variableReferences and functionCalls created\n";
+        
+        results.push_back(
+          std::make_unique<SymbolicControlDependency>(
+            std::move(functionCalls), 
+            std::move(variableReferences),
+            condition->getSourceRange().printToString(astContext.getSourceManager()),
+            prettyPrint(condition, astContext)
+          )
+        );
+
+        llvm::outs() << "SymbolicControlDependency created\n";
+      } catch (...) {
+        llvm::outs() << "[Error] Failed to create SymbolicControlDependency";
+      }
+    }
+
+    llvm::outs() << "getControlDependenciesObjects end\n";
+
+    return results;
+  }
+
+  const llvm::SmallVector<clang::CFGBlock *, 4> getControlDependencies(const clang::Stmt* stmt) {
+
+    std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
+          function, function->getBody(), &astContext, clang::CFG::BuildOptions());
+    clang::ControlDependencyCalculator cdc(sourceCFG.get());
+    llvm::outs() << "getControlDependencies: ";
+    std::unique_ptr<clang::ParentMap> PM = std::make_unique<clang::ParentMap>(function->getBody());
+    auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
+    auto stmt_block = CM->getBlock(stmt); 
+    auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
+    llvm::outs() << "getControlDependencies end\n";
+    return deps;
+  }
+
+
   std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {
-    auto *function = symContext.getDefinition(getCallee(callExpr));
-    llvm::outs() << "DEBUG: symbolizing call to function: " << function->getName() << "\n";
+    auto *calledFunction = symContext.getDefinition(getCallee(callExpr));
+    llvm::outs() << "DEBUG: symbolizing call to function: " << calledFunction->getName() << "\n";
 
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
     for (
-      auto it = function->params_begin();
-      it != function->params_end();
+      auto it = calledFunction->params_begin();
+      it != calledFunction->params_end();
       it++
     ) {
       auto &param = it->second;
@@ -724,7 +802,7 @@ private:
       args.emplace(param.getName(), std::move(symbolicParam));
     }
 
-    return SymbolicFunctionCall::create(function, args);
+    return SymbolicFunctionCall::create(calledFunction, args, getControlDependenciesObjects(getControlDependencies(callExpr)));
   }
 
 

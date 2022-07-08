@@ -13,6 +13,7 @@
 #include "Decl/Parameter.h"
 #include "Stmt/Stmt.h"
 #include "Stmt/Compound.h"
+#include "Stmt/ControlDependency.h"
 
 namespace rosdiscover {
 
@@ -130,22 +131,24 @@ class SymbolicFunctionCall : public virtual SymbolicStmt {
 public:
   SymbolicFunctionCall(
     SymbolicFunction *callee,
-    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args
-  ) : callee(callee), args(std::move(args)) {}
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
+    std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies = {}
+  ) : callee(callee), args(std::move(args)), controlDependencies(std::move(controlDependencies)) {}
   ~SymbolicFunctionCall(){}
 
   static std::unique_ptr<SymbolicFunctionCall> create(
     SymbolicFunction *function,
-    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
+    std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies
   ) {
-    return std::make_unique<SymbolicFunctionCall>(function, args);
+    return std::make_unique<SymbolicFunctionCall>(function, args, std::move(controlDependencies));
   }
 
   static std::unique_ptr<SymbolicFunctionCall> create(
     SymbolicFunction *function
   ) {
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> emptyArgs;
-    return create(function, emptyArgs);
+    return create(function, emptyArgs, {});
   }
 
   void print(llvm::raw_ostream &os) const override {
@@ -163,10 +166,15 @@ public:
     for (auto const &entry : args) {
       argsJson[entry.first] = entry.second->toJson();
     }
+    auto jDeps = nlohmann::json::array();
+    for (auto const &controlDependency : controlDependencies) {
+      jDeps.push_back(controlDependency->toJson());
+    }
     return {
       {"kind", "call"},
       {"callee", callee->getName()},
-      {"arguments", argsJson}
+      {"arguments", argsJson},
+      {"control_dependencies", jDeps},
     };
   }
 
@@ -177,6 +185,7 @@ public:
 private:
   SymbolicFunction *callee;
   std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
+  std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies;
 };
 
 } // rosdiscover

@@ -4,6 +4,8 @@
 #include "../../Value/String.h"
 #include "../../Value/Value.h"
 
+#include "ControlDependency.h"
+
 namespace rosdiscover {
 
 class SymbolicRosApiCall : public virtual SymbolicStmt {
@@ -115,21 +117,31 @@ private:
 
 class Publish : public SymbolicRosApiCall {
 public:
-  Publish(std::string const &publisher) : SymbolicRosApiCall(), publisher(publisher) {}
+  Publish(std::string const &publisher, std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies={}) : 
+    SymbolicRosApiCall(), 
+    publisher(publisher), 
+    controlDependencies(std::move(controlDependencies)
+  ) {}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(publish " << publisher << ")";
   }
 
   nlohmann::json toJson() const override {
+    auto jDeps = nlohmann::json::array();
+    for (auto const &controlDependency : controlDependencies) {
+      jDeps.push_back(controlDependency->toJson());
+    }
     return {
       {"kind", "publish"},
-      {"publisher", publisher}
+      {"publisher", publisher},
+      {"control_dependencies", jDeps}
     };
   }
 
 private:
   std::string const publisher;
+  std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies;
 };
 
 class ServiceCaller : public NamedSymbolicRosApiCall {
