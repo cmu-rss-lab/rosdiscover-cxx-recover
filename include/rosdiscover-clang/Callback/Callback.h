@@ -6,6 +6,7 @@
 
 #include "../ApiCall/RosApiCall.h"
 #include "../Helper/utils.h"
+#include "../ApiCall/Calls/Util.h"
 
 namespace rosdiscover {
 
@@ -13,61 +14,16 @@ class Callback {
 public:
 
   // Used for unwrapping bind calls
-  static clang::Expr const * unwrapMaterializeTemporaryExpr(
-    clang::MaterializeTemporaryExpr const *tempExpr
+  static  const clang::Expr * unwrapMaterializeTemporaryExpr(
+    const clang::MaterializeTemporaryExpr* tempExpr
   ) {
-      auto *bindExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(tempExpr->getSubExpr()->IgnoreImpCasts());
-      if (bindExpr == nullptr) {
-        auto *callExpr = clang::dyn_cast<clang::CallExpr>(tempExpr->getSubExpr()->IgnoreImpCasts());
-        if (callExpr == nullptr || callExpr->getNumArgs() < 1) {
-          unableToResolve(tempExpr);
-          return nullptr;
-        }
-        llvm::outs() << "[Callback] CallExpr: ";
-        callExpr->dump();
-        llvm::outs() << "\n";
-        // TODO: Read the other arguments of bind calls such as in, ``boost::bind(CmdCallBack, _1, accel_rate)`` 
-        return callExpr->getArg(0);
+      std::vector<const clang::Stmt*> calls = rosdiscover::getTransitiveChildenByType(tempExpr, false, true);
+      if (calls.size() == 1) {
+        auto *call = clang::dyn_cast<clang::CallExpr>(calls[0]);
+        return call->getArg(0);
       }
-      auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(bindExpr->getSubExpr()->IgnoreImpCasts());
-      if (constructExpr == nullptr) {
-        auto *callExpr = clang::dyn_cast<clang::CallExpr>(bindExpr->getSubExpr()->IgnoreImpCasts());
-        if (callExpr == nullptr || callExpr->getNumArgs() < 1) {
-          unableToResolve(bindExpr);
-          return nullptr;
-        }
-        llvm::outs() << "[Callback] CallExpr: ";
-        callExpr->dump();
-        llvm::outs() << "\n";
-        // TODO: Read the other arguments of bind calls such as in, ``boost::bind(CmdCallBack, _1, accel_rate)`` 
-        return callExpr->getArg(0);
-      }
-      clang::CXXConstructExpr* constructExpr2 = clang::dyn_cast<clang::CXXConstructExpr>(constructExpr->getArg(0));
-      if (constructExpr2 == nullptr) {
-
-        auto *bindExpr2 = clang::dyn_cast<clang::CXXBindTemporaryExpr>(constructExpr->getArg(0));
-        if (bindExpr2 != nullptr) {
-          if (auto *subExpr = clang::dyn_cast<clang::CXXConstructExpr>(bindExpr2->getSubExpr()->IgnoreImpCasts())) {
-            constructExpr2 = subExpr;
-          } else {
-            llvm::outs() << "[Callback] subExpr was expecting CXXConstructExpr";
-            unableToResolve(constructExpr->getArg(0));
-            return nullptr;
-          }
-        } else {
-          llvm::outs() << "[Callback] constructExpr2 was expecting CXXConstructExpr or CXXBindTemporaryExpr";
-          unableToResolve(constructExpr->getArg(0));
-          return nullptr;
-        }
-      } 
-      auto *arg = clang::dyn_cast<clang::MaterializeTemporaryExpr>(constructExpr2->getArg(0));
-      if (arg == nullptr) {
-        llvm::outs() << "[Callback] arg was expecting MaterializeTemporaryExpr";
-        unableToResolve(constructExpr2->getArg(0));
-        return nullptr;
-      } 
-
-      return unwrapMaterializeTemporaryExpr(arg);
+      llvm::outs() << "Only one call expected.";
+      return nullptr;
   }
   
   static Callback* fromArgExpr(
@@ -92,7 +48,7 @@ public:
       auto *castExpr = clang::dyn_cast<clang::ImplicitCastExpr>(argExpr);
       if (castExpr == nullptr) {
         // It could be a MaterializeTemporaryExpr
-        auto *tempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(argExpr);
+        const auto *tempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(argExpr);
         if (tempExpr == nullptr) {
           return unableToResolve(argExpr);
         }
