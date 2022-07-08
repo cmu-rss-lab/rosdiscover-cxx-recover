@@ -43,8 +43,8 @@ namespace rosdiscover {
     return false;
   }
 
-  static std::string prettyPrint(clang::Stmt* const statement, clang::ASTContext const &context) {
-    auto range = clang::CharSourceRange::getTokenRange(statement->getSourceRange());
+  static std::string prettyPrint(clang::SourceRange sourceRange, clang::ASTContext const &context) {
+    auto range = clang::CharSourceRange::getTokenRange(sourceRange);
     llvm::StringRef ref = clang::Lexer::getSourceText(
       range, 
       context.getSourceManager(), 
@@ -53,14 +53,12 @@ namespace rosdiscover {
     return ref.str();
   }
 
+  static std::string prettyPrint(clang::Stmt* const statement, clang::ASTContext const &context) {
+    return prettyPrint(statement->getSourceRange(), context);
+  }
+
   static std::string prettyPrint(const clang::Expr* expr, clang::ASTContext const &context) {
-    auto range = clang::CharSourceRange::getTokenRange(expr->getSourceRange());
-    llvm::StringRef ref = clang::Lexer::getSourceText(
-      range, 
-      context.getSourceManager(), 
-      clang::LangOptions()
-    );
-    return ref.str();
+    return prettyPrint(expr->getSourceRange(), context);
   }
 
   static std::vector<clang::Stmt*> getTransitiveChildenByType(clang::Stmt* const parent, bool const includeDeclRefExpr) {
