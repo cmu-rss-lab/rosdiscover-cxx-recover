@@ -18,11 +18,16 @@ public:
     const clang::MaterializeTemporaryExpr* tempExpr
   ) {
       std::vector<const clang::Stmt*> calls = rosdiscover::getTransitiveChildenByType(tempExpr, false, true);
-      if (calls.size() == 1) {
-        auto *call = clang::dyn_cast<clang::CallExpr>(calls[0]);
-        return call->getArg(0);
+      for (auto* c: calls) {
+        auto *call = clang::dyn_cast<clang::CallExpr>(c);
+        if (auto* declRef = clang::dyn_cast<clang::DeclRefExpr>(call->getArg(0)->IgnoreImpCasts())) {
+          return declRef;
+        }
+        if (auto* unaryOperator = clang::dyn_cast<clang::UnaryOperator>(call->getArg(0)->IgnoreImpCasts())) {
+          return unaryOperator;
+        }
       }
-      llvm::outs() << "Only one call expected.";
+      llvm::outs() << "[Callback] ERROR: Couldn't find UnaryOperator or DeclRefExpr call argument in MaterializeTemporaryExpr.";
       return nullptr;
   }
   
