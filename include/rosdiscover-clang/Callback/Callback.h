@@ -50,22 +50,27 @@ public:
     clang::Expr const *subExpr;
     if (unaryOp == nullptr) {
       // The callback doesn't have an unary operator
-      auto *castExpr = clang::dyn_cast<clang::ImplicitCastExpr>(argExpr);
-      if (castExpr == nullptr) {
-        // It could be a MaterializeTemporaryExpr
-        const auto *tempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(argExpr);
-        if (tempExpr == nullptr) {
-          return unableToResolve(argExpr);
+      auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(argExpr);
+      if (declRefExpr != nullptr) {
+        subExpr = declRefExpr;
+      } else {
+        auto *castExpr = clang::dyn_cast<clang::ImplicitCastExpr>(argExpr);
+        if (castExpr == nullptr) {
+          // It could be a MaterializeTemporaryExpr
+          const auto *tempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(argExpr);
+          if (tempExpr == nullptr) {
+            return unableToResolve(argExpr);
+          }
+          llvm::outs() << "[Callback] is MaterializeTemporaryExpr: ";
+          tempExpr->dump();
+          llvm::outs() << "\n";
+
+          
+          return fromArgExpr(context, apiCall, unwrapMaterializeTemporaryExpr(tempExpr));
         }
-        llvm::outs() << "[Callback] is MaterializeTemporaryExpr: ";
-        tempExpr->dump();
-        llvm::outs() << "\n";
 
-        
-        return fromArgExpr(context, apiCall, unwrapMaterializeTemporaryExpr(tempExpr));
+        subExpr = castExpr->IgnoreImpCasts();
       }
-
-      subExpr = castExpr->IgnoreImpCasts();
     } else {
       subExpr = unaryOp->getSubExpr();
     }
