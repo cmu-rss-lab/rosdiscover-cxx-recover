@@ -6,6 +6,7 @@
 #include <clang/AST/Type.h>
 
 #include "Stmt.h"
+#include "../../ApiCall/Calls/Util.h"
 
 namespace rosdiscover {
 
@@ -23,14 +24,6 @@ public:
    {}
 
   ~SymbolicDeclRef(){}
-
-  static std::string createName(clang::DeclRefExpr* declRef) {
-    std::string name = declRef->getNameInfo().getAsString();
-    if (declRef->hasQualifier()) {
-      name = declRef->getQualifier()->getAsNamespace()->getNameAsString() + "::" + name;
-    }
-    return name;
-  }
 
   SymbolicDeclRef(clang::DeclRefExpr* declRef
   ) : isInstanceMember(declRef->getDecl()->isCXXInstanceMember()), 
