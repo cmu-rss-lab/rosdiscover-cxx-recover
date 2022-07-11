@@ -707,7 +707,14 @@ private:
     
     std::vector<std::unique_ptr<SymbolicControlDependency>> results;
 
+    auto prevBlock = stmt_block;
+
     for (clang::CFGBlock *block: deps) {
+      auto entry = sourceCFG.get()->createBlock();
+      clang::CFGBlock::AdjacentBlock aBlock(block, true);
+      entry->addSuccessor(aBlock, sourceCFG.get()->getBumpVectorContext());
+      sourceCFG.get()->setEntry(entry);
+      clang::CFGDominatorTreeImpl<false> dominatorAnalysis(sourceCFG.get());
       try {
         if (block == nullptr || block->empty() || block->size() < 1 || block->size() > 1000 || block->getTerminatorStmt() == nullptr )   {
           continue;
@@ -727,27 +734,27 @@ private:
         
         llvm::outs() << "terminator condition found: " << conditionStr << "\n";
 
-        bool reachableFromTrue = false;
-        bool reachableFromFalse = false;
+        bool trueBranchDominates = false;
+        bool falseBranchDominates = false;
 
         int i = 0;
         for (const clang::CFGBlock *sBlock: block->succs()) {
           if (i == 0) { //true branch
-            if (cdc.isControlDependent(const_cast<clang::CFGBlock *>(stmt_block), const_cast<clang::CFGBlock *>(sBlock)) || sBlock->getIndexInCFG() == stmt_block->getIndexInCFG()) {
-              llvm::outs() << "reachable from true\n";
-              reachableFromTrue = true;
+            if (dominatorAnalysis.dominates(sBlock, prevBlock)) {
+              llvm::outs() << "true branch dominates stmt\n";
+              trueBranchDominates = true;
             }
           } else if (i == 1) { //false branch
-            if (cdc.isControlDependent(const_cast<clang::CFGBlock *>(stmt_block), const_cast<clang::CFGBlock *>(sBlock)) || sBlock->getIndexInCFG() == stmt_block->getIndexInCFG()) {
-              llvm::outs() << "reachable from false\n";
-              reachableFromFalse = true;
+            if (dominatorAnalysis.dominates(sBlock, prevBlock)) {
+              llvm::outs() << "false branch dominates stmt\n";
+              falseBranchDominates = true;
             }
           }          
           llvm::outs() << i++;
           sBlock->dump();
         }
-        if ((reachableFromTrue && reachableFromFalse) || (!reachableFromTrue && !reachableFromFalse)){
-          llvm::outs() << "ERROR: reachableFromFalse: " << reachableFromFalse << " reachableFromTrue: " << reachableFromTrue << " block: ";
+        if ((trueBranchDominates && falseBranchDominates) || (!trueBranchDominates && !falseBranchDominates)){
+          llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << " block: ";
           block->dump();
           abort();
         }
@@ -773,7 +780,7 @@ private:
           std::make_unique<SymbolicControlDependency>(
             std::move(functionCalls), 
             std::move(variableReferences),
-            reachableFromFalse,
+            falseBranchDominates,
             condition->getSourceRange().printToString(astContext.getSourceManager()),
             conditionStr
           )
@@ -783,6 +790,7 @@ private:
       } catch (...) {
         llvm::outs() << "[Error] Failed to create SymbolicControlDependency";
       }
+      prevBlock = block;
     }
 
     llvm::outs() << "getControlDependenciesObjects end\n";
