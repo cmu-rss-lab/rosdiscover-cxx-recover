@@ -697,7 +697,7 @@ private:
         llvm::outs() << "size " << d->size() << "\n";
         llvm::outs() << "looking for terminator condition in " << d->getTerminatorStmt()->getStmtClassName();
 
-        auto *condition = d->getTerminatorCondition();
+        const auto *condition = d->getTerminatorCondition();
         if (condition == nullptr) {
           llvm::outs() << "no terminator condition\n";
           continue;
@@ -707,7 +707,7 @@ private:
 
         std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
         std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
-        for (auto delcRef : getTransitiveChildenByType(condition, true)) {
+        for (auto delcRef : getTransitiveChildenByType(condition, true, false)) {
           auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
           if (declRefExpr != nullptr && declRefExpr->getDecl() != nullptr)  {
             auto decl = declRefExpr->getDecl();

@@ -16,7 +16,7 @@
 namespace rosdiscover {
 
   
-  static std::string createName(clang::DeclRefExpr* declRef) {
+  static std::string createName(const clang::DeclRefExpr* declRef) {
     std::string name = declRef->getNameInfo().getAsString();
     if (declRef->hasQualifier()) {
       name = "";
@@ -43,7 +43,7 @@ namespace rosdiscover {
     return false;
   }
 
-  static std::string prettyPrint(clang::Stmt* const statement, clang::ASTContext const &context) {
+  static std::string prettyPrint(const clang::Stmt* statement, clang::ASTContext const &context) {
     auto range = clang::CharSourceRange::getTokenRange(statement->getSourceRange());
     llvm::StringRef ref = clang::Lexer::getSourceText(
       range, 
@@ -53,15 +53,23 @@ namespace rosdiscover {
     return ref.str();
   }
 
-  static std::vector<clang::Stmt*> getTransitiveChildenByType(clang::Stmt* const parent, bool const includeDeclRefExpr) {
-    std::vector<clang::Stmt*> result;
+  static std::vector<const clang::Stmt*> getTransitiveChildenByType(const clang::Stmt* parent, 
+    bool const includeDeclRefExpr,
+    bool const includeCallExpr
+  ) {
+    std::vector<const clang::Stmt*> result;
     for (auto c: parent->children()) {
       if (includeDeclRefExpr) {
-        if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(c)) {
-          result.push_back(declRefExpr);
+        if (auto *expr = clang::dyn_cast<clang::DeclRefExpr>(c)) {
+          result.push_back(expr);
         } 
       }
-      auto childResult = getTransitiveChildenByType(c,  includeDeclRefExpr);
+      if (includeCallExpr) {
+        if (auto *expr = clang::dyn_cast<clang::CallExpr>(c)) {
+          result.push_back(expr);
+        } 
+      }
+      auto childResult = getTransitiveChildenByType(c,  includeDeclRefExpr, includeCallExpr);
       result.insert(result.end(), childResult.begin(), childResult.end());
     }
     return result;
