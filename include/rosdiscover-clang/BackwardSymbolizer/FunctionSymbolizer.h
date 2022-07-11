@@ -10,7 +10,6 @@
 #include <clang/Analysis/CFG.h>
 #include <clang/Analysis/Analyses/Dominators.h>
 #include <clang/Analysis/CFGStmtMap.h>
-#include <clang/Analysis/Analyses/CFGReachabilityAnalysis.h>
 #include <clang/AST/ParentMap.h>
 #include <llvm/ADT/BitVector.h>
 #include <llvm/ADT/SmallVector.h>
@@ -703,7 +702,6 @@ private:
     auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
     //sourceCFG->dump(clang::LangOptions(), true);
     llvm::outs() << "succs:\n";
-    clang::CFGReverseBlockReachabilityAnalysis reachabilityAnalysis = clang::CFGReverseBlockReachabilityAnalysis(*(sourceCFG.get()));
     
     std::vector<std::unique_ptr<SymbolicControlDependency>> results;
 
