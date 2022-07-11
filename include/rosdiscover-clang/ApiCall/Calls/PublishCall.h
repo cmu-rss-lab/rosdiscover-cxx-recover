@@ -1,5 +1,7 @@
 #pragma once
 
+#include <clang/AST/ASTContext.h>
+
 #include "../RosApiCall.h"
 #include "./Util.h"
 
@@ -14,7 +16,7 @@ public:
     return RosApiCallKind::PublishCall;
   }
 
-  const std::string getPublisherName() const {
+  const std::string getPublisherName(clang::ASTContext &astContext) const {
     llvm::outs() << "DEBUG [PublishCall] Publish call is : ";
     getCallExpr()->dump();
     llvm::outs() << "\n";
@@ -32,7 +34,7 @@ public:
       llvm::outs() << "ERROR [PublishCall] Decl is null: ";
       memberCall->dump();
       llvm::outs() << "\n";
-      return nullptr;
+      return rosdiscover::prettyPrint(memberCall->getCallee(), astContext);
     }
 
     llvm::outs() << "DEBUG [PublishCall] decl: ";

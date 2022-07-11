@@ -408,6 +408,7 @@ private:
     std::unique_ptr<SymbolicNodeHandle> nodeHandle,
     api_call::NamedRosApiCall *apiCall
   ) {
+    llvm::outs() << "DEBUG: symbolizing NodeHandleApiCallName\n";
     auto name = symbolizeApiCallName(apiCall);
 
     // FIXME: since we use unique_ptr, we need to use a separate node handle
@@ -450,10 +451,18 @@ private:
     llvm::outs() << "DEBUG: symbolizing call to message_filters::Subscriber\n";
     auto formatName = apiCall->getFormatName();
     llvm::outs() << "DEBUG [message_filters::Subscriber]: uses format: " << formatName << "\n";
+
+    auto* callback = apiCall->getCallback(astContext);
+    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    if (callback == nullptr) {
+      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+    } else {
+      symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
+    }
     return std::make_unique<Subscriber>(
       symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
-      formatName,
-      symbolizeCallback(new RawCallbackStatement(apiCall->getCallback(astContext)))
+      apiCall->getFormatName(),
+      std::move(symbolicCallBack)
     );
   }
 
@@ -599,10 +608,17 @@ private:
     api_call::SubscribeTopicCall *apiCall
   ) {
     llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
+    auto* callback = apiCall->getCallback(astContext);
+    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    if (callback == nullptr) {
+      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+    } else {
+      symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
+    }
     return std::make_unique<Subscriber>(
       symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
       apiCall->getFormatName(),
-      symbolizeCallback(new RawCallbackStatement(apiCall->getCallback(astContext)))
+      std::move(symbolicCallBack)
     );
   }
 
@@ -621,7 +637,7 @@ private:
     llvm::outs() << "DEBUG: symbolizing PublishCall\n";
 
     return std::make_unique<Publish>(
-        apiCall->getPublisherName(),
+        apiCall->getPublisherName(astContext),
         getControlDependenciesObjects(apiCall->getCallExpr())
     );
   }
@@ -699,7 +715,7 @@ private:
         llvm::outs() << "size " << block->size() << "\n";                
         llvm::outs() << "looking for terminator condition in " << block->getTerminatorStmt()->getStmtClassName();
 
-        auto *condition = block->getTerminatorCondition();
+        const auto *condition = block->getTerminatorCondition();
         if (condition == nullptr) {
           llvm::outs() << "no terminator condition\n";
           continue;
@@ -734,7 +750,7 @@ private:
 
         std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
         std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
-        for (auto delcRef : getTransitiveChildenByType(condition, true)) {
+        for (auto delcRef : getTransitiveChildenByType(condition, true, false)) {
           auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(delcRef);
           if (declRefExpr != nullptr && declRefExpr->getDecl() != nullptr)  {
             auto decl = declRefExpr->getDecl();
@@ -754,7 +770,7 @@ private:
             std::move(variableReferences),
             reachableFromFalse,
             condition->getSourceRange().printToString(astContext.getSourceManager()),
-            prettyPrint(condition, astContext)
+            rosdiscover::prettyPrint(condition, astContext)
           )
         );
 
@@ -992,8 +1008,22 @@ private:
   }
 
   std::unique_ptr<SymbolicFunctionCall> symbolizeCallback(RawCallbackStatement *statement) {
+    llvm::outs() << "DEBUG: symbolizing callback\n";
+    if (statement == nullptr) {
+      llvm::outs() << "ERROR: callback statement\n";
+    }
+    if (statement->getTargetFunction() == nullptr) {
+      llvm::outs() << "ERROR: no target function\n";
+    }
+    llvm::outs() << "DEBUG: getting definition\n";
     auto *function = symContext.getDefinition(statement->getTargetFunction());
-    return SymbolicFunctionCall::create(function);
+    if (function == nullptr) {
+      llvm::outs() << "ERROR: target function definition not found\n";
+    }
+    llvm::outs() << "DEBUG: target function definition found\n";
+    auto result = SymbolicFunctionCall::create(function);
+    llvm::outs() << "DEBUG: symbolized callback\n";
+    return result;
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeStatement(RawStatement *statement) {
