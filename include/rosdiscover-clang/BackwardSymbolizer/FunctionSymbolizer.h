@@ -732,6 +732,8 @@ private:
         auto conditionStr = rosdiscover::prettyPrint(condition, astContext);
         if (block->getTerminatorStmt()->getStmtClass() == clang::Stmt::SwitchStmtClass) {
           conditionStr = "switch (" + conditionStr + ")";
+          llvm::outs() << "ERROR: Encountered switch: " << conditionStr << "\n";
+          abort();
         }
         
         llvm::outs() << "terminator condition found: " << conditionStr << "\n";
