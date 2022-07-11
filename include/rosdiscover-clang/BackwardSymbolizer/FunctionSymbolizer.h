@@ -706,11 +706,18 @@ private:
     auto prevBlock = stmt_block;
 
     for (clang::CFGBlock *block: deps) {
+
+      //To identify whether the control condition needs to be negated, we need to see if the true or false branch is 
+      //leading to the statement. To do this, we need to see if within the sub-graph of the CFG starting from the control-
+      //dependent the true or false branch is dominating the lower-level control-dependent block. Since one of the paths
+      //could be a sink in the CFG, there can be multiple paths that lead to the statement. Hence, the CFG entry point 
+      //needs to be the control-depdent block.
       auto entry = sourceCFG->createBlock();
       clang::CFGBlock::AdjacentBlock aBlock(block, true);
       entry->addSuccessor(aBlock, sourceCFG->getBumpVectorContext());
       sourceCFG->setEntry(entry);
       clang::CFGDominatorTreeImpl<false> dominatorAnalysis(sourceCFG.get());
+
       try {
         if (block == nullptr || block->empty() || block->size() < 1 || block->size() > 1000 || block->getTerminatorStmt() == nullptr )   {
           continue;
@@ -735,7 +742,7 @@ private:
 
         int i = 0;
         for (const clang::CFGBlock *sBlock: block->succs()) {
-          if (i == 0) { //true branch
+          if (i == 0) { //true branch, as defined by clang's order of successors
             if (dominatorAnalysis.dominates(sBlock, prevBlock)) {
               llvm::outs() << "true branch dominates stmt\n";
               trueBranchDominates = true;
@@ -770,13 +777,12 @@ private:
         }
 
         llvm::outs() << "variableReferences and functionCalls created\n";
-
         
         results.push_back(
           std::make_unique<SymbolicControlDependency>(
             std::move(functionCalls), 
             std::move(variableReferences),
-            falseBranchDominates,
+            falseBranchDominates, //if the false branch dominates the statement, we need to negate the condition
             condition->getSourceRange().printToString(astContext.getSourceManager()),
             conditionStr
           )
