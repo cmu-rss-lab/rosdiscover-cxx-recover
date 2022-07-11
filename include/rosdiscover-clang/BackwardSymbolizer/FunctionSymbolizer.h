@@ -710,10 +710,10 @@ private:
     auto prevBlock = stmt_block;
 
     for (clang::CFGBlock *block: deps) {
-      auto entry = sourceCFG.get()->createBlock();
+      auto entry = sourceCFG->createBlock();
       clang::CFGBlock::AdjacentBlock aBlock(block, true);
-      entry->addSuccessor(aBlock, sourceCFG.get()->getBumpVectorContext());
-      sourceCFG.get()->setEntry(entry);
+      entry->addSuccessor(aBlock, sourceCFG->getBumpVectorContext());
+      sourceCFG->setEntry(entry);
       clang::CFGDominatorTreeImpl<false> dominatorAnalysis(sourceCFG.get());
       try {
         if (block == nullptr || block->empty() || block->size() < 1 || block->size() > 1000 || block->getTerminatorStmt() == nullptr )   {
