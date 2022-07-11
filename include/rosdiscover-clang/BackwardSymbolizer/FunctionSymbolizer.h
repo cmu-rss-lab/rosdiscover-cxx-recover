@@ -735,6 +735,16 @@ private:
     auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
     auto stmt_block = CM->getBlock(stmt); 
     auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
+    sourceCFG->dump(clang::LangOptions(), true);
+    llvm::outs() << "succs:\n";
+    for (clang::CFGBlock *block: deps) {
+      int i = 0;
+      for (clang::CFGBlock *sBlock: block->succs()) {
+        llvm::outs() << i++;
+        sBlock->dump();
+      }
+    }
+    abort();
     llvm::outs() << "getControlDependencies end\n";
     return deps;
   }
