@@ -11,8 +11,8 @@ namespace rosdiscover {
 class SymbolicVariableReference : public SymbolicDeclRef {
 public:
   SymbolicVariableReference(
-    clang::DeclRefExpr* varRef,
-    clang::VarDecl* varDecl
+    const clang::DeclRefExpr* varRef,
+    const clang::VarDecl* varDecl
   ) : SymbolicDeclRef(varRef),
       isFileVarDecl(varDecl->isFileVarDecl()),
       isLocalVarDeclOrParm(varDecl->isLocalVarDeclOrParm()),

@@ -174,6 +174,9 @@ public:
   }
 
   clang::FunctionDecl const * getTargetFunction() const {
+    if (callback == nullptr) {
+      llvm::outs() << "ERROR: No callback";
+    }
     return callback->getTargetFunction();
   }
 

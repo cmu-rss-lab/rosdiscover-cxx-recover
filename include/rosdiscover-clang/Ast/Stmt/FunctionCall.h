@@ -9,7 +9,7 @@ namespace rosdiscover {
 class SymbolicCall : public SymbolicDeclRef {
 public:
   SymbolicCall(
-    clang::DeclRefExpr* call
+    const clang::DeclRefExpr* call
   ) : SymbolicDeclRef(call) {}
   ~SymbolicCall(){}
 

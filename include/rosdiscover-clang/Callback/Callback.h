@@ -6,6 +6,7 @@
 
 #include "../ApiCall/RosApiCall.h"
 #include "../Helper/utils.h"
+#include "../ApiCall/Calls/Util.h"
 
 namespace rosdiscover {
 
@@ -13,39 +14,21 @@ class Callback {
 public:
 
   // Used for unwrapping bind calls
-  static clang::Expr const * unwrapMaterializeTemporaryExpr(
-    clang::MaterializeTemporaryExpr const *tempExpr
+  static  const clang::Expr * unwrapMaterializeTemporaryExpr(
+    const clang::MaterializeTemporaryExpr* tempExpr
   ) {
-      auto *bindExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(tempExpr->getSubExpr()->IgnoreImpCasts());
-      if (bindExpr == nullptr) {
-        auto *callExpr = clang::dyn_cast<clang::CallExpr>(tempExpr->getSubExpr()->IgnoreImpCasts());
-        if (callExpr == nullptr || callExpr->getNumArgs() < 1) {
-          unableToResolve(tempExpr);
-          return nullptr;
+      std::vector<const clang::Stmt*> calls = rosdiscover::getTransitiveChildenByType(tempExpr, false, true);
+      for (auto* c: calls) {
+        auto *call = clang::dyn_cast<clang::CallExpr>(c);
+        if (auto* declRef = clang::dyn_cast<clang::DeclRefExpr>(call->getArg(0)->IgnoreImpCasts())) {
+          return declRef;
         }
-        llvm::outs() << "[Callback] CallExpr: ";
-        callExpr->dump();
-        llvm::outs() << "\n";
-        // TODO: Read the other arguments of bind calls such as in, ``boost::bind(CmdCallBack, _1, accel_rate)`` 
-        return callExpr->getArg(0);
+        if (auto* unaryOperator = clang::dyn_cast<clang::UnaryOperator>(call->getArg(0)->IgnoreImpCasts())) {
+          return unaryOperator;
+        }
       }
-      auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(bindExpr->getSubExpr()->IgnoreImpCasts());
-      if (constructExpr == nullptr) {
-        unableToResolve(tempExpr);
-        return nullptr;
-      }
-      auto *constructExpr2 = clang::dyn_cast<clang::CXXConstructExpr>(constructExpr->getArg(0));
-      if (constructExpr2 == nullptr) {
-        unableToResolve(tempExpr);
-        return nullptr;
-      } 
-      auto *arg = clang::dyn_cast<clang::MaterializeTemporaryExpr>(constructExpr2->getArg(0));
-      if (arg == nullptr) {
-        unableToResolve(tempExpr);
-        return nullptr;
-      } 
-
-      return unwrapMaterializeTemporaryExpr(arg);
+      llvm::outs() << "[Callback] ERROR: Couldn't find UnaryOperator or DeclRefExpr call argument in MaterializeTemporaryExpr.";
+      return nullptr;
   }
   
   static Callback* fromArgExpr(
@@ -67,22 +50,27 @@ public:
     clang::Expr const *subExpr;
     if (unaryOp == nullptr) {
       // The callback doesn't have an unary operator
-      auto *castExpr = clang::dyn_cast<clang::ImplicitCastExpr>(argExpr);
-      if (castExpr == nullptr) {
-        // It could be a MaterializeTemporaryExpr
-        auto *tempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(argExpr);
-        if (tempExpr == nullptr) {
-          return unableToResolve(argExpr);
+      auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(argExpr);
+      if (declRefExpr != nullptr) {
+        subExpr = declRefExpr;
+      } else {
+        auto *castExpr = clang::dyn_cast<clang::ImplicitCastExpr>(argExpr);
+        if (castExpr == nullptr) {
+          // It could be a MaterializeTemporaryExpr
+          const auto *tempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(argExpr);
+          if (tempExpr == nullptr) {
+            return unableToResolve(argExpr);
+          }
+          llvm::outs() << "[Callback] is MaterializeTemporaryExpr: ";
+          tempExpr->dump();
+          llvm::outs() << "\n";
+
+          
+          return fromArgExpr(context, apiCall, unwrapMaterializeTemporaryExpr(tempExpr));
         }
-        llvm::outs() << "[Callback] is MaterializeTemporaryExpr";
-        tempExpr->dump();
-        llvm::outs() << "\n";
 
-        
-        return fromArgExpr(context, apiCall, unwrapMaterializeTemporaryExpr(tempExpr));
+        subExpr = castExpr->IgnoreImpCasts();
       }
-
-      subExpr = castExpr->IgnoreImpCasts();
     } else {
       subExpr = unaryOp->getSubExpr();
     }
