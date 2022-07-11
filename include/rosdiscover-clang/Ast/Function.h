@@ -178,7 +178,7 @@ public:
     };
   }
 
-  std::string const getCalleeName() const {
+  virtual std::string const getCalleeName() const {
     return callee->getName();
   }
 
@@ -186,6 +186,32 @@ private:
   SymbolicFunction *callee;
   std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
   std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies;
+};
+
+class UnknownSymbolicFunctionCall : public SymbolicFunctionCall {
+public:
+  UnknownSymbolicFunctionCall(std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args) : SymbolicFunctionCall(nullptr, args) {}
+  ~UnknownSymbolicFunctionCall(){}
+  
+  static std::unique_ptr<UnknownSymbolicFunctionCall> create() {
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> emptyArgs;
+    return std::make_unique<UnknownSymbolicFunctionCall>(emptyArgs);
+  }
+
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "UNKNOWN";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "unknown"}
+    };
+  }
+
+  std::string const getCalleeName() const override {
+    return "unknown";
+  }
 };
 
 } // rosdiscover
