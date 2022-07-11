@@ -713,15 +713,19 @@ private:
           continue;
         }
         llvm::outs() << "size " << block->size() << "\n";                
-        llvm::outs() << "looking for terminator condition in " << block->getTerminatorStmt()->getStmtClassName();
+        llvm::outs() << "looking for terminator condition in " << block->getTerminatorStmt()->getStmtClassName() << "\n";
 
         const auto *condition = block->getTerminatorCondition();
         if (condition == nullptr) {
           llvm::outs() << "no terminator condition\n";
           continue;
         }
+        auto conditionStr = rosdiscover::prettyPrint(condition, astContext);
+        if (block->getTerminatorStmt()->getStmtClass() == clang::Stmt::SwitchStmtClass) {
+          conditionStr = "switch (" + conditionStr + ")";
+        }
         
-        llvm::outs() << "terminator condition found: \n";
+        llvm::outs() << "terminator condition found: " << conditionStr << "\n";
 
         bool reachableFromTrue = false;
         bool reachableFromFalse = false;
@@ -729,12 +733,12 @@ private:
         int i = 0;
         for (const clang::CFGBlock *sBlock: block->succs()) {
           if (i == 0) { //true branch
-            if (cdc.isControlDependent(const_cast<clang::CFGBlock *>(stmt_block), const_cast<clang::CFGBlock *>(sBlock)) || sBlock == stmt_block) {
+            if (cdc.isControlDependent(const_cast<clang::CFGBlock *>(stmt_block), const_cast<clang::CFGBlock *>(sBlock)) || sBlock->getIndexInCFG() == stmt_block->getIndexInCFG()) {
               llvm::outs() << "reachable from true\n";
               reachableFromTrue = true;
             }
           } else if (i == 1) { //false branch
-            if (cdc.isControlDependent(const_cast<clang::CFGBlock *>(stmt_block), const_cast<clang::CFGBlock *>(sBlock)) || sBlock == stmt_block) {
+            if (cdc.isControlDependent(const_cast<clang::CFGBlock *>(stmt_block), const_cast<clang::CFGBlock *>(sBlock)) || sBlock->getIndexInCFG() == stmt_block->getIndexInCFG()) {
               llvm::outs() << "reachable from false\n";
               reachableFromFalse = true;
             }
@@ -763,6 +767,7 @@ private:
         }
 
         llvm::outs() << "variableReferences and functionCalls created\n";
+
         
         results.push_back(
           std::make_unique<SymbolicControlDependency>(
@@ -770,7 +775,7 @@ private:
             std::move(variableReferences),
             reachableFromFalse,
             condition->getSourceRange().printToString(astContext.getSourceManager()),
-            rosdiscover::prettyPrint(condition, astContext)
+            conditionStr
           )
         );
 
