@@ -751,7 +751,7 @@ private:
               llvm::outs() << "false branch dominates stmt\n";
               falseBranchDominates = true;
             }
-          }          
+          }//TODO: Check whether this works for switch-case as well
           llvm::outs() << i++;
           sBlock->dump();
         }
