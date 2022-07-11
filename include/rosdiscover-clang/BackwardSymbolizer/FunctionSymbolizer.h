@@ -698,7 +698,6 @@ private:
     auto stmt_block = CM->getBlock(stmt); 
     stmt_block->dump();
     auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
-    //sourceCFG->dump(clang::LangOptions(), true);
     llvm::outs() << "succs:\n";
     
     std::vector<std::unique_ptr<SymbolicControlDependency>> results;
