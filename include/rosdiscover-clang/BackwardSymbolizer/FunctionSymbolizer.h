@@ -11,8 +11,6 @@
 #include <clang/Analysis/Analyses/Dominators.h>
 #include <clang/Analysis/CFGStmtMap.h>
 #include <clang/AST/ParentMap.h>
-#include <llvm/ADT/BitVector.h>
-#include <llvm/ADT/SmallVector.h>
 
 #include <fmt/core.h>
 
@@ -717,7 +715,7 @@ private:
         if (block == nullptr || block->empty() || block->size() < 1 || block->size() > 1000 || block->getTerminatorStmt() == nullptr )   {
           continue;
         }
-        llvm::outs() << "size " << block->size() << "\n";                
+        llvm::outs() << "size " << block->size() << "\n";
         llvm::outs() << "looking for terminator condition in " << block->getTerminatorStmt()->getStmtClassName() << "\n";
 
         const auto *condition = block->getTerminatorCondition();
