@@ -10,7 +10,10 @@
 #include <clang/Analysis/CFG.h>
 #include <clang/Analysis/Analyses/Dominators.h>
 #include <clang/Analysis/CFGStmtMap.h>
+#include <clang/Analysis/Analyses/CFGReachabilityAnalysis.h>
 #include <clang/AST/ParentMap.h>
+#include <llvm/ADT/BitVector.h>
+#include <llvm/ADT/SmallVector.h>
 
 #include <fmt/core.h>
 
@@ -619,7 +622,7 @@ private:
 
     return std::make_unique<Publish>(
         apiCall->getPublisherName(),
-        getControlDependenciesObjects(getControlDependencies(apiCall->getCallExpr()))
+        getControlDependenciesObjects(apiCall->getCallExpr())
     );
   }
 
@@ -671,23 +674,63 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const llvm::SmallVector<clang::CFGBlock *, 4> deps) {
+  std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const clang::Stmt* stmt) {
+    std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
+          function, function->getBody(), &astContext, clang::CFG::BuildOptions());
+    clang::ControlDependencyCalculator cdc(sourceCFG.get());
+    stmt->dump();
+    llvm::outs() << "getControlDependencies: ";
+    std::unique_ptr<clang::ParentMap> PM = std::make_unique<clang::ParentMap>(function->getBody());
+    auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
+    auto stmt_block = CM->getBlock(stmt); 
+    stmt_block->dump();
+    auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
+    //sourceCFG->dump(clang::LangOptions(), true);
+    llvm::outs() << "succs:\n";
+    clang::CFGReverseBlockReachabilityAnalysis reachabilityAnalysis = clang::CFGReverseBlockReachabilityAnalysis(*(sourceCFG.get()));
+    
     std::vector<std::unique_ptr<SymbolicControlDependency>> results;
-    for (const auto d: deps) {
+
+    for (clang::CFGBlock *block: deps) {
       try {
-        if (d == nullptr || d->empty() || d->size() < 1 || d->size() > 1000 || d->getTerminatorStmt() == nullptr )   {
+        if (block == nullptr || block->empty() || block->size() < 1 || block->size() > 1000 || block->getTerminatorStmt() == nullptr )   {
           continue;
         }
-        llvm::outs() << "size " << d->size() << "\n";
-        llvm::outs() << "looking for terminator condition in " << d->getTerminatorStmt()->getStmtClassName();
+        llvm::outs() << "size " << block->size() << "\n";                
+        llvm::outs() << "looking for terminator condition in " << block->getTerminatorStmt()->getStmtClassName();
 
-        auto *condition = d->getTerminatorCondition();
+        auto *condition = block->getTerminatorCondition();
         if (condition == nullptr) {
           llvm::outs() << "no terminator condition\n";
           continue;
         }
         
         llvm::outs() << "terminator condition found: \n";
+
+        bool reachableFromTrue = false;
+        bool reachableFromFalse = false;
+
+        int i = 0;
+        for (const clang::CFGBlock *sBlock: block->succs()) {
+          if (i == 0) { //true branch
+            if (cdc.isControlDependent(const_cast<clang::CFGBlock *>(stmt_block), const_cast<clang::CFGBlock *>(sBlock)) || sBlock == stmt_block) {
+              llvm::outs() << "reachable from true\n";
+              reachableFromTrue = true;
+            }
+          } else if (i == 1) { //false branch
+            if (cdc.isControlDependent(const_cast<clang::CFGBlock *>(stmt_block), const_cast<clang::CFGBlock *>(sBlock)) || sBlock == stmt_block) {
+              llvm::outs() << "reachable from false\n";
+              reachableFromFalse = true;
+            }
+          }          
+          llvm::outs() << i++;
+          sBlock->dump();
+        }
+        if ((reachableFromTrue && reachableFromFalse) || (!reachableFromTrue && !reachableFromFalse)){
+          llvm::outs() << "ERROR: reachableFromFalse: " << reachableFromFalse << " reachableFromTrue: " << reachableFromTrue << " block: ";
+          block->dump();
+          abort();
+        }
 
         std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
         std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
@@ -709,6 +752,7 @@ private:
           std::make_unique<SymbolicControlDependency>(
             std::move(functionCalls), 
             std::move(variableReferences),
+            reachableFromFalse,
             condition->getSourceRange().printToString(astContext.getSourceManager()),
             prettyPrint(condition, astContext)
           )
@@ -724,31 +768,6 @@ private:
 
     return results;
   }
-
-  const llvm::SmallVector<clang::CFGBlock *, 4> getControlDependencies(const clang::Stmt* stmt) {
-
-    std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
-          function, function->getBody(), &astContext, clang::CFG::BuildOptions());
-    clang::ControlDependencyCalculator cdc(sourceCFG.get());
-    llvm::outs() << "getControlDependencies: ";
-    std::unique_ptr<clang::ParentMap> PM = std::make_unique<clang::ParentMap>(function->getBody());
-    auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
-    auto stmt_block = CM->getBlock(stmt); 
-    auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
-    sourceCFG->dump(clang::LangOptions(), true);
-    llvm::outs() << "succs:\n";
-    for (clang::CFGBlock *block: deps) {
-      int i = 0;
-      for (clang::CFGBlock *sBlock: block->succs()) {
-        llvm::outs() << i++;
-        sBlock->dump();
-      }
-    }
-    abort();
-    llvm::outs() << "getControlDependencies end\n";
-    return deps;
-  }
-
 
   std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {
     auto *calledFunction = symContext.getDefinition(getCallee(callExpr));
@@ -812,7 +831,7 @@ private:
       args.emplace(param.getName(), std::move(symbolicParam));
     }
 
-    return SymbolicFunctionCall::create(calledFunction, args, getControlDependenciesObjects(getControlDependencies(callExpr)));
+    return SymbolicFunctionCall::create(calledFunction, args, getControlDependenciesObjects(callExpr));
   }
 
 
