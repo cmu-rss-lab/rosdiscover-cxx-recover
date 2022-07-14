@@ -753,13 +753,22 @@ private:
               llvm::outs() << "false branch dominates stmt\n";
               falseBranchDominates = true;
             }
-          }//TODO: Check whether this works for switch-case as well
+          } else {
+            //TODO: Handle switch-case here
+            llvm::outs() << "Too many branches. Swich not yet supported\n";
+            abort();
+          }
           llvm::outs() << i++;
           sBlock->dump();
         }
         if ((trueBranchDominates && falseBranchDominates) || (!trueBranchDominates && !falseBranchDominates)){
-          llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << " block: ";
+          llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << "\n";
+          llvm::outs() << "prevBlock: ";
+          prevBlock->dump();
+          llvm::outs() << "\nblock: ";
           block->dump();
+          llvm::outs() << "\nCFG: ";
+          sourceCFG->dump(clang::LangOptions(), false);
           abort();
         }
 
