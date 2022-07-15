@@ -3,6 +3,7 @@
 #include <unordered_set>
 #include <string> 
 #include <vector>
+#include <unordered_map>
 
 #include <clang/AST/ASTContext.h>
 #include <clang/AST/Decl.h>
@@ -689,19 +690,12 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  std::vector<CFGBlock*> buildGraph(CFGBlock *&last, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGReverseBlockReachabilityAnalysis* dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed) {
+  std::vector<CFGBlock*> buildGraph(bool first, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGReverseBlockReachabilityAnalysis* dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed, std::unordered_map<long, CFGBlock*> &blockMap) {
     std::vector<CFGBlock*> result;
     if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
       return result;
     }
     analyzed.push_back(block);
-
-    bool first = false;
-    if (last == nullptr) {
-      auto newBlock = new CFGBlock(block);
-      last = newBlock;
-      first = true;
-    }
     
     llvm::outs() << "buildGraph for: ";
     block->dump();
@@ -713,14 +707,17 @@ private:
       llvm::outs() << "\n";
       
 
-      auto r = buildGraph(last, b.getReachableBlock(), deps, dominatorAnalysis, analyzed);
+      auto r = buildGraph(false, b.getReachableBlock(), deps, dominatorAnalysis, analyzed, blockMap);
       llvm::outs() << "merging results\n";
       result.insert(result.end(), r.begin(), r.end());
       llvm::outs() << "merged results\n";
     }
 
     if (first || llvm::is_contained(deps, block)) {
-      auto newBlock = first ? last : new CFGBlock(block);
+      if (!blockMap.count(block->getBlockID()))
+        blockMap.emplace(block->getBlockID(), new CFGBlock(block));
+
+      auto newBlock = blockMap.at(block->getBlockID());
       llvm::outs() << "predecessor size: " << result.size() << "\n";
       for (auto *predecessor: result) {
         bool trueBranchDominates = false;
@@ -782,11 +779,11 @@ private:
 
   CFGBlock* buildGraph(const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGReverseBlockReachabilityAnalysis* dominatorAnalysis) {
     std::vector<const clang::CFGBlock*> analyzed;
+    std::unordered_map<long, CFGBlock*> blockMap; //maps BlockID to CFGBlockObject
     llvm::outs() << "#### buildGraph ####\n";
-    CFGBlock* result = nullptr;
-    buildGraph(result, block, deps, dominatorAnalysis, analyzed);
+    buildGraph(true, block, deps, dominatorAnalysis, analyzed, blockMap);
     llvm::outs() << "#### graph built ####\n";
-    return result;
+    return blockMap.at(block->getBlockID());
   }
 
   std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const clang::Stmt* stmt) {
