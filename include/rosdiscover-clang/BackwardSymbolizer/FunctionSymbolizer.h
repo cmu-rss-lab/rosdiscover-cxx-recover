@@ -9,6 +9,7 @@
 #include <clang/AST/DeclCXX.h>
 #include <clang/Analysis/CFG.h>
 #include <clang/Analysis/Analyses/Dominators.h>
+#include <clang/Analysis/Analyses/CFGReachabilityAnalysis.h>
 #include <clang/Analysis/CFGStmtMap.h>
 #include <clang/AST/ParentMap.h>
 #include <llvm/ADT/STLExtras.h>
@@ -688,33 +689,54 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  std::vector<CFGBlock*> buildGraph(bool insert, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, const clang::CFGDominatorTreeImpl<false>* dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed) {
+  std::vector<CFGBlock*> buildGraph(CFGBlock *&last, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGReverseBlockReachabilityAnalysis* dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed) {
     std::vector<CFGBlock*> result;
-    if (block == nullptr || llvm::is_contained(analyzed, block)) {
+    if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
       return result;
     }
     analyzed.push_back(block);
+
+    bool first = false;
+    if (last == nullptr) {
+      auto newBlock = new CFGBlock(block);
+      last = newBlock;
+      first = true;
+    }
     
+    llvm::outs() << "buildGraph for: ";
+    block->dump();
+    llvm::outs() << "\n";
+
     for (const clang::CFGBlock::AdjacentBlock b: block->preds()) {
-      auto r = buildGraph(false, b.getReachableBlock(), deps, dominatorAnalysis, analyzed);
+      llvm::outs() << "pred: ";
+      b->dump();
+      llvm::outs() << "\n";
+      
+
+      auto r = buildGraph(last, b.getReachableBlock(), deps, dominatorAnalysis, analyzed);
+      llvm::outs() << "merging results\n";
       result.insert(result.end(), r.begin(), r.end());
+      llvm::outs() << "merged results\n";
     }
 
-    if (insert || llvm::is_contained(deps, block)) {
-      auto newBlock = new CFGBlock(block);
+    if (first || llvm::is_contained(deps, block)) {
+      auto newBlock = first ? last : new CFGBlock(block);
+      llvm::outs() << "predecessor size: " << result.size() << "\n";
       for (auto *predecessor: result) {
-
         bool trueBranchDominates = false;
         bool falseBranchDominates = false;
         int i = 0;
+        llvm::outs() << "predecessor: ";
+        predecessor->getClangBlock()->dump();
+        llvm::outs() << "\n";
         for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
           if (i == 0) { //true branch, as defined by clang's order of successors
-            if (dominatorAnalysis->dominates(sBlock, block)) {
+            if (dominatorAnalysis->isReachable(sBlock, block) || block->getBlockID() == sBlock->getBlockID()) {
               llvm::outs() << "true branch dominates stmt\n";
               trueBranchDominates = true;
             }
           } else if (i == 1) { //false branch
-            if (dominatorAnalysis->dominates(sBlock, block)) {
+            if (dominatorAnalysis->isReachable(sBlock, block) || block->getBlockID() == sBlock->getBlockID()) {
               llvm::outs() << "false branch dominates stmt\n";
               falseBranchDominates = true;
             }
@@ -723,14 +745,17 @@ private:
             llvm::outs() << "Too many branches. Swich not yet supported\n";
             abort();
           }
-          i++;
+          llvm::outs() << i++;
+          sBlock->dump();
+          llvm::outs() << "\n";
         }
-        if ((trueBranchDominates && falseBranchDominates) || (!trueBranchDominates && !falseBranchDominates)){
+        if ((trueBranchDominates && falseBranchDominates) || (!trueBranchDominates && !falseBranchDominates) ){
           llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << "\n";
-          llvm::outs() << "\nblock: ";
+          llvm::outs() << "block: ";
           block->dump();
           abort();
         }
+        llvm::outs() << "creating edge\n";
         CFGEdge::EdgeType type;
         if (i == 1) {
           type = CFGEdge::EdgeType::Normal;
@@ -738,23 +763,33 @@ private:
           type = falseBranchDominates ? CFGEdge::EdgeType::False : CFGEdge::EdgeType::True;
         } else {
           type = CFGEdge::EdgeType::Unknown;
+          llvm::outs() << "ERROR: Unknown edge\n";
         }
 
         predecessor->createEdge(newBlock, type);
+        llvm::outs() << "created edge\n";
       }
-      return {newBlock};
+      llvm::outs() << "return one\n";
+      std::vector<CFGBlock*> r;
+      r.push_back(newBlock);
+      return r;
     } else {
+      llvm::outs() << "return some\n";
       return result;
     }
   }
 
-  std::vector<CFGBlock*> buildGraph(const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, const clang::CFGDominatorTreeImpl<false>* dominatorAnalysis) {
+  CFGBlock* buildGraph(const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGReverseBlockReachabilityAnalysis* dominatorAnalysis) {
     std::vector<const clang::CFGBlock*> analyzed;
-    return buildGraph(true, block, deps, dominatorAnalysis, analyzed);
+    llvm::outs() << "#### buildGraph ####\n";
+    CFGBlock* result = nullptr;
+    buildGraph(result, block, deps, dominatorAnalysis, analyzed);
+    llvm::outs() << "#### graph built ####\n";
+    return result;
   }
 
   std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const clang::Stmt* stmt) {
-    std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
+    const std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
           function, function->getBody(), &astContext, clang::CFG::BuildOptions());
     clang::ControlDependencyCalculator cdc(sourceCFG.get());
     stmt->dump();
@@ -764,13 +799,18 @@ private:
     auto stmt_block = CM->getBlock(stmt); 
     stmt_block->dump();
     auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
-    llvm::outs() << "succs:\n";
     
     std::vector<std::unique_ptr<SymbolicControlDependency>> results;
 
     auto prevBlock = stmt_block;
-    auto analysis = std::make_unique<clang::CFGDominatorTreeImpl<false>>(sourceCFG.get());
+    auto analysis = std::make_unique<clang::CFGReverseBlockReachabilityAnalysis>(*(sourceCFG.get()));
+
+    for (clang::CFGBlock *block: deps) {
+      block->dump();
+    }
     auto graph = buildGraph(stmt_block, deps, analysis.get());
+    
+    graph->getClangBlock()->dump();
 
     for (clang::CFGBlock *block: deps) {
 

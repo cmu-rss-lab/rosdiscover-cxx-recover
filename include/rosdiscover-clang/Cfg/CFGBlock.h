@@ -15,7 +15,7 @@ public:
   ) : clangBlock(clangBlock), predecessors(), successors() {}
   ~CFGBlock(){}
 
-  const clang::CFGBlock* getClangBlock() {
+  const clang::CFGBlock* getClangBlock() const {
     return clangBlock;
   }
 
