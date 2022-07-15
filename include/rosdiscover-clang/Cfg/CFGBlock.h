@@ -39,7 +39,7 @@ public:
   std::string getConditionStr(clang::ASTContext &astContext) const {
     const auto *condition = clangBlock->getTerminatorCondition();
     if (condition == nullptr) {
-      return rosdiscover::prettyPrint(condition, astContext);
+      return "[" + std::to_string(clangBlock->getBlockID()) + "]";
     }
     return rosdiscover::prettyPrint(condition, astContext);
   }
