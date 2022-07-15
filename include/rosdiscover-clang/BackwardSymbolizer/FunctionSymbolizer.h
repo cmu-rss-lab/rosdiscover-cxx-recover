@@ -731,6 +731,7 @@ private:
           for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
             if (i == 0) { //true branch, as defined by clang's order of successors
             //TODO: Ensure that no blocks are skipped
+              //the only post-dominating control dependency is the directly following control dependency
               if (dominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
                 llvm::outs() << "true branch dominates stmt\n";
                 trueBranchDominates = true;

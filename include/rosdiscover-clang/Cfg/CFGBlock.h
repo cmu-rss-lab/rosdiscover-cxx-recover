@@ -28,14 +28,6 @@ public:
     return predecessors;
   }
 
-  void addSuccessor(CFGEdge* edge) {
-    successors.push_back(edge);
-  }
-
-  void addPredecessor(CFGEdge* edge) {
-    predecessors.push_back(edge);
-  }
-
   std::string getConditionStr(clang::ASTContext &astContext) const {
     const auto *condition = clangBlock->getTerminatorCondition();
     if (condition == nullptr) {
@@ -46,24 +38,24 @@ public:
 
   std::string getFullConditionStr(clang::ASTContext &astContext, bool negate = false) const {
     std::string result = "";
-    for (auto p: predecessors) {
-      auto pStr = p->getPredecessor()->getFullConditionStr(astContext, p->getType() == CFGEdge::EdgeType::False);
+    for (auto edge: predecessors) {
+      auto pStr = edge->getPredecessor()->getFullConditionStr(astContext, edge->getType() == CFGEdge::EdgeType::False);
       if (pStr == "")
         continue;
 
-      if (p->getType() == CFGEdge::EdgeType::False) {
+      if (edge->getType() == CFGEdge::EdgeType::False) {
         if (result == "") 
           result = pStr;
         else 
           result = pStr + " || " + result;
       }
-      else if (p->getType() == CFGEdge::EdgeType::True) {
+      else if (edge->getType() == CFGEdge::EdgeType::True) {
         if (result == "") 
           result = pStr;
         else
           result = pStr + " || " + result;
       }
-      else if (p->getType() == CFGEdge::EdgeType::Normal) {
+      else if (edge->getType() == CFGEdge::EdgeType::Normal) {
         abort();
       }
     }
@@ -74,14 +66,11 @@ public:
       return "(" + result + ") && " + myStr;
   }
 
-  inline bool operator==(const CFGBlock& rhs) const { 
-    return clangBlock->getBlockID() == rhs.clangBlock->getBlockID();
-  }
-
   bool createEdge(CFGBlock* successor, CFGEdge::EdgeType type) {
     auto edge = new CFGEdge(this, successor, type);
-    for (auto pEdge : predecessors) {
-      if (pEdge == edge) {
+    for (auto pEdge : successors) {
+      if (*pEdge == *edge) {
+        llvm::outs() << "Skip redundant edge\n";
         return false;
       }
     }
@@ -95,5 +84,13 @@ private:
   std::vector<CFGEdge*> predecessors;
   std::vector<CFGEdge*> successors;
 
+  void addSuccessor(CFGEdge* edge) {
+    successors.push_back(edge);
+  }
+
+  void addPredecessor(CFGEdge* edge) {
+    predecessors.push_back(edge);
+  }
+  
 };
 } // rosdiscover
