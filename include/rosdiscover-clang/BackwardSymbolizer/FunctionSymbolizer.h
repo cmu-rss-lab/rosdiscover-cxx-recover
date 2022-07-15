@@ -635,7 +635,7 @@ private:
 
     return std::make_unique<Publish>(
         apiCall->getPublisherName(astContext),
-        getControlDependenciesObjects(getControlDependencies(apiCall->getCallExpr()))
+        getControlDependenciesObjects(apiCall->getCallExpr())
     );
   }
 
@@ -687,23 +687,90 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const llvm::SmallVector<clang::CFGBlock *, 4> deps) {
+  std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const clang::Stmt* stmt) {
+    std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
+          function, function->getBody(), &astContext, clang::CFG::BuildOptions());
+    clang::ControlDependencyCalculator cdc(sourceCFG.get());
+    stmt->dump();
+    llvm::outs() << "getControlDependencies: ";
+    std::unique_ptr<clang::ParentMap> PM = std::make_unique<clang::ParentMap>(function->getBody());
+    auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
+    auto stmt_block = CM->getBlock(stmt); 
+    stmt_block->dump();
+    auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
+    llvm::outs() << "succs:\n";
+    
     std::vector<std::unique_ptr<SymbolicControlDependency>> results;
-    for (const auto d: deps) {
+
+    auto prevBlock = stmt_block;
+
+    for (clang::CFGBlock *block: deps) {
+
+      //To identify whether the control condition needs to be negated, we need to see if the true or false branch is 
+      //leading to the statement. To do this, we need to see if within the sub-graph of the CFG starting from the control-
+      //dependent the true or false branch is dominating the lower-level control-dependent block. Since one of the paths
+      //could be a sink in the CFG, there can be multiple paths that lead to the statement. Hence, the CFG entry point 
+      //needs to be the control-depdent block.
+      auto entry = sourceCFG->createBlock();
+      clang::CFGBlock::AdjacentBlock aBlock(block, true);
+      entry->addSuccessor(aBlock, sourceCFG->getBumpVectorContext());
+      sourceCFG->setEntry(entry);
+      clang::CFGDominatorTreeImpl<false> dominatorAnalysis(sourceCFG.get());
+
       try {
-        if (d == nullptr || d->empty() || d->size() < 1 || d->size() > 1000 || d->getTerminatorStmt() == nullptr )   {
+        if (block == nullptr || block->empty() || block->size() < 1 || block->size() > 1000 || block->getTerminatorStmt() == nullptr )   {
           continue;
         }
-        llvm::outs() << "size " << d->size() << "\n";
-        llvm::outs() << "looking for terminator condition in " << d->getTerminatorStmt()->getStmtClassName();
+        llvm::outs() << "size " << block->size() << "\n";
+        llvm::outs() << "looking for terminator condition in " << block->getTerminatorStmt()->getStmtClassName() << "\n";
 
-        const auto *condition = d->getTerminatorCondition();
+        const auto *condition = block->getTerminatorCondition();
         if (condition == nullptr) {
           llvm::outs() << "no terminator condition\n";
           continue;
         }
+        auto conditionStr = rosdiscover::prettyPrint(condition, astContext);
+        if (block->getTerminatorStmt()->getStmtClass() == clang::Stmt::SwitchStmtClass) {
+          conditionStr = "switch (" + conditionStr + ")";
+          llvm::outs() << "ERROR: Encountered switch: " << conditionStr << "\n";
+          abort();
+        }
         
-        llvm::outs() << "terminator condition found: \n";
+        llvm::outs() << "terminator condition found: " << conditionStr << "\n";
+
+        bool trueBranchDominates = false;
+        bool falseBranchDominates = false;
+
+        int i = 0;
+        for (const clang::CFGBlock *sBlock: block->succs()) {
+          if (i == 0) { //true branch, as defined by clang's order of successors
+            if (dominatorAnalysis.dominates(sBlock, prevBlock)) {
+              llvm::outs() << "true branch dominates stmt\n";
+              trueBranchDominates = true;
+            }
+          } else if (i == 1) { //false branch
+            if (dominatorAnalysis.dominates(sBlock, prevBlock)) {
+              llvm::outs() << "false branch dominates stmt\n";
+              falseBranchDominates = true;
+            }
+          } else {
+            //TODO: Handle switch-case here
+            llvm::outs() << "Too many branches. Swich not yet supported\n";
+            abort();
+          }
+          llvm::outs() << i++;
+          sBlock->dump();
+        }
+        if ((trueBranchDominates && falseBranchDominates) || (!trueBranchDominates && !falseBranchDominates)){
+          llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << "\n";
+          llvm::outs() << "prevBlock: ";
+          prevBlock->dump();
+          llvm::outs() << "\nblock: ";
+          block->dump();
+          llvm::outs() << "\nCFG: ";
+          sourceCFG->dump(clang::LangOptions(), false);
+          abort();
+        }
 
         std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
         std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
@@ -725,8 +792,9 @@ private:
           std::make_unique<SymbolicControlDependency>(
             std::move(functionCalls), 
             std::move(variableReferences),
+            falseBranchDominates, //if the false branch dominates the statement, we need to negate the condition
             condition->getSourceRange().printToString(astContext.getSourceManager()),
-            rosdiscover::prettyPrint(condition, astContext)
+            conditionStr
           )
         );
 
@@ -734,27 +802,13 @@ private:
       } catch (...) {
         llvm::outs() << "[Error] Failed to create SymbolicControlDependency";
       }
+      prevBlock = block;
     }
 
     llvm::outs() << "getControlDependenciesObjects end\n";
 
     return results;
   }
-
-  const llvm::SmallVector<clang::CFGBlock *, 4> getControlDependencies(const clang::Stmt* stmt) {
-
-    std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
-          function, function->getBody(), &astContext, clang::CFG::BuildOptions());
-    clang::ControlDependencyCalculator cdc(sourceCFG.get());
-    llvm::outs() << "getControlDependencies: ";
-    std::unique_ptr<clang::ParentMap> PM = std::make_unique<clang::ParentMap>(function->getBody());
-    auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
-    auto stmt_block = CM->getBlock(stmt); 
-    auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
-    llvm::outs() << "getControlDependencies end\n";
-    return deps;
-  }
-
 
   std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {
     auto *calledFunction = symContext.getDefinition(getCallee(callExpr));
@@ -818,7 +872,7 @@ private:
       args.emplace(param.getName(), std::move(symbolicParam));
     }
 
-    return SymbolicFunctionCall::create(calledFunction, args, getControlDependenciesObjects(getControlDependencies(callExpr)));
+    return SymbolicFunctionCall::create(calledFunction, args, getControlDependenciesObjects(callExpr));
   }
 
 
