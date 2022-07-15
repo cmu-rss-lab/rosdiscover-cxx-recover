@@ -690,7 +690,7 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  std::vector<CFGBlock*> buildGraph(bool first, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGReverseBlockReachabilityAnalysis* dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed, std::unordered_map<long, CFGBlock*> &blockMap) {
+  std::vector<CFGBlock*> buildGraph(bool first, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGReverseBlockReachabilityAnalysis* dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed, std::vector<const CFGBlock*> &analyzedDeps, std::unordered_map<long, CFGBlock*> &blockMap) {
     std::vector<CFGBlock*> result;
     if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
       return result;
@@ -707,7 +707,7 @@ private:
       llvm::outs() << "\n";
       
 
-      auto r = buildGraph(false, b.getReachableBlock(), deps, dominatorAnalysis, analyzed, blockMap);
+      auto r = buildGraph(false, b.getReachableBlock(), deps, dominatorAnalysis, analyzed, analyzedDeps, blockMap);
       llvm::outs() << "merging results\n";
       result.insert(result.end(), r.begin(), r.end());
       llvm::outs() << "merged results\n";
@@ -718,54 +718,60 @@ private:
         blockMap.emplace(block->getBlockID(), new CFGBlock(block));
 
       auto newBlock = blockMap.at(block->getBlockID());
+      analyzedDeps.push_back(newBlock);
       llvm::outs() << "predecessor size: " << result.size() << "\n";
       for (auto *predecessor: result) {
-        bool trueBranchDominates = false;
-        bool falseBranchDominates = false;
-        int i = 0;
-        llvm::outs() << "predecessor: ";
-        predecessor->getClangBlock()->dump();
-        llvm::outs() << "\n";
-        for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
-          if (i == 0) { //true branch, as defined by clang's order of successors
-          //TODO: build the whole graph, not just a small part, check whether paths lead to any control dependency block, not just the previous
-            if (dominatorAnalysis->isReachable(sBlock, block) || block->getBlockID() == sBlock->getBlockID()) {
-              llvm::outs() << "true branch dominates stmt\n";
-              trueBranchDominates = true;
+        for(auto depBlock :analyzedDeps) {
+          bool trueBranchDominates = false;
+          bool falseBranchDominates = false;
+          int i = 0;
+          llvm::outs() << "predecessor: ";
+          predecessor->getClangBlock()->dump();
+          llvm::outs() << "\n";
+          for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
+            if (i == 0) { //true branch, as defined by clang's order of successors
+            //TODO: build the whole graph, not just a small part, check whether paths lead to any control dependency block, not just the previous
+              if (dominatorAnalysis->isReachable(sBlock, block) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
+                llvm::outs() << "true branch dominates stmt\n";
+                trueBranchDominates = true;
+              }
+            } else if (i == 1) { //false branch
+              if (dominatorAnalysis->isReachable(sBlock, block) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
+                llvm::outs() << "false branch dominates stmt\n";
+                falseBranchDominates = true;
+              }
+            } else {
+              //TODO: Handle switch-case here
+              llvm::outs() << "Too many branches. Swich not yet supported\n";
+              abort();
             }
-          } else if (i == 1) { //false branch
-            if (dominatorAnalysis->isReachable(sBlock, block) || block->getBlockID() == sBlock->getBlockID()) {
-              llvm::outs() << "false branch dominates stmt\n";
-              falseBranchDominates = true;
-            }
-          } else {
-            //TODO: Handle switch-case here
-            llvm::outs() << "Too many branches. Swich not yet supported\n";
+            llvm::outs() << i++;
+            sBlock->dump();
+            llvm::outs() << "\n";
+          }
+          if (!trueBranchDominates && !falseBranchDominates) {
+            continue;
+          }
+          if (trueBranchDominates && falseBranchDominates){
+            llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << "\n";
+            llvm::outs() << "depBlock->getClangBlock(): ";
+            depBlock->getClangBlock()->dump();
             abort();
           }
-          llvm::outs() << i++;
-          sBlock->dump();
-          llvm::outs() << "\n";
-        }
-        if ((trueBranchDominates && falseBranchDominates) || (!trueBranchDominates && !falseBranchDominates) ){
-          llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << "\n";
-          llvm::outs() << "block: ";
-          block->dump();
-          abort();
-        }
-        llvm::outs() << "creating edge\n";
-        CFGEdge::EdgeType type;
-        if (i == 1) {
-          type = CFGEdge::EdgeType::Normal;
-        } else if (i == 2) {
-          type = falseBranchDominates ? CFGEdge::EdgeType::False : CFGEdge::EdgeType::True;
-        } else {
-          type = CFGEdge::EdgeType::Unknown;
-          llvm::outs() << "ERROR: Unknown edge\n";
-        }
+          llvm::outs() << "creating edge\n";
+          CFGEdge::EdgeType type;
+          if (i == 1) {
+            type = CFGEdge::EdgeType::Normal;
+          } else if (i == 2) {
+            type = falseBranchDominates ? CFGEdge::EdgeType::False : CFGEdge::EdgeType::True;
+          } else {
+            type = CFGEdge::EdgeType::Unknown;
+            llvm::outs() << "ERROR: Unknown edge\n";
+          }
 
-        predecessor->createEdge(newBlock, type);
-        llvm::outs() << "created edge\n";
+          predecessor->createEdge(newBlock, type);
+          llvm::outs() << "created edge\n";
+        }
       }
       llvm::outs() << "return one\n";
       std::vector<CFGBlock*> r;
@@ -779,9 +785,10 @@ private:
 
   CFGBlock* buildGraph(const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGReverseBlockReachabilityAnalysis* dominatorAnalysis) {
     std::vector<const clang::CFGBlock*> analyzed;
+    std::vector<const CFGBlock*> analyzedDeps;
     std::unordered_map<long, CFGBlock*> blockMap; //maps BlockID to CFGBlockObject
     llvm::outs() << "#### buildGraph ####\n";
-    buildGraph(true, block, deps, dominatorAnalysis, analyzed, blockMap);
+    buildGraph(true, block, deps, dominatorAnalysis, analyzed, analyzedDeps, blockMap);
     llvm::outs() << "#### graph built ####\n";
     return blockMap.at(block->getBlockID());
   }
@@ -869,7 +876,7 @@ private:
           llvm::outs() << i++;
           sBlock->dump();
         }
-        if ((trueBranchDominates && falseBranchDominates) || (!trueBranchDominates && !falseBranchDominates)){
+        if (trueBranchDominates && falseBranchDominates){
           llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << "\n";
           llvm::outs() << "prevBlock: ";
           prevBlock->dump();
