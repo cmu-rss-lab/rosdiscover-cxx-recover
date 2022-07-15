@@ -59,9 +59,11 @@ public:
         abort();
       }
     }
+    
     if (!includeSelf) {
       return result;
     }
+
     auto myStr = negate ? "!(" + getConditionStr(astContext) + ")" : getConditionStr(astContext);
     if (result == "") 
       return myStr;
