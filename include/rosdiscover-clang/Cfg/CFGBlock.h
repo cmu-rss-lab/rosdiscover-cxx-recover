@@ -39,8 +39,7 @@ public:
   std::string getConditionStr(clang::ASTContext &astContext) const {
     const auto *condition = clangBlock->getTerminatorCondition();
     if (condition == nullptr) {
-      llvm::outs() << "no terminator condition\n";
-      return "unknown";
+      return rosdiscover::prettyPrint(condition, astContext);
     }
     return rosdiscover::prettyPrint(condition, astContext);
   }
@@ -75,10 +74,20 @@ public:
       return "(" + result + ") && " + myStr;
   }
 
-  void createEdge(CFGBlock* successor, CFGEdge::EdgeType type) {
+  inline bool operator==(const CFGBlock& rhs) const { 
+    return clangBlock->getBlockID() == rhs.clangBlock->getBlockID();
+  }
+
+  bool createEdge(CFGBlock* successor, CFGEdge::EdgeType type) {
     auto edge = new CFGEdge(this, successor, type);
+    for (auto pEdge : predecessors) {
+      if (pEdge == edge) {
+        return false;
+      }
+    }
     this->addSuccessor(edge);
     successor->addPredecessor(edge);
+    return true;
   }
    
 private: 

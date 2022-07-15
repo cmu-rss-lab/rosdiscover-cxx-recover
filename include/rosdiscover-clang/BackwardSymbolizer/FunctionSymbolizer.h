@@ -690,7 +690,7 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  std::vector<CFGBlock*> buildGraph(bool first, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGReverseBlockReachabilityAnalysis* dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed, std::vector<const CFGBlock*> &analyzedDeps, std::unordered_map<long, CFGBlock*> &blockMap) {
+  std::vector<CFGBlock*> buildGraph(bool first, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed, std::vector<CFGBlock*> &analyzedDeps, std::unordered_map<long, CFGBlock*> &blockMap) {
     std::vector<CFGBlock*> result;
     if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
       return result;
@@ -731,12 +731,12 @@ private:
           for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
             if (i == 0) { //true branch, as defined by clang's order of successors
             //TODO: Ensure that no blocks are skipped
-              if (dominatorAnalysis->isReachable(sBlock, block) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
+              if (dominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
                 llvm::outs() << "true branch dominates stmt\n";
                 trueBranchDominates = true;
               }
             } else if (i == 1) { //false branch
-              if (dominatorAnalysis->isReachable(sBlock, block) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
+              if (dominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
                 llvm::outs() << "false branch dominates stmt\n";
                 falseBranchDominates = true;
               }
@@ -769,8 +769,9 @@ private:
             llvm::outs() << "ERROR: Unknown edge\n";
           }
 
-          predecessor->createEdge(newBlock, type);
-          llvm::outs() << "created edge\n";
+          if (predecessor->createEdge(depBlock, type)) {
+            llvm::outs() << "created edge between " << predecessor->getConditionStr(astContext) << " and " << depBlock->getConditionStr(astContext) << " of type " << CFGEdge::getEdgeTypeName(type) << "\n";
+          }
         }
       }
       llvm::outs() << "return one\n";
@@ -783,10 +784,15 @@ private:
     }
   }
 
-  CFGBlock* buildGraph(const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGReverseBlockReachabilityAnalysis* dominatorAnalysis) {
+  CFGBlock* buildGraph(const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &dominatorAnalysis) {
     std::vector<const clang::CFGBlock*> analyzed;
-    std::vector<const CFGBlock*> analyzedDeps;
+    std::vector<CFGBlock*> analyzedDeps;
     std::unordered_map<long, CFGBlock*> blockMap; //maps BlockID to CFGBlockObject
+    for (auto b: deps) {
+      auto b2 = new CFGBlock(b);
+      blockMap.emplace(b->getBlockID(), b2);
+      analyzedDeps.push_back(b2);
+    }
     llvm::outs() << "#### buildGraph ####\n";
     buildGraph(true, block, deps, dominatorAnalysis, analyzed, analyzedDeps, blockMap);
     llvm::outs() << "#### graph built ####\n";
@@ -809,11 +815,12 @@ private:
 
     auto prevBlock = stmt_block;
     auto analysis = std::make_unique<clang::CFGReverseBlockReachabilityAnalysis>(*(sourceCFG.get()));
+    clang::CFGDominatorTreeImpl<true> postDominatorAnalysis(sourceCFG.get());
 
     for (clang::CFGBlock *block: deps) {
       block->dump();
     }
-    auto graph = buildGraph(stmt_block, deps, analysis.get());
+    auto graph = buildGraph(stmt_block, deps, postDominatorAnalysis);
     graph->getClangBlock()->dump();
     auto condStr = graph->getFullConditionStr(astContext);
     llvm::outs() << "\nFullControlCondition: " << condStr << "\n";

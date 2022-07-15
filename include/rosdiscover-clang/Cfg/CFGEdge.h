@@ -18,6 +18,27 @@ public:
       Unknown,
   };
 
+  static std::string getEdgeTypeName(const EdgeType type) {
+    switch (type) {
+      case True:
+        return "True";
+      case False:
+        return "False";
+      case Normal:
+        return "Normal";
+      case Unknown:
+        return "Unknown";
+    }
+  }
+
+  inline bool operator==(const CFGEdge& rhs) const { 
+    return 
+      predecessor == rhs.predecessor &&
+      successor == rhs.successor &&
+      edgeType == rhs.edgeType
+    ;
+  }
+
   CFGEdge(
     CFGBlock* predecessor,
     CFGBlock* successor,
