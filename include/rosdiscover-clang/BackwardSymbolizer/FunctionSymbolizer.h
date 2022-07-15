@@ -730,7 +730,7 @@ private:
           llvm::outs() << "\n";
           for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
             if (i == 0) { //true branch, as defined by clang's order of successors
-            //TODO: build the whole graph, not just a small part, check whether paths lead to any control dependency block, not just the previous
+            //TODO: Ensure that no blocks are skipped
               if (dominatorAnalysis->isReachable(sBlock, block) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
                 llvm::outs() << "true branch dominates stmt\n";
                 trueBranchDominates = true;
