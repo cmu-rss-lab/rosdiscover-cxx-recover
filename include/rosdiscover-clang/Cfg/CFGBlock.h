@@ -11,12 +11,12 @@ class CFGEdge;
 class CFGBlock {
 public:
   CFGBlock(
-    const clang::Stmt* stmt
-  ) : stmt(stmt), predecessors(), successors() {}
+    const clang::CFGBlock* clangBlock
+  ) : clangBlock(clangBlock), predecessors(), successors() {}
   ~CFGBlock(){}
 
-  const clang::Stmt* getStmt() {
-    return stmt;
+  const clang::CFGBlock* getClangBlock() {
+    return clangBlock;
   }
 
   std::vector<CFGEdge*> getSuccessors() {
@@ -42,7 +42,7 @@ public:
   }
    
 private: 
-  const clang::Stmt* stmt;
+  const clang::CFGBlock* clangBlock;
   std::vector<CFGEdge*> predecessors;
   std::vector<CFGEdge*> successors;
 

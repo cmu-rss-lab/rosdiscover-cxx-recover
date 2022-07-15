@@ -11,7 +11,7 @@
 #include <clang/Analysis/Analyses/Dominators.h>
 #include <clang/Analysis/CFGStmtMap.h>
 #include <clang/AST/ParentMap.h>
-
+#include <llvm/ADT/STLExtras.h>
 #include <fmt/core.h>
 
 #include "../ApiCall/Calls/Util.h"
@@ -21,6 +21,7 @@
 #include "../RawStatement.h"
 #include "../Value/String.h"
 #include "../Value/Value.h"
+#include "../Cfg/CFGBlock.h"
 #include "StringSymbolizer.h"
 #include "IntSymbolizer.h"
 #include "BoolSymbolizer.h"
@@ -687,6 +688,71 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
+  std::vector<CFGBlock*> buildGraph(bool insert, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, const clang::CFGDominatorTreeImpl<false>* dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed) {
+    std::vector<CFGBlock*> result;
+    if (block == nullptr || llvm::is_contained(analyzed, block)) {
+      return result;
+    }
+    analyzed.push_back(block);
+    
+    for (const clang::CFGBlock::AdjacentBlock b: block->preds()) {
+      auto r = buildGraph(false, b.getReachableBlock(), deps, dominatorAnalysis, analyzed);
+      result.insert(result.end(), r.begin(), r.end());
+    }
+
+    if (insert || llvm::is_contained(deps, block)) {
+      auto newBlock = new CFGBlock(block);
+      for (auto *predecessor: result) {
+
+        bool trueBranchDominates = false;
+        bool falseBranchDominates = false;
+        int i = 0;
+        for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
+          if (i == 0) { //true branch, as defined by clang's order of successors
+            if (dominatorAnalysis->dominates(sBlock, block)) {
+              llvm::outs() << "true branch dominates stmt\n";
+              trueBranchDominates = true;
+            }
+          } else if (i == 1) { //false branch
+            if (dominatorAnalysis->dominates(sBlock, block)) {
+              llvm::outs() << "false branch dominates stmt\n";
+              falseBranchDominates = true;
+            }
+          } else {
+            //TODO: Handle switch-case here
+            llvm::outs() << "Too many branches. Swich not yet supported\n";
+            abort();
+          }
+          i++;
+        }
+        if ((trueBranchDominates && falseBranchDominates) || (!trueBranchDominates && !falseBranchDominates)){
+          llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << "\n";
+          llvm::outs() << "\nblock: ";
+          block->dump();
+          abort();
+        }
+        CFGEdge::EdgeType type;
+        if (i == 1) {
+          type = CFGEdge::EdgeType::Normal;
+        } else if (i == 2) {
+          type = falseBranchDominates ? CFGEdge::EdgeType::False : CFGEdge::EdgeType::True;
+        } else {
+          type = CFGEdge::EdgeType::Unknown;
+        }
+
+        predecessor->createEdge(newBlock, type);
+      }
+      return {newBlock};
+    } else {
+      return result;
+    }
+  }
+
+  std::vector<CFGBlock*> buildGraph(const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, const clang::CFGDominatorTreeImpl<false>* dominatorAnalysis) {
+    std::vector<const clang::CFGBlock*> analyzed;
+    return buildGraph(true, block, deps, dominatorAnalysis, analyzed);
+  }
+
   std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const clang::Stmt* stmt) {
     std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
           function, function->getBody(), &astContext, clang::CFG::BuildOptions());
@@ -703,6 +769,8 @@ private:
     std::vector<std::unique_ptr<SymbolicControlDependency>> results;
 
     auto prevBlock = stmt_block;
+    auto analysis = std::make_unique<clang::CFGDominatorTreeImpl<false>>(sourceCFG.get());
+    auto graph = buildGraph(stmt_block, deps, analysis.get());
 
     for (clang::CFGBlock *block: deps) {
 

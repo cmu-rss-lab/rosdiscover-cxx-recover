@@ -15,6 +15,7 @@ public:
       True,
       False,
       Normal,
+      Unknown,
   };
 
   CFGEdge(
