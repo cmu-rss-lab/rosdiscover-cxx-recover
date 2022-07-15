@@ -36,10 +36,10 @@ public:
     return rosdiscover::prettyPrint(condition, astContext);
   }
 
-  std::string getFullConditionStr(clang::ASTContext &astContext, bool negate = false) const {
+  std::string getFullConditionStr(bool includeSelf, clang::ASTContext &astContext, bool negate) const {
     std::string result = "";
     for (auto edge: predecessors) {
-      auto pStr = edge->getPredecessor()->getFullConditionStr(astContext, edge->getType() == CFGEdge::EdgeType::False);
+      auto pStr = edge->getPredecessor()->getFullConditionStr(true, astContext, edge->getType() == CFGEdge::EdgeType::False);
       if (pStr == "")
         continue;
 
@@ -59,11 +59,18 @@ public:
         abort();
       }
     }
+    if (!includeSelf) {
+      return result;
+    }
     auto myStr = negate ? "!(" + getConditionStr(astContext) + ")" : getConditionStr(astContext);
     if (result == "") 
       return myStr;
     else
       return "(" + result + ") && " + myStr;
+  }
+
+  std::string getFullConditionStr(clang::ASTContext &astContext) const {
+    return getFullConditionStr(false, astContext, false);
   }
 
   bool createEdge(CFGBlock* successor, CFGEdge::EdgeType type) {
