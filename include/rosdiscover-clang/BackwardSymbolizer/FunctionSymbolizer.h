@@ -731,6 +731,7 @@ private:
         llvm::outs() << "\n";
         for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
           if (i == 0) { //true branch, as defined by clang's order of successors
+          //TODO: build the whole graph, not just a small part, check whether paths lead to any control dependency block, not just the previous
             if (dominatorAnalysis->isReachable(sBlock, block) || block->getBlockID() == sBlock->getBlockID()) {
               llvm::outs() << "true branch dominates stmt\n";
               trueBranchDominates = true;
@@ -809,8 +810,9 @@ private:
       block->dump();
     }
     auto graph = buildGraph(stmt_block, deps, analysis.get());
-    
     graph->getClangBlock()->dump();
+    auto condStr = graph->getFullConditionStr(astContext);
+    llvm::outs() << "\nFullControlCondition: " << condStr << "\n";
 
     for (clang::CFGBlock *block: deps) {
 
@@ -852,6 +854,7 @@ private:
         int i = 0;
         for (const clang::CFGBlock *sBlock: block->succs()) {
           if (i == 0) { //true branch, as defined by clang's order of successors
+
             if (dominatorAnalysis.dominates(sBlock, prevBlock)) {
               llvm::outs() << "true branch dominates stmt\n";
               trueBranchDominates = true;

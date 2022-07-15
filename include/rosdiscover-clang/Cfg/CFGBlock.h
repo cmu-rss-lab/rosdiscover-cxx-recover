@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include <clang/AST/ASTContext.h>
 #include <clang/AST/Stmt.h>
 
 #include "CFGEdge.h"
@@ -33,6 +34,45 @@ public:
 
   void addPredecessor(CFGEdge* edge) {
     predecessors.push_back(edge);
+  }
+
+  std::string getConditionStr(clang::ASTContext &astContext) const {
+    const auto *condition = clangBlock->getTerminatorCondition();
+    if (condition == nullptr) {
+      llvm::outs() << "no terminator condition\n";
+      return "unknown";
+    }
+    return rosdiscover::prettyPrint(condition, astContext);
+  }
+
+  std::string getFullConditionStr(clang::ASTContext &astContext, bool negate = false) const {
+    std::string result = "";
+    for (auto p: predecessors) {
+      auto pStr = p->getPredecessor()->getFullConditionStr(astContext, p->getType() == CFGEdge::EdgeType::False);
+      if (pStr == "")
+        continue;
+
+      if (p->getType() == CFGEdge::EdgeType::False) {
+        if (result == "") 
+          result = pStr;
+        else 
+          result = pStr + " || " + result;
+      }
+      else if (p->getType() == CFGEdge::EdgeType::True) {
+        if (result == "") 
+          result = pStr;
+        else
+          result = pStr + " || " + result;
+      }
+      else if (p->getType() == CFGEdge::EdgeType::Normal) {
+        abort();
+      }
+    }
+    auto myStr = negate ? "!(" + getConditionStr(astContext) + ")" : getConditionStr(astContext);
+    if (result == "") 
+      return myStr;
+    else
+      return "(" + result + ") && " + myStr;
   }
 
   void createEdge(CFGBlock* successor, CFGEdge::EdgeType type) {
