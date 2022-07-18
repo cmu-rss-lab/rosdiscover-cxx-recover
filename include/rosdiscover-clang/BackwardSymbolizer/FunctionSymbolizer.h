@@ -858,41 +858,6 @@ private:
         
         llvm::outs() << "terminator condition found: " << conditionStr << "\n";
 
-        bool trueBranchDominates = false;
-        bool falseBranchDominates = false;
-
-        int i = 0;
-        for (const clang::CFGBlock *sBlock: block->succs()) {
-          if (i == 0) { //true branch, as defined by clang's order of successors
-
-            if (dominatorAnalysis.dominates(sBlock, prevBlock)) {
-              llvm::outs() << "true branch dominates stmt\n";
-              trueBranchDominates = true;
-            }
-          } else if (i == 1) { //false branch
-            if (dominatorAnalysis.dominates(sBlock, prevBlock)) {
-              llvm::outs() << "false branch dominates stmt\n";
-              falseBranchDominates = true;
-            }
-          } else {
-            //TODO: Handle switch-case here
-            llvm::outs() << "Too many branches. Swich not yet supported\n";
-            abort();
-          }
-          llvm::outs() << i++;
-          sBlock->dump();
-        }
-        if (trueBranchDominates && falseBranchDominates){
-          llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << "\n";
-          llvm::outs() << "prevBlock: ";
-          prevBlock->dump();
-          llvm::outs() << "\nblock: ";
-          block->dump();
-          llvm::outs() << "\nCFG: ";
-          sourceCFG->dump(clang::LangOptions(), false);
-          abort();
-        }
-
         std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
         std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
         for (auto delcRef : getTransitiveChildenByType(condition, true, false)) {
@@ -913,7 +878,6 @@ private:
           std::make_unique<SymbolicControlDependency>(
             std::move(functionCalls), 
             std::move(variableReferences),
-            falseBranchDominates, //if the false branch dominates the statement, we need to negate the condition
             condition->getSourceRange().printToString(astContext.getSourceManager()),
             conditionStr
           )
