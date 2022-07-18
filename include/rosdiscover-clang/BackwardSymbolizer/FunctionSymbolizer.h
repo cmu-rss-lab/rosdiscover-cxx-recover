@@ -783,14 +783,14 @@ private:
   CFGBlock* buildGraph(const clang::CFGBlock* blockOfInterest, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis) {
     std::vector<const clang::CFGBlock*> analyzed;
     std::unordered_map<long, CFGBlock*> blockMap; //maps BlockID to CFGBlockObject
-    auto cfgBlock = new CFGBlock(blockOfInterest);
-    blockMap.emplace(blockOfInterest->getBlockID(), cfgBlock);
-    std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlock};
+    auto cfgBlockOfInterest = new CFGBlock(blockOfInterest);
+    blockMap.emplace(blockOfInterest->getBlockID(), cfgBlockOfInterest);
+    std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlockOfInterest};
     for (auto depsBlock: deps) {
       if (postdominatorAnalysis.dominates(depsBlock, blockOfInterest) && !dominatorAnalysis.dominates(depsBlock, blockOfInterest))
         continue; //ignore CFG blocks that come after the block of interest.
       auto depsCfgBlock = new CFGBlock(depsBlock);
-      blockMap.emplace(depsBlock->getBlockID(), depsCfgBlock);
+      blockMap.emplace(depsBlock->getBlockID(), cfgBlockOfInterest);
       controlDependencyGraphNodes.push_back(depsCfgBlock);
     }
     llvm::outs() << "#### buildGraph ####\n";
