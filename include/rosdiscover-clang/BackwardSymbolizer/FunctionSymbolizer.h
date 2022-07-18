@@ -729,10 +729,13 @@ private:
           predecessor->getClangBlock()->dump();
           llvm::outs() << "\n";
           for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
-            if ((postdominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock) && !dominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock)) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
-              if (i == 0) { //true branch, as defined by clang's order of successors
-              //TODO: Ensure that no blocks are skipped
-                //the only post-dominating control dependency is the directly following control dependency
+            // The only post-dominating control dependency is the directly following control dependency,
+            // The exception to this is the head of a loop, which is the only control dependency which then also pre-dominiates the 
+            // inner statement. Hence those edges need to be ignored to avoid circles in the control dependcy graph. 
+            if ((postdominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock) 
+              && !dominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock)) 
+              || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
+              if (i == 0) { //true branch, as defined by clang's order of successors                
                   llvm::outs() << "true branch dominates stmt\n";
                   trueBranchDominates = true;
               } else if (i == 1) { //false branch
