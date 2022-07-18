@@ -84,7 +84,7 @@ public:
   OrExpr(
     std::unique_ptr<SymbolicExpr> expr1,
     std::unique_ptr<SymbolicExpr> expr2
-  ) : BinaryExpr(std::move(expr1),std::move(expr2)) {}
+  ) : BinaryExpr(std::move(expr1), std::move(expr2)) {}
 
   std::string binaryOperator() const override {
     return "||";
@@ -97,11 +97,54 @@ public:
   AndExpr(
     std::unique_ptr<SymbolicExpr> expr1,
     std::unique_ptr<SymbolicExpr> expr2
-  ) : BinaryExpr(std::move(expr1),std::move(expr2)) {}
+  ) : BinaryExpr(std::move(expr1), std::move(expr2)) {}
 
   std::string binaryOperator() const override {
     return "&&";
   }
+};
+
+enum class CompareOperator {
+  EQ,
+  NE,
+  LT,
+  LE,
+  GT,
+  GE
+};
+
+class CompareExpr : public BinaryExpr {
+public:
+
+  CompareExpr(
+    std::unique_ptr<SymbolicExpr> expr1,
+    std::unique_ptr<SymbolicExpr> expr2,
+    const CompareOperator& operator
+  ) : BinaryExpr(std::move(expr1), std::move(expr2)), operator(operator) {}
+
+  std::string binaryOperator() const override {
+    switch (operator) {
+      case CompareOperator::EQ:
+        return "==";
+      case CompareOperator::NE:
+        return "!=";
+      case CompareOperator::LT:
+        return "<";
+      case CompareOperator::LE:
+        return "<=";
+      case CompareOperator::GT:
+        return ">";
+      case CompareOperator::GE:
+        return ">=";
+    }
+  }
+
+  const CompareOperator getOperator() const {
+    return operator;
+  }
+
+private:
+  const CompareOperator operator;
 };
 
 } // rosdiscover

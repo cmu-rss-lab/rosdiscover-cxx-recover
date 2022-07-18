@@ -57,7 +57,19 @@ public:
       case clang::BinaryOperator::Opcode::BO_LAnd: 
         return std::make_unique<AndExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()));
       case clang::BinaryOperator::Opcode::BO_LOr: 
-        return std::make_unique<OrExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()));        
+        return std::make_unique<OrExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()));
+      case clang::BinaryOperator::Opcode::BO_EQ: 
+        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::EQ);
+      case clang::BinaryOperator::Opcode::BO_NE: 
+        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::NE);
+      case clang::BinaryOperator::Opcode::BO_LT: 
+        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::LT);
+      case clang::BinaryOperator::Opcode::BO_LE: 
+        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::LE);
+      case clang::BinaryOperator::Opcode::BO_GT:
+        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::GT);
+      case clang::BinaryOperator::Opcode::BO_GE: 
+        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::GE);
       default: 
         llvm::outs() << "Unsupported binar operator: " << binOpExpr->getOpcode() << " in expr: " << prettyPrint(binOpExpr, astContext);
         return valueBuilder.unknown();
