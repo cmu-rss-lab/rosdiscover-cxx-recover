@@ -10,6 +10,7 @@
 #include "../Builder/ValueBuilder.h"
 #include "../Value/String.h"
 #include "../Helper/FindDefVisitor.h"
+#include "../ApiCall/Calls/Util.h"
 
 #include "../Ast/Stmt/Exprs.h"
 #include "IntSymbolizer.h"
@@ -38,10 +39,17 @@ public:
 
     expr = expr->IgnoreParenCasts()->IgnoreImpCasts()->IgnoreCasts();
 
+    auto *constNum = api_call::evaluateNumber("ExprSymbolizer", expr, astContext);
+    if (constNum != nullptr) {
+      return std::make_unique<SymbolicConstant>(*constNum);
+    } 
+
     if (auto *binOpExpr = clang::dyn_cast<clang::BinaryOperator>(expr)) {
       return symbolizeBinaryOp(binOpExpr);
     } else if (auto *unaryOpExpr = clang::dyn_cast<clang::UnaryOperator>(expr)) {
       return symbolizeUnaryOp(unaryOpExpr);
+    } else if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(expr)) {
+      return symbolizeDeclRef(declRefExpr);
     } 
 
     llvm::outs() << "symbolizing (expr): ";
@@ -49,6 +57,25 @@ public:
     llvm::outs() << "\n";
 
     llvm::outs() << "unable to symbolize expression (expr): treating as unknown\n";
+    return valueBuilder.unknown();
+  }
+
+  std::unique_ptr<SymbolicExpr> symbolizeDeclRef(const clang::DeclRefExpr *declRefExpr) {
+    if (declRefExpr->getDecl() == nullptr)  {
+      llvm::outs() << "unable to symbolize expression (expr) since decl wasn't found: treating as unknown\n";
+      declRefExpr->dump();
+      return valueBuilder.unknown();    
+    }
+
+    auto decl = declRefExpr->getDecl();
+    if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
+      return std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
+    } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
+      return std::make_unique<SymbolicCall>(declRefExpr);
+    }
+
+    llvm::outs() << "unable to symbolize expression (expr) due to unsupported decl type: treating as unknown\n";
+    declRefExpr->dump();
     return valueBuilder.unknown();
   }
 
