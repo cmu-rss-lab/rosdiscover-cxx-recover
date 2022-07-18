@@ -691,7 +691,16 @@ private:
   }
 
   // Recursively builds a graph of control dependencies starting from the last block.
-  std::vector<CFGBlock*> buildGraph(bool first, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed, std::vector<CFGBlock*> &controlDependencyGraphNodes, std::unordered_map<long, CFGBlock*> &blockMap) {
+  std::vector<CFGBlock*> buildGraph(
+    bool first,
+    const clang::CFGBlock* block,
+    const llvm::SmallVector<clang::CFGBlock *, 4> &deps,
+    clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis,
+    clang::CFGDominatorTreeImpl<false> &dominatorAnalysis,
+    std::vector<const clang::CFGBlock*> &analyzed,
+    std::vector<CFGBlock*> &controlDependencyGraphNodes,
+    std::unordered_map<long, CFGBlock*> &blockMap
+  ) {
     std::vector<CFGBlock*> predecessors;
     if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
       return predecessors;
@@ -704,7 +713,16 @@ private:
 
     // Recursively build the graph for the block's predecessors
     for (const clang::CFGBlock::AdjacentBlock predecessorBlock: block->preds()) {
-      auto indirectPredecessors = buildGraph(false, predecessorBlock.getReachableBlock(), deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, blockMap);
+      auto indirectPredecessors = buildGraph(
+        false,
+        predecessorBlock.getReachableBlock(),
+        deps,
+        postdominatorAnalysis,
+        dominatorAnalysis,
+        analyzed,
+        controlDependencyGraphNodes,
+        blockMap
+      );
       predecessors.insert(predecessors.end(), indirectPredecessors.begin(), indirectPredecessors.end()); //merge results
     }
 
