@@ -44,6 +44,10 @@ public:
       return std::make_unique<SymbolicConstant>(*constNum);
     } 
 
+    llvm::outs() << "symbolizing (expr): ";
+    expr->dump();
+    llvm::outs() << "\n";
+
     if (auto *binOpExpr = clang::dyn_cast<clang::BinaryOperator>(expr)) {
       return symbolizeBinaryOp(binOpExpr);
     } else if (auto *unaryOpExpr = clang::dyn_cast<clang::UnaryOperator>(expr)) {
@@ -56,13 +60,9 @@ public:
       return symbolize(memberExpr->getBase());
     } else if (auto *literal = clang::dyn_cast<clang::StringLiteral>(expr)) {
       return std::make_unique<SymbolicStringConstant>(literal->getString().str());
-    } 
+    }
 
-    llvm::outs() << "symbolizing (expr): ";
-    expr->dump();
-    llvm::outs() << "\n";
-
-    llvm::outs() << "unable to symbolize expression (expr): treating as unknown\n";
+    llvm::outs() << "unable to symbolize expression (expr): Unsupported expression type " << expr->getStmtClassName() << ". treating as unknown\n";
     return valueBuilder.unknown();
   }
   
