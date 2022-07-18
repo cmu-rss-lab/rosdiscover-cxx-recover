@@ -55,11 +55,8 @@ public:
     } else if (auto *memberExpr = clang::dyn_cast<clang::MemberExpr>(expr)) {
       return symbolize(memberExpr->getBase());
     } else if (auto *literal = clang::dyn_cast<clang::StringLiteral>(expr)) {
-      valueBuilder.stringLiteral(literal->getString().str());
-
-      return symbolize(memberExpr->getBase());
+      return std::make_unique<SymbolicStringConstant>(literal->getString().str());
     } 
-
 
     llvm::outs() << "symbolizing (expr): ";
     expr->dump();

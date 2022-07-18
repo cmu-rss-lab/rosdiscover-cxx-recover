@@ -13,6 +13,32 @@ public:
 
 };
 
+class SymbolicStringConstant : public SymbolicExpr {
+public:
+  SymbolicStringConstant(
+    std::string const value
+  ) : value(value) {}
+  ~SymbolicStringConstant(){}
+  
+  void print(llvm::raw_ostream &os) const override {
+    os << "(SymbolicStringConstant " << toString() << ")";
+  }
+
+  std::string toString() const override {
+    return value;
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "SymbolicConstant"},
+      {"string", value},
+    };
+  }
+
+private:
+  std::string value;
+};
+
 class SymbolicConstant : public SymbolicExpr {
 public:
   SymbolicConstant(
