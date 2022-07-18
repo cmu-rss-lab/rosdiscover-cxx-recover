@@ -178,4 +178,44 @@ private:
   const CompareOperator op;
 };
 
+enum class BinaryMathOperator {
+  Add,
+  Sub,
+  Mul,
+  Div,
+  Rem
+};
+
+class BinaryMathExpr : public BinaryExpr {
+public:
+
+  BinaryMathExpr(
+    std::unique_ptr<SymbolicExpr> expr1,
+    std::unique_ptr<SymbolicExpr> expr2,
+    const BinaryMathOperator op
+    ) : BinaryExpr(std::move(expr1), std::move(expr2)), op(op) {}
+
+  std::string binaryOperator() const override {
+    switch (op) {
+      case BinaryMathOperator::Add:
+        return "+";
+      case BinaryMathOperator::Sub:
+        return "-";
+      case BinaryMathOperator::Mul:
+        return "*";
+      case BinaryMathOperator::Div:
+        return "/";
+      case BinaryMathOperator::Rem:
+        return "%";        
+    }
+  }
+
+  const BinaryMathOperator getOperator() const {
+    return op;
+  }
+
+private:
+  const BinaryMathOperator op;
+};
+
 } // rosdiscover
