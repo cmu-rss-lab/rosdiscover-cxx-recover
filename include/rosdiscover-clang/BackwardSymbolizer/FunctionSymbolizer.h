@@ -780,23 +780,23 @@ private:
     }
   }
 
-  CFGBlock* buildGraph(const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis) {
+  CFGBlock* buildGraph(const clang::CFGBlock* blockOfInterest, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis) {
     std::vector<const clang::CFGBlock*> analyzed;
     std::unordered_map<long, CFGBlock*> blockMap; //maps BlockID to CFGBlockObject
-    auto cfgBlock = new CFGBlock(block);
-    blockMap.emplace(block->getBlockID(), cfgBlock);
+    auto cfgBlock = new CFGBlock(blockOfInterest);
+    blockMap.emplace(blockOfInterest->getBlockID(), cfgBlock);
     std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlock};
     for (auto depsBlock: deps) {
-      if (postdominatorAnalysis.dominates(depsBlock, block) && !dominatorAnalysis.dominates(depsBlock, block))
-        continue;
+      if (postdominatorAnalysis.dominates(depsBlock, blockOfInterest) && !dominatorAnalysis.dominates(depsBlock, blockOfInterest))
+        continue; //ignore CFG blocks that come after the block of interest.
       auto depsCfgBlock = new CFGBlock(depsBlock);
       blockMap.emplace(depsBlock->getBlockID(), depsCfgBlock);
       controlDependencyGraphNodes.push_back(depsCfgBlock);
     }
     llvm::outs() << "#### buildGraph ####\n";
-    buildGraph(true, block, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, blockMap);
+    buildGraph(true, blockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, blockMap);
     llvm::outs() << "#### graph built ####\n";
-    return blockMap.at(block->getBlockID());
+    return blockMap.at(blockOfInterest->getBlockID());
   }
 
   std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const clang::Stmt* stmt) {
