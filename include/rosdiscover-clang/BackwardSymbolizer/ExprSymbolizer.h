@@ -48,16 +48,34 @@ public:
       return symbolizeBinaryOp(binOpExpr);
     } else if (auto *unaryOpExpr = clang::dyn_cast<clang::UnaryOperator>(expr)) {
       return symbolizeUnaryOp(unaryOpExpr);
+    } else if (auto *operatorCallExpr = clang::dyn_cast<clang::CXXOperatorCallExpr>(expr)) {
+      return symbolizeOperatorCallExpr(operatorCallExpr);
     } else if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(expr)) {
       return symbolizeDeclRef(declRefExpr);
     } else if (auto *memberExpr = clang::dyn_cast<clang::MemberExpr>(expr)) {
       return symbolize(memberExpr->getBase());
+    } else if (auto *literal = clang::dyn_cast<clang::StringLiteral>(expr)) {
+      valueBuilder.stringLiteral(literal->getString().str());
+
+      return symbolize(memberExpr->getBase());
     } 
+
 
     llvm::outs() << "symbolizing (expr): ";
     expr->dump();
     llvm::outs() << "\n";
 
+    llvm::outs() << "unable to symbolize expression (expr): treating as unknown\n";
+    return valueBuilder.unknown();
+  }
+  
+  std::unique_ptr<SymbolicExpr> symbolizeOperatorCallExpr(const clang::CXXOperatorCallExpr *operatorCallExpr) {
+    const std::string op = prettyPrint(operatorCallExpr->getCallee(), astContext);
+    if (operatorCallExpr->isComparisonOp()) {
+      return std::make_unique<CompareExpr>(symbolize(operatorCallExpr->getArg(0)), symbolize(operatorCallExpr->getArg(1)), op);
+    } else if (op == "!") {
+      return std::make_unique<NegateExpr>(symbolize(operatorCallExpr->getArg(0)));
+    }
     llvm::outs() << "unable to symbolize expression (expr): treating as unknown\n";
     return valueBuilder.unknown();
   }

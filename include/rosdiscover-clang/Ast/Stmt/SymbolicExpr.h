@@ -141,7 +141,8 @@ enum class CompareOperator {
   LT,
   LE,
   GT,
-  GE
+  GE,
+  Spaceship
 };
 
 class CompareExpr : public BinaryExpr {
@@ -150,8 +151,32 @@ public:
   CompareExpr(
     std::unique_ptr<SymbolicExpr> expr1,
     std::unique_ptr<SymbolicExpr> expr2,
+    const std::string op
+    ) : BinaryExpr(std::move(expr1), std::move(expr2)), op(compareOperatorFromString(op)) {}
+
+  CompareExpr(
+    std::unique_ptr<SymbolicExpr> expr1,
+    std::unique_ptr<SymbolicExpr> expr2,
     const CompareOperator op
     ) : BinaryExpr(std::move(expr1), std::move(expr2)), op(op) {}
+
+  static const CompareOperator compareOperatorFromString(const std::string str) {
+    if (str == "==")
+      return CompareOperator::EQ;
+    else if (str == "!=")      
+      return CompareOperator::NE;
+    else if (str == "<")
+      return CompareOperator::LT;
+    else if (str == "<=")
+      return CompareOperator::LE;
+    else if (str == ">")
+      return CompareOperator::GT;
+    else if (str == ">=")
+      return CompareOperator::GE;
+      else if (str == "<=>")
+    return CompareOperator::Spaceship;
+    abort();
+  }
 
   std::string binaryOperator() const override {
     switch (op) {
@@ -167,6 +192,8 @@ public:
         return ">";
       case CompareOperator::GE:
         return ">=";
+      case CompareOperator::Spaceship:
+        return "<=>";
     }
   }
 

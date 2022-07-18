@@ -87,8 +87,8 @@ namespace api_call {
 clang::APValue const * evaluateNumber(
   const std::string debugTag, 
   const clang::Expr *expr,
-  const clang::ASTContext &Ctx
-) {
+  const clang::ASTContext &Ctx,
+  bool debugPrint=true) {
   //Try evaluating the frequency as integer.
   clang::Expr::EvalResult resultInt;
   if (expr->EvaluateAsInt(resultInt, Ctx)) {
@@ -111,9 +111,11 @@ clang::APValue const * evaluateNumber(
   } 
 
   //All evaluation attempts have failed.
-  llvm::outs() << "DEBUG [" << debugTag << "]: has unsupported type: "; 
-  expr->dump();
-  llvm::outs() << "\n";
+  if (debugPrint) {
+    llvm::outs() << "DEBUG [" << debugTag << "]: has unsupported type: "; 
+    expr->dump();
+    llvm::outs() << "\n";
+  }
 
   return nullptr;
 }
