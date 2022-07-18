@@ -25,7 +25,7 @@ public:
   }
 
   std::string toString() const override {
-    return value;
+    return "\""+value+"\"";
   }
 
   nlohmann::json toJson() const override {
