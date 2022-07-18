@@ -690,10 +690,11 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
+  // Recursively builds a graph of control dependencies starting from the last block.
   std::vector<CFGBlock*> buildGraph(bool first, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed, std::vector<CFGBlock*> &analyzedDeps, std::unordered_map<long, CFGBlock*> &blockMap) {
-    std::vector<CFGBlock*> result;
+    std::vector<CFGBlock*> predecessors;
     if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
-      return result;
+      return predecessors;
     }
     analyzed.push_back(block);
     
@@ -701,33 +702,28 @@ private:
     block->dump();
     llvm::outs() << "\n";
 
-    for (const clang::CFGBlock::AdjacentBlock b: block->preds()) {
-      llvm::outs() << "pred: ";
-      b->dump();
-      llvm::outs() << "\n";
-      
-
-      auto r = buildGraph(false, b.getReachableBlock(), deps, postdominatorAnalysis, dominatorAnalysis, analyzed, analyzedDeps, blockMap);
-      llvm::outs() << "merging results\n";
-      result.insert(result.end(), r.begin(), r.end());
-      llvm::outs() << "merged results\n";
+    // Recursively build the graph for the block's predecessors
+    for (const clang::CFGBlock::AdjacentBlock predecessorBlock: block->preds()) {
+      auto indirectPredecessors = buildGraph(false, predecessorBlock.getReachableBlock(), deps, postdominatorAnalysis, dominatorAnalysis, analyzed, analyzedDeps, blockMap);
+      predecessors.insert(predecessors.end(), indirectPredecessors.begin(), indirectPredecessors.end()); //merge results
     }
 
+    // Create a node for control dependencies and the first block
     if (first || llvm::is_contained(deps, block)) {
-      if (!blockMap.count(block->getBlockID()))
+      if (!blockMap.count(block->getBlockID())) //lazy creation of CFG blocks
         blockMap.emplace(block->getBlockID(), new CFGBlock(block));
 
-      auto newBlock = blockMap.at(block->getBlockID());
-      analyzedDeps.push_back(newBlock);
-      llvm::outs() << "predecessor size: " << result.size() << "\n";
-      for (auto *predecessor: result) {
-        for(auto depBlock :analyzedDeps) {
+      auto newControlDependencyNode = blockMap.at(block->getBlockID());
+
+      // Create edges for predecessors
+      for (auto *predecessor: predecessors) {
+
+        // Check all nodes of the control dependency graph for potential edges to be created and their type
+        for(auto *depBlock : analyzedDeps) {
           bool trueBranchDominates = false;
           bool falseBranchDominates = false;
+
           int i = 0;
-          llvm::outs() << "predecessor: ";
-          predecessor->getClangBlock()->dump();
-          llvm::outs() << "\n";
           for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
             // The only post-dominating control dependency is the directly following control dependency,
             // The exception to this is the head of a loop, which is the only control dependency which then also pre-dominiates the 
@@ -744,16 +740,14 @@ private:
               } 
             } 
             if (i > 1) {
-              //TODO: Handle switch-case here
+              //TODO: Handle switch-case here.
               llvm::outs() << "Too many branches. Swich not yet supported\n";
               abort();
             }
-            llvm::outs() << i++;
-            sBlock->dump();
-            llvm::outs() << "\n";
+            i++;
           }
           if (!trueBranchDominates && !falseBranchDominates) {
-            continue;
+            continue; // No edge needed
           }
           if (trueBranchDominates && falseBranchDominates){
             llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << "\n";
@@ -761,6 +755,7 @@ private:
             depBlock->getClangBlock()->dump();
             abort();
           }
+          
           llvm::outs() << "creating edge\n";
           CFGEdge::EdgeType type;
           if (i == 1) {
@@ -769,7 +764,7 @@ private:
             type = falseBranchDominates ? CFGEdge::EdgeType::False : CFGEdge::EdgeType::True;
           } else {
             type = CFGEdge::EdgeType::Unknown;
-            llvm::outs() << "ERROR: Unknown edge\n";
+            llvm::outs() << "ERROR: Unknown edge type\n";
           }
 
           if (predecessor->createEdge(depBlock, type)) {
@@ -777,13 +772,9 @@ private:
           }
         }
       }
-      llvm::outs() << "return one\n";
-      std::vector<CFGBlock*> r;
-      r.push_back(newBlock);
-      return r;
-    } else {
-      llvm::outs() << "return some\n";
-      return result;
+      return {newControlDependencyNode}; // Return newly created control dependency node
+    } else { 
+      return predecessors; // For non-control dependency nodes forward the predecessors to the next dependency node
     }
   }
 
