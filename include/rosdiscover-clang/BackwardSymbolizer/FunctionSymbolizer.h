@@ -756,7 +756,7 @@ private:
             abort();
           }
           
-          llvm::outs() << "creating edge\n";
+          // Creating edge
           CFGEdge::EdgeType type;
           if (i == 1) {
             type = CFGEdge::EdgeType::Normal;
