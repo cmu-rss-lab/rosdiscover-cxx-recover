@@ -753,6 +753,8 @@ private:
             llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << "\n";
             llvm::outs() << "depBlock->getClangBlock(): ";
             depBlock->getClangBlock()->dump();
+            llvm::outs() << "\npredecessor->getClangBlock(): ";
+            predecessor->getClangBlock()->dump();
             abort();
           }
           
