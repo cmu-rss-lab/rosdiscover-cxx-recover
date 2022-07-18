@@ -691,7 +691,7 @@ private:
   }
 
   // Recursively builds a graph of control dependencies starting from the last block.
-  std::vector<CFGBlock*> buildGraph(bool first, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed, std::vector<CFGBlock*> &analyzedDeps, std::unordered_map<long, CFGBlock*> &blockMap) {
+  std::vector<CFGBlock*> buildGraph(bool first, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed, std::vector<CFGBlock*> &controlDependencyGraphNodes, std::unordered_map<long, CFGBlock*> &blockMap) {
     std::vector<CFGBlock*> predecessors;
     if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
       return predecessors;
@@ -704,7 +704,7 @@ private:
 
     // Recursively build the graph for the block's predecessors
     for (const clang::CFGBlock::AdjacentBlock predecessorBlock: block->preds()) {
-      auto indirectPredecessors = buildGraph(false, predecessorBlock.getReachableBlock(), deps, postdominatorAnalysis, dominatorAnalysis, analyzed, analyzedDeps, blockMap);
+      auto indirectPredecessors = buildGraph(false, predecessorBlock.getReachableBlock(), deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, blockMap);
       predecessors.insert(predecessors.end(), indirectPredecessors.begin(), indirectPredecessors.end()); //merge results
     }
 
@@ -719,7 +719,7 @@ private:
       for (auto *predecessor: predecessors) {
 
         // Check all nodes of the control dependency graph for potential edges to be created and their type
-        for(auto *depBlock : analyzedDeps) {
+        for(auto *depBlock : controlDependencyGraphNodes) {
           bool trueBranchDominates = false;
           bool falseBranchDominates = false;
 
@@ -780,15 +780,17 @@ private:
 
   CFGBlock* buildGraph(const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis) {
     std::vector<const clang::CFGBlock*> analyzed;
-    std::vector<CFGBlock*> analyzedDeps;
     std::unordered_map<long, CFGBlock*> blockMap; //maps BlockID to CFGBlockObject
-    for (auto b: deps) {
-      auto b2 = new CFGBlock(b);
-      blockMap.emplace(b->getBlockID(), b2);
-      analyzedDeps.push_back(b2);
+    auto cfgBlock = new CFGBlock(block);
+    blockMap.emplace(block->getBlockID(), cfgBlock);
+    std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlock};
+    for (auto depsBlock: deps) {
+      auto depsCfgBlock = new CFGBlock(depsBlock);
+      blockMap.emplace(depsBlock->getBlockID(), depsCfgBlock);
+      controlDependencyGraphNodes.push_back(depsCfgBlock);
     }
     llvm::outs() << "#### buildGraph ####\n";
-    buildGraph(true, block, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, analyzedDeps, blockMap);
+    buildGraph(true, block, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, blockMap);
     llvm::outs() << "#### graph built ####\n";
     return blockMap.at(block->getBlockID());
   }
