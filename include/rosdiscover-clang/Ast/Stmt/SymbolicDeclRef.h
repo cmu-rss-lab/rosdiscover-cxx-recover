@@ -5,12 +5,12 @@
 #include <clang/AST/Expr.h>
 #include <clang/AST/Type.h>
 
-#include "Stmt.h"
+#include "SymbolicExpr.h"
 #include "../../ApiCall/Calls/Util.h"
 
 namespace rosdiscover {
 
-class SymbolicDeclRef : public SymbolicStmt {
+class SymbolicDeclRef : public SymbolicExpr {
 public:
   SymbolicDeclRef(
     bool isInstanceMember,
@@ -31,6 +31,10 @@ public:
       isClassMember(declRef->getDecl()->isCXXClassMember()),
       typeName(declRef->getType().getAsString()),
       name(createName(declRef)) {}
+
+  std::string toString() const override {
+    return name;
+  }
 
   void print(llvm::raw_ostream &os) const override {
     os << "(declRef " << name << " : " << typeName << ")";
