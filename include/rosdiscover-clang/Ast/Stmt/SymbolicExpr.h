@@ -13,6 +13,49 @@ public:
 
 };
 
+class TrueExpr : public SymbolicExpr {
+public:
+  TrueExpr() {}
+  ~TrueExpr(){}
+
+  void print(llvm::raw_ostream &os) const override {
+    os << toString();
+  }
+
+  std::string toString() const override {
+    return "true";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "TrueExpr"},
+      {"string", toString()},
+    };
+
+  }
+};
+
+class FalseExpr : public SymbolicExpr {
+public:
+  FalseExpr() {}
+  ~FalseExpr(){}
+  
+  void print(llvm::raw_ostream &os) const override {
+    os << toString();
+  }
+
+  std::string toString() const override {
+    return "false";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "FalseExpr"},
+      {"string", toString()},
+    };
+  }
+};
+
 class SymbolicStringConstant : public SymbolicExpr {
 public:
   SymbolicStringConstant(

@@ -60,6 +60,8 @@ public:
       return symbolize(memberExpr->getBase());
     } else if (auto *literal = clang::dyn_cast<clang::StringLiteral>(expr)) {
       return std::make_unique<SymbolicStringConstant>(literal->getString().str());
+    } else if (auto *callExpr = clang::dyn_cast<clang::CallExpr>(expr)) {
+      return symbolizeCallExpr(callExpr);
     }
 
     llvm::outs() << "unable to symbolize expression (expr): Unsupported expression type " << expr->getStmtClassName() << ". treating as unknown\n";
@@ -92,6 +94,21 @@ public:
     }
 
     llvm::outs() << "unable to symbolize expression (expr) due to unsupported decl type: treating as unknown\n";
+    declRefExpr->dump();
+    return valueBuilder.unknown();
+  }
+
+  std::unique_ptr<SymbolicExpr> symbolizeCallExpr(const clang::CallExpr *callExpr) {
+    auto funcDecl = callExpr->getDirectCallee();
+    if (funcDecl == nullptr) {
+      llvm::outs() << "unable to symbolize expression (expr) since func decl wasn't found: treating as unknown\n";
+      callExpr->dump();
+      return valueBuilder.unknown();
+    }
+    if (funcDecl->getQualifiedNameAsString() == "ros::ok") {
+      return std::make_unique<TrueExpr>();
+    }
+    llvm::outs() << "unable to symbolize expression (expr) due to unknown call name: treating as unknown\n";
     declRefExpr->dump();
     return valueBuilder.unknown();
   }
