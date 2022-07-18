@@ -38,12 +38,30 @@ public:
 
     expr = expr->IgnoreParenCasts()->IgnoreImpCasts()->IgnoreCasts();
 
+    if (auto *binaryOp = clang::dyn_cast<clang::BinaryOperator>(expr)) {
+      return symbolizeBinaryOp(binaryOp);
+    } 
+
+
     llvm::outs() << "symbolizing (expr): ";
     expr->dump();
     llvm::outs() << "\n";
 
     llvm::outs() << "unable to symbolize expression (expr): treating as unknown\n";
     return valueBuilder.unknown();
+  }
+
+  std::unique_ptr<SymbolicExpr> symbolizeBinaryOp(clang::BinaryOperator *binOp) {
+    llvm::outs() << "unable to symbolize expression (expr): treating as unknown\n";
+    switch (binOp->getOpcode()) {
+      case clang::BinaryOperator::Opcode::BO_LAnd: 
+        return std::make_unique<AndExpr>(symbolize(binOp->getLHS()), symbolize(binOp->getRHS()));
+      case clang::BinaryOperator::Opcode::BO_LOr: 
+        return std::make_unique<OrExpr>(symbolize(binOp->getLHS()), symbolize(binOp->getRHS()));        
+      default: 
+        llvm::outs() << "Unsupported boolean operator: " << binOp->getOpcode() << " in expr: " << prettyPrint(binOp, astContext);
+        return valueBuilder.unknown();
+    }
   }
 
 private:

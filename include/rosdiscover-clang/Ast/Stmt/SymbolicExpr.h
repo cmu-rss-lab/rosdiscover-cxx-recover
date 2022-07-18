@@ -80,6 +80,12 @@ private:
 
 class OrExpr : public BinaryExpr {
 public:
+
+  OrExpr(
+    std::unique_ptr<SymbolicExpr> expr1,
+    std::unique_ptr<SymbolicExpr> expr2
+  ) : BinaryExpr(std::move(expr1),std::move(expr2)) {}
+
   std::string binaryOperator() const override {
     return "||";
   }
@@ -87,6 +93,12 @@ public:
 
 class AndExpr : public BinaryExpr {
 public:
+
+  AndExpr(
+    std::unique_ptr<SymbolicExpr> expr1,
+    std::unique_ptr<SymbolicExpr> expr2
+  ) : BinaryExpr(std::move(expr1),std::move(expr2)) {}
+
   std::string binaryOperator() const override {
     return "&&";
   }
