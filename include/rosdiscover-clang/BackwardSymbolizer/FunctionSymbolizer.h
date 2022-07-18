@@ -690,7 +690,7 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  std::vector<CFGBlock*> buildGraph(bool first, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed, std::vector<CFGBlock*> &analyzedDeps, std::unordered_map<long, CFGBlock*> &blockMap) {
+  std::vector<CFGBlock*> buildGraph(bool first, const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis, std::vector<const clang::CFGBlock*> &analyzed, std::vector<CFGBlock*> &analyzedDeps, std::unordered_map<long, CFGBlock*> &blockMap) {
     std::vector<CFGBlock*> result;
     if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
       return result;
@@ -707,7 +707,7 @@ private:
       llvm::outs() << "\n";
       
 
-      auto r = buildGraph(false, b.getReachableBlock(), deps, dominatorAnalysis, analyzed, analyzedDeps, blockMap);
+      auto r = buildGraph(false, b.getReachableBlock(), deps, postdominatorAnalysis, dominatorAnalysis, analyzed, analyzedDeps, blockMap);
       llvm::outs() << "merging results\n";
       result.insert(result.end(), r.begin(), r.end());
       llvm::outs() << "merged results\n";
@@ -729,19 +729,18 @@ private:
           predecessor->getClangBlock()->dump();
           llvm::outs() << "\n";
           for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
-            if (i == 0) { //true branch, as defined by clang's order of successors
-            //TODO: Ensure that no blocks are skipped
-              //the only post-dominating control dependency is the directly following control dependency
-              if (dominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
-                llvm::outs() << "true branch dominates stmt\n";
-                trueBranchDominates = true;
-              }
-            } else if (i == 1) { //false branch
-              if (dominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
-                llvm::outs() << "false branch dominates stmt\n";
-                falseBranchDominates = true;
-              }
-            } else {
+            if ((postdominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock) && !dominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock)) || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
+              if (i == 0) { //true branch, as defined by clang's order of successors
+              //TODO: Ensure that no blocks are skipped
+                //the only post-dominating control dependency is the directly following control dependency
+                  llvm::outs() << "true branch dominates stmt\n";
+                  trueBranchDominates = true;
+              } else if (i == 1) { //false branch
+                  llvm::outs() << "false branch dominates stmt\n";
+                  falseBranchDominates = true;
+              } 
+            } 
+            if (i > 1) {
               //TODO: Handle switch-case here
               llvm::outs() << "Too many branches. Swich not yet supported\n";
               abort();
@@ -785,7 +784,7 @@ private:
     }
   }
 
-  CFGBlock* buildGraph(const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &dominatorAnalysis) {
+  CFGBlock* buildGraph(const clang::CFGBlock* block, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis) {
     std::vector<const clang::CFGBlock*> analyzed;
     std::vector<CFGBlock*> analyzedDeps;
     std::unordered_map<long, CFGBlock*> blockMap; //maps BlockID to CFGBlockObject
@@ -795,7 +794,7 @@ private:
       analyzedDeps.push_back(b2);
     }
     llvm::outs() << "#### buildGraph ####\n";
-    buildGraph(true, block, deps, dominatorAnalysis, analyzed, analyzedDeps, blockMap);
+    buildGraph(true, block, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, analyzedDeps, blockMap);
     llvm::outs() << "#### graph built ####\n";
     return blockMap.at(block->getBlockID());
   }
@@ -817,11 +816,12 @@ private:
     auto prevBlock = stmt_block;
     auto analysis = std::make_unique<clang::CFGReverseBlockReachabilityAnalysis>(*(sourceCFG.get()));
     clang::CFGDominatorTreeImpl<true> postDominatorAnalysis(sourceCFG.get());
+    clang::CFGDominatorTreeImpl<false> dominatorAnalysis(sourceCFG.get());
 
     for (clang::CFGBlock *block: deps) {
       block->dump();
     }
-    auto graph = buildGraph(stmt_block, deps, postDominatorAnalysis);
+    auto graph = buildGraph(stmt_block, deps, postDominatorAnalysis, dominatorAnalysis);
     graph->getClangBlock()->dump();
     auto condStr = graph->getFullConditionStr(astContext);
     llvm::outs() << "\nFullControlCondition: " << condStr << "\n";
