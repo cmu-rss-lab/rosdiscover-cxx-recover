@@ -787,6 +787,8 @@ private:
     blockMap.emplace(block->getBlockID(), cfgBlock);
     std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlock};
     for (auto depsBlock: deps) {
+      if (postdominatorAnalysis.dominates(depsBlock, block) && !dominatorAnalysis.dominates(depsBlock, block))
+        continue;
       auto depsCfgBlock = new CFGBlock(depsBlock);
       blockMap.emplace(depsBlock->getBlockID(), depsCfgBlock);
       controlDependencyGraphNodes.push_back(depsCfgBlock);
