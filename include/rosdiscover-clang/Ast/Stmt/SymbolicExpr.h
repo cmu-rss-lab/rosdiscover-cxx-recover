@@ -119,11 +119,11 @@ public:
   CompareExpr(
     std::unique_ptr<SymbolicExpr> expr1,
     std::unique_ptr<SymbolicExpr> expr2,
-    const CompareOperator& operator
-  ) : BinaryExpr(std::move(expr1), std::move(expr2)), operator(operator) {}
+    const CompareOperator op
+    ) : BinaryExpr(std::move(expr1), std::move(expr2)), op(op) {}
 
   std::string binaryOperator() const override {
-    switch (operator) {
+    switch (op) {
       case CompareOperator::EQ:
         return "==";
       case CompareOperator::NE:
@@ -140,11 +140,11 @@ public:
   }
 
   const CompareOperator getOperator() const {
-    return operator;
+    return op;
   }
 
 private:
-  const CompareOperator operator;
+  const CompareOperator op;
 };
 
 } // rosdiscover
