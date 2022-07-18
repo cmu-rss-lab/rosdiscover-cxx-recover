@@ -5,6 +5,7 @@
 #include <nlohmann/json.hpp>
 
 #include <llvm/Support/raw_ostream.h>
+#include "../Ast/Stmt/SymbolicExpr.h"
 
 namespace rosdiscover {
 
@@ -84,6 +85,7 @@ class SymbolicUnknown :
   public virtual SymbolicBool,
   public virtual SymbolicInteger,
   public virtual SymbolicFloat,
+  public virtual SymbolicExpr,
   public virtual SymbolicNodeHandle
 {
 public:
@@ -92,6 +94,10 @@ public:
 
   bool isUnknown() const override {
     return true;
+  }
+
+  std::string toString() const override {
+    return "unknown";
   }
 
   void print(llvm::raw_ostream &os) const override {

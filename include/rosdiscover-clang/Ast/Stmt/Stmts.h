@@ -7,3 +7,4 @@
 #include "If.h"
 #include "While.h"
 #include "Stmt.h"
+#include "SymbolicExpr.h"
