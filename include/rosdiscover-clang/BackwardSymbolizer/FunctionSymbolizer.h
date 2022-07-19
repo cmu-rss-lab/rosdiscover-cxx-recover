@@ -791,7 +791,7 @@ private:
           }
 
           if (predecessor->createEdge(depBlock, type)) {
-            llvm::outs() << "created edge between " << predecessor->getConditionStr(astContext) << " and " << depBlock->getConditionStr(astContext) << " of type " << CFGEdge::getEdgeTypeName(type) << "\n";
+            llvm::outs() << "created edge between " << predecessor->getConditionStr(astContext, exprSymbolizer) << " and " << depBlock->getConditionStr(astContext, exprSymbolizer) << " of type " << CFGEdge::getEdgeTypeName(type) << "\n";
           }
         }
       }
@@ -849,8 +849,8 @@ private:
     }
     auto graph = buildGraph(stmt_block, deps, postDominatorAnalysis, dominatorAnalysis);
     graph->getClangBlock()->dump();
-    auto condStr = graph->getFullConditionStr(astContext);
-    llvm::outs() << "\nFullControlCondition: " << condStr << "\n";
+    auto condExpr = graph->getFullConditionExpr(astContext, exprSymbolizer);
+    llvm::outs() << "\nFullControlCondition: " << condExpr->toString() << "\n";
 
     for (clang::CFGBlock *block: deps) {
 
@@ -885,17 +885,7 @@ private:
         }
         
         llvm::outs() << "terminator condition found: " << conditionStr << "\n";
-        auto *conditionExpr = clang::dyn_cast<clang::Expr>(condition);
-        if (conditionExpr == nullptr) {
-          llvm::outs() << "ERROR: Terminiator condition is no expression: ";
-          condition->dump();
-          abort();
-        }
-        auto symbolicCondition = exprSymbolizer.symbolize(conditionExpr);
-        llvm::outs() << "Symbolized Expr: " << symbolicCondition->toString() << " for: " << conditionStr << "\n";
-
-
-
+        
         std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
         std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
         for (auto delcRef : getTransitiveChildenByType(condition, true, false)) {
@@ -917,7 +907,7 @@ private:
             std::move(functionCalls), 
             std::move(variableReferences),
             condition->getSourceRange().printToString(astContext.getSourceManager()),
-            conditionStr
+            std::move(condExpr)
           )
         );
 

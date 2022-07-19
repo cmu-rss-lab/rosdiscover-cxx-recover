@@ -16,11 +16,11 @@ public:
     std::vector<std::unique_ptr<SymbolicCall>> functionCalls,
     std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences, 
     std::string const location,
-    std::string const condition=""
+    std::unique_ptr<SymbolicExpr> condition
   ) : functionCalls(std::move(functionCalls)), 
       variableReferences(std::move(variableReferences)), 
       location(location), 
-      condition(condition) {}
+      condition(std::move(condition)) {}
   ~SymbolicControlDependency(){}
 
   void print(llvm::raw_ostream &os) const override {
@@ -41,7 +41,7 @@ public:
       {"calls", jCalls},
       {"variableReferences", jVarrefs},
       {"source-location", location},
-      {"condition", condition},
+      {"condition", condition->toJson()},
     };
   }
 
@@ -49,7 +49,7 @@ private:
   std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
   std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
   std::string const location;
-  std::string const condition;
+  std::unique_ptr<SymbolicExpr> condition;
 };
 
 } // rosdiscover
