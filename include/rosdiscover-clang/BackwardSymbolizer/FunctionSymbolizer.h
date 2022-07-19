@@ -699,7 +699,7 @@ private:
     clang::CFGDominatorTreeImpl<false> &dominatorAnalysis,
     std::vector<const clang::CFGBlock*> &analyzed,
     std::vector<CFGBlock*> &controlDependencyGraphNodes,
-    std::unordered_map<long, CFGBlock*> &blockMap
+    std::unordered_map<long, std::unique_ptr<CFGBlock>> &blockMap
   ) {
     std::vector<CFGBlock*> predecessors;
     if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
@@ -729,9 +729,9 @@ private:
     // Create a node for control dependencies and the first block
     if (first || llvm::is_contained(deps, block)) {
       if (!blockMap.count(block->getBlockID())) //lazy creation of CFG blocks
-        blockMap.emplace(block->getBlockID(), new CFGBlock(block));
+        blockMap.emplace(block->getBlockID(), std::make_unique<CFGBlock>(block));
 
-      auto newControlDependencyNode = blockMap.at(block->getBlockID());
+      auto newControlDependencyNode = blockMap.at(block->getBlockID()).get();
 
       // Create edges for predecessors
       for (auto *predecessor: predecessors) {
@@ -798,23 +798,23 @@ private:
     }
   }
 
-  CFGBlock* buildGraph(const clang::CFGBlock* clangBlockOfInterest, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis) {
+  std::unique_ptr<CFGBlock> buildGraph(const clang::CFGBlock* clangBlockOfInterest, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis) {
     std::vector<const clang::CFGBlock*> analyzed;
-    std::unordered_map<long, CFGBlock*> blockMap; //maps BlockID to CFGBlockObject
-    auto cfgBlockOfInterest = new CFGBlock(clangBlockOfInterest);
-    blockMap.emplace(clangBlockOfInterest->getBlockID(), cfgBlockOfInterest);
-    std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlockOfInterest};
+    std::unordered_map<long, std::unique_ptr<CFGBlock>> blockMap; //maps BlockID to CFGBlockObject
+    auto cfgBlockOfInterest = std::make_unique<CFGBlock>(clangBlockOfInterest);
+    std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlockOfInterest.get()};
+    blockMap.emplace(clangBlockOfInterest->getBlockID(), std::move(cfgBlockOfInterest));
     for (auto depsBlock: deps) {
       if (postdominatorAnalysis.dominates(depsBlock, clangBlockOfInterest) && !dominatorAnalysis.dominates(depsBlock, clangBlockOfInterest))
         continue; //ignore CFG blocks that come after the block of interest.
-      auto depsCfgBlock = new CFGBlock(depsBlock);
-      blockMap.emplace(depsBlock->getBlockID(), depsCfgBlock);
-      controlDependencyGraphNodes.push_back(depsCfgBlock);
+      auto depsCfgBlock = std::make_unique<CFGBlock>(depsBlock);
+      controlDependencyGraphNodes.push_back(depsCfgBlock.get());
+      blockMap.emplace(depsBlock->getBlockID(), std::move(depsCfgBlock));
     }
     llvm::outs() << "#### buildGraph ####\n";
     buildGraph(true, clangBlockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, blockMap);
     llvm::outs() << "#### graph built ####\n";
-    return blockMap.at(clangBlockOfInterest->getBlockID());
+    return std::move(blockMap.at(clangBlockOfInterest->getBlockID()));
   }
 
   std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const clang::Stmt* stmt) {
