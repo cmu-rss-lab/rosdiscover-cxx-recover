@@ -808,7 +808,7 @@ private:
       if (postdominatorAnalysis.dominates(depsBlock, blockOfInterest) && !dominatorAnalysis.dominates(depsBlock, blockOfInterest))
         continue; //ignore CFG blocks that come after the block of interest.
       auto depsCfgBlock = new CFGBlock(depsBlock);
-      blockMap.emplace(depsBlock->getBlockID(), cfgBlockOfInterest);
+      blockMap.emplace(depsBlock->getBlockID(), depsCfgBlock);
       controlDependencyGraphNodes.push_back(depsCfgBlock);
     }
     llvm::outs() << "#### buildGraph ####\n";
