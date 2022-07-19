@@ -57,7 +57,7 @@ public:
       return symbolizeMemberExpr(memberExpr);
     } else if (auto *literal = clang::dyn_cast<clang::StringLiteral>(expr)) {
       return std::make_unique<SymbolicStringConstant>(literal->getString().str());
-    } else if (auto *literal = clang::dyn_cast<clang::BoolLiteral>(expr)) {
+    } else if (auto *literal = clang::dyn_cast<clang::CXXBoolLiteralExpr>(expr)) {
       return symbolizeBoolLiteral(literal);
     } else if (auto *callExpr = clang::dyn_cast<clang::CallExpr>(expr)) {
       return symbolizeCallExpr(callExpr);
@@ -189,7 +189,7 @@ public:
     }
   }
 
-  std::unique_ptr<SymbolicExpr> symbolizeBoolLiteral(const clang::BoolLiteral *literal) {
+  std::unique_ptr<SymbolicExpr> symbolizeBoolLiteral(const clang::CXXBoolLiteralExpr *literal) {
     bool result;
     literal->EvaluateAsBooleanCondition(result, astContext);
     if (result) {
