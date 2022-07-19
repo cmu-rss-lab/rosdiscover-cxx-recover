@@ -71,9 +71,14 @@ public:
       }
     }
 
-    auto condExpr = clang::dyn_cast<clang::Expr>(clangBlock->getTerminatorCondition());
-    if (!includeSelf || condExpr == nullptr) {
+    if (!includeSelf || clangBlock->getTerminatorCondition() == nullptr) {
       return result;
+    }
+    auto condExpr = clang::dyn_cast<clang::Expr>(clangBlock->getTerminatorCondition());
+    if (condExpr == nullptr) {
+      llvm::outs() << "ERROR: Terminiator condition is no expression: ";
+      clangBlock->getTerminatorCondition()->dump();
+      abort();
     }
 
     auto symbolicCondition = exprSymbolizer.symbolize(condExpr);
