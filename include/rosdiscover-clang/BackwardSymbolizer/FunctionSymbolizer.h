@@ -798,23 +798,23 @@ private:
     }
   }
 
-  CFGBlock* buildGraph(const clang::CFGBlock* blockOfInterest, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis) {
+  CFGBlock* buildGraph(const clang::CFGBlock* clangBlockOfInterest, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis) {
     std::vector<const clang::CFGBlock*> analyzed;
     std::unordered_map<long, CFGBlock*> blockMap; //maps BlockID to CFGBlockObject
-    auto cfgBlockOfInterest = new CFGBlock(blockOfInterest);
-    blockMap.emplace(blockOfInterest->getBlockID(), cfgBlockOfInterest);
+    auto cfgBlockOfInterest = new CFGBlock(clangBlockOfInterest);
+    blockMap.emplace(clangBlockOfInterest->getBlockID(), cfgBlockOfInterest);
     std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlockOfInterest};
     for (auto depsBlock: deps) {
-      if (postdominatorAnalysis.dominates(depsBlock, blockOfInterest) && !dominatorAnalysis.dominates(depsBlock, blockOfInterest))
+      if (postdominatorAnalysis.dominates(depsBlock, clangBlockOfInterest) && !dominatorAnalysis.dominates(depsBlock, clangBlockOfInterest))
         continue; //ignore CFG blocks that come after the block of interest.
       auto depsCfgBlock = new CFGBlock(depsBlock);
       blockMap.emplace(depsBlock->getBlockID(), depsCfgBlock);
       controlDependencyGraphNodes.push_back(depsCfgBlock);
     }
     llvm::outs() << "#### buildGraph ####\n";
-    buildGraph(true, blockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, blockMap);
+    buildGraph(true, clangBlockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, blockMap);
     llvm::outs() << "#### graph built ####\n";
-    return blockMap.at(blockOfInterest->getBlockID());
+    return blockMap.at(clangBlockOfInterest->getBlockID());
   }
 
   std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const clang::Stmt* stmt) {
