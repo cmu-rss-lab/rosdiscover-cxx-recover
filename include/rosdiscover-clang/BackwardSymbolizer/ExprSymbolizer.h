@@ -82,7 +82,16 @@ public:
   }
   
   std::unique_ptr<SymbolicExpr> symbolizeMemberExpr(const clang::MemberExpr *memberExpr) {
-    return std::make_unique<SymbolicVariableReference>(true, false, memberExpr->getType().getAsString(), memberExpr->getMemberNameInfo().getAsString(), false, false, false);    
+    return std::make_unique<SymbolicMemberVariableReference>(
+      true, 
+      false, 
+      memberExpr->getType().getAsString(), 
+      memberExpr->getMemberNameInfo().getAsString(), 
+      false, 
+      false, 
+      false,
+      symbolize(memberExpr->getBase())
+      );    
   }
 
   std::unique_ptr<SymbolicExpr> symbolizeDeclRef(const clang::DeclRefExpr *declRefExpr) {

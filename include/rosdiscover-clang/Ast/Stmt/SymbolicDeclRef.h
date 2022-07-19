@@ -32,7 +32,7 @@ public:
       typeName(declRef->getType().getAsString()),
       name(createName(declRef)) {}
 
-  std::string toString() const override {
+  virtual std::string toString() const override {
     return name;
   }
 
@@ -47,6 +47,7 @@ public:
       {"isClassMember", isClassMember},
       {"type", typeName},
       {"name", name},
+      {"string", this->toString()},
     };
   }
     
