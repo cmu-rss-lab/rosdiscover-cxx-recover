@@ -25,6 +25,7 @@
 #include "IntSymbolizer.h"
 #include "BoolSymbolizer.h"
 #include "FloatSymbolizer.h"
+#include "ExprSymbolizer.h"
 
 namespace rosdiscover {
 

@@ -11,6 +11,20 @@ namespace rosdiscover {
 class SymbolicVariableReference : public SymbolicDeclRef {
 public:
   SymbolicVariableReference(
+    bool isInstanceMember,
+    bool isClassMember,
+    std::string typeName,
+    std::string name,
+    bool isFileVarDecl,
+    bool isLocalVarDeclOrParm,
+    bool isModulePrivate
+  ) : SymbolicDeclRef(isInstanceMember, isClassMember, typeName, name),
+      isFileVarDecl(isFileVarDecl),
+      isLocalVarDeclOrParm(isLocalVarDeclOrParm),
+      isModulePrivate(isModulePrivate)
+  {}
+  
+  SymbolicVariableReference(
     const clang::DeclRefExpr* varRef,
     const clang::VarDecl* varDecl
   ) : SymbolicDeclRef(varRef),
@@ -49,6 +63,49 @@ private:
   bool isFileVarDecl;
   bool isLocalVarDeclOrParm;
   bool isModulePrivate;
+};
+
+class SymbolicMemberVariableReference : public SymbolicVariableReference {
+public:
+  SymbolicMemberVariableReference(
+    bool isInstanceMember,
+    bool isClassMember,
+    std::string typeName,
+    std::string name,
+    bool isFileVarDecl,
+    bool isLocalVarDeclOrParm,
+    bool isModulePrivate,
+    std::unique_ptr<SymbolicExpr> base
+  ) : SymbolicVariableReference(isInstanceMember, isClassMember, typeName, name, isFileVarDecl, isLocalVarDeclOrParm, isModulePrivate),
+      base(std::move(base))
+  {}
+  
+  SymbolicMemberVariableReference(
+    const clang::DeclRefExpr* varRef,
+    const clang::VarDecl* varDecl,
+    std::unique_ptr<SymbolicExpr> base
+  ) : SymbolicVariableReference(varRef, varDecl),
+      base(std::move(base))
+  {}
+  ~SymbolicMemberVariableReference(){}
+
+  std::string toString() const override {
+    return  base->toString() + "." + getName();
+  }
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(memberVarRef " << toString() << " : " << getTypeName() << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    auto j = SymbolicVariableReference::toJson();
+    j["kind"] = "memberVarRef";
+    j["base"] = base->toJson();
+    return j;
+  }
+
+private: 
+  std::unique_ptr<SymbolicExpr> base;
 };
 
 } // rosdiscover
