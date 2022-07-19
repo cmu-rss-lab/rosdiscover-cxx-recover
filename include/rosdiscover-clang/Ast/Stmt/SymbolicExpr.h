@@ -35,6 +35,48 @@ public:
   }
 };
 
+class ThisExpr : public SymbolicExpr {
+public:
+  ThisExpr() {}
+  ~ThisExpr(){}
+  
+  void print(llvm::raw_ostream &os) const override {
+    os << toString();
+  }
+
+  std::string toString() const override {
+    return "this";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "ThisExpr"},
+      {"string", toString()},
+    };
+  }
+};
+
+class NullExpr : public SymbolicExpr {
+public:
+  NullExpr() {}
+  ~NullExpr(){}
+  
+  void print(llvm::raw_ostream &os) const override {
+    os << toString();
+  }
+
+  std::string toString() const override {
+    return "NULL";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "NullExpr"},
+      {"string", toString()},
+    };
+  }
+};
+
 class FalseExpr : public SymbolicExpr {
 public:
   FalseExpr() {}

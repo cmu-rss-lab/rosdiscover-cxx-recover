@@ -59,6 +59,10 @@ public:
       return std::make_unique<SymbolicStringConstant>(literal->getString().str());
     } else if (auto *callExpr = clang::dyn_cast<clang::CallExpr>(expr)) {
       return symbolizeCallExpr(callExpr);
+    } else if (auto *thisExpr = clang::dyn_cast<clang::CXXThisExpr>(expr)) {
+      return std::make_unique<ThisExpr>();
+    } else if (auto *nullExpr = clang::dyn_cast<clang::GNUNullExpr>(expr)) {
+      return std::make_unique<NullExpr>();
     } 
     
     auto *constNum = api_call::evaluateNumber("ExprSymbolizer", expr, astContext, false);
