@@ -10,10 +10,14 @@ public:
   ~BoolLiteral() {}
 
   void print(llvm::raw_ostream &os) const override {
+    os << toString();
+  }
+
+  std::string toString() const override {
     if (literal) {
-      os << "true";
+      return "true";
     } else {
-      os << "false";
+      return "false";
     }
   }
 

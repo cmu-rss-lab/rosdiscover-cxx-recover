@@ -18,6 +18,9 @@ public:
   void print(llvm::raw_ostream &os) const override {
     os << "\"" << literal << "\"";
   }
+  std::string toString() const override {
+    return literal;
+  }
 
   nlohmann::json toJson() const override {
     return {
@@ -37,6 +40,10 @@ public:
 
   void print(llvm::raw_ostream &os) const override {
     os << "(node-name)";
+  }
+
+  std::string toString() const override {
+    return "node-name";
   }
 
   nlohmann::json toJson() const override {
@@ -61,6 +68,10 @@ public:
     os << " ";
     rhs->print(os);
     os << ")";
+  }
+
+  std::string toString() const override {
+    return lhs->toString() + " " + rhs->toString();
   }
 
   nlohmann::json toJson() const override {

@@ -18,7 +18,7 @@ enum class SymbolicValueType {
   NodeHandle
 };
 
-class SymbolicValue {
+class SymbolicValue : public SymbolicExpr {
 public:
   virtual ~SymbolicValue(){};
   virtual void print(llvm::raw_ostream &os) const = 0;
@@ -85,7 +85,6 @@ class SymbolicUnknown :
   public virtual SymbolicBool,
   public virtual SymbolicInteger,
   public virtual SymbolicFloat,
-  public virtual SymbolicExpr,
   public virtual SymbolicNodeHandle
 {
 public:
@@ -97,7 +96,7 @@ public:
   }
 
   std::string toString() const override {
-    return "unknown";
+    return "UNKNOWN";
   }
 
   void print(llvm::raw_ostream &os) const override {
@@ -124,6 +123,10 @@ public:
 
   void print(llvm::raw_ostream &os) const override {
     os << "(arg " << name << ")";
+  }
+
+  std::string toString() const override {
+    return name;
   }
 
   nlohmann::json toJson() const override {
@@ -161,6 +164,10 @@ public:
     os << "(node-handle ";
     name.get()->print(os);
     os << ")";
+  }
+
+  std::string toString() const override {
+    return name->toString();
   }
 
   nlohmann::json toJson() const override {

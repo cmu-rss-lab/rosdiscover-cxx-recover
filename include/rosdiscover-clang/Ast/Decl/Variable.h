@@ -15,6 +15,7 @@ public:
   std::string getTypeAsString() const {
     return SymbolicValue::getSymbolicTypeAsString(getType());
   }
+  
 };
 
 class VariableReference :
@@ -32,7 +33,11 @@ public:
   }
 
   void print(llvm::raw_ostream &os) const override {
-    os << variable->getName();
+    os << toString();
+  }
+
+  std::string toString() const override {
+    return variable->getName();
   }
 
   nlohmann::json toJson() const override {

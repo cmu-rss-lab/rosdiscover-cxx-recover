@@ -190,7 +190,7 @@ public:
   }
 
   std::unique_ptr<SymbolicExpr> symbolizeBoolLiteral(const clang::CXXBoolLiteralExpr *literal) {
-    if (literal.getValue()) {
+    if (literal->getValue()) {
       return std::make_unique<TrueExpr>();
     } else {
       return std::make_unique<FalseExpr>();

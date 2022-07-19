@@ -211,6 +211,10 @@ public:
     os << ")";
   }
 
+  std::string toString() const override {
+    return "ros::param::get(param=" + getName()->toString() + ")";
+  }
+
   nlohmann::json toJson() const override {
     return {
       {"kind", "reads-param"},
@@ -274,6 +278,10 @@ public:
     os << ")";
   }
 
+  std::string toString() const override {
+    return "ros::param::has(param=" + getName()->toString() + ")";
+  }
+
   nlohmann::json toJson() const override {
     return {
       {"kind", "checks-for-param"},
@@ -295,6 +303,10 @@ public:
 
   SymbolicValue const * getDefaultValue() const {
     return defaultValue.get();
+  }
+
+  std::string toString() const override {
+    return "ros::param::read(param=" + getName()->toString() + ", default=" + getDefaultValue()->toString() + ")";
   }
 
   void print(llvm::raw_ostream &os) const override {
