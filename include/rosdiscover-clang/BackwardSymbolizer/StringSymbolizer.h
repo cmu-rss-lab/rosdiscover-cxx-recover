@@ -21,7 +21,7 @@ public:
   )
   : astContext(astContext), apiCallToVar(apiCallToVar), valueBuilder() {}
 
-  std::unique_ptr<SymbolicString> symbolize(clang::Expr *expr) {
+  std::unique_ptr<SymbolicString> symbolize(const clang::Expr *expr) {
     if (expr == nullptr) {
       llvm::outs() << "ERROR! Symbolizing (str): NULLPTR";
       return valueBuilder.unknown();
@@ -33,7 +33,7 @@ public:
     expr->dump();
     llvm::outs() << "\n";
 
-    if (clang::CallExpr *callExpr = clang::dyn_cast<clang::CallExpr>(expr)) {
+    if (auto *callExpr = clang::dyn_cast<clang::CallExpr>(expr)) {
       // is this expression mapped to a ROS API call?
       if (apiCallToVar.find(callExpr) != apiCallToVar.end()) {
         return valueBuilder.varRef(apiCallToVar[callExpr]);
@@ -51,19 +51,19 @@ public:
 
     }
 
-    if (clang::DeclRefExpr *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(expr)) {
+    if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(expr)) {
       return symbolize(declRefExpr);
-    } else if (clang::StringLiteral *literal = clang::dyn_cast<clang::StringLiteral>(expr)) {
+    } else if (auto *literal = clang::dyn_cast<clang::StringLiteral>(expr)) {
       return symbolize(literal);
-    } else if (clang::IntegerLiteral *literal = clang::dyn_cast<clang::IntegerLiteral>(expr)) {
+    } else if (auto *literal = clang::dyn_cast<clang::IntegerLiteral>(expr)) {
       return symbolize(literal);
-    } else if (clang::ImplicitCastExpr *implicitCastExpr = clang::dyn_cast<clang::ImplicitCastExpr>(expr)) {
+    } else if (auto *implicitCastExpr = clang::dyn_cast<clang::ImplicitCastExpr>(expr)) {
       return symbolize(implicitCastExpr);
-    } else if (clang::CXXConstructExpr *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(expr)) {
+    } else if (auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(expr)) {
       return symbolize(constructExpr);
-    } else if (clang::CXXBindTemporaryExpr *bindTempExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(expr)) {
+    } else if (auto *bindTempExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(expr)) {
       return symbolize(bindTempExpr);
-    } else if (clang::MaterializeTemporaryExpr *materializeTempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(expr)) {
+    } else if (auto *materializeTempExpr = clang::dyn_cast<clang::MaterializeTemporaryExpr>(expr)) {
       return symbolize(materializeTempExpr);
     }
 
@@ -76,15 +76,15 @@ private:
   std::unordered_map<clang::Expr const *, SymbolicVariable *> &apiCallToVar;
   ValueBuilder valueBuilder;
 
-  std::unique_ptr<SymbolicString> symbolize(clang::StringLiteral *literal) {
+  std::unique_ptr<SymbolicString> symbolize(const clang::StringLiteral *literal) {
     return valueBuilder.stringLiteral(literal->getString().str());
   }
 
-  std::unique_ptr<SymbolicString> symbolize(clang::IntegerLiteral *literal) {
+  std::unique_ptr<SymbolicString> symbolize(const clang::IntegerLiteral *literal) {
     return valueBuilder.stringLiteral(std::to_string(literal->getValue().getSExtValue()));
   }
 
-  std::unique_ptr<SymbolicString> symbolize(clang::CXXConstructExpr *expr) {
+  std::unique_ptr<SymbolicString> symbolize(const clang::CXXConstructExpr *expr) {
     // does this call the std::string constructor?
     // FIXME this is a bit hacky and may break when other libc++ versions are used
     //
@@ -105,19 +105,19 @@ private:
     return valueBuilder.unknown();
   }
 
-  std::unique_ptr<SymbolicString> symbolizeConcatenation(clang::CallExpr *expr) {
+  std::unique_ptr<SymbolicString> symbolizeConcatenation(const clang::CallExpr *expr) {
     assert(expr->getNumArgs() == 2 && "string concentation should have two arguments");
     auto lhs = symbolize(expr->getArg(0));
     auto rhs = symbolize(expr->getArg(1));
     return valueBuilder.concatenate(std::move(lhs), std::move(rhs));
   }
 
-  std::unique_ptr<SymbolicString> symbolize(clang::ImplicitCastExpr *expr) {
+  std::unique_ptr<SymbolicString> symbolize(const clang::ImplicitCastExpr *expr) {
     // TODO check that we're dealing with strings or char[]
     return symbolize(expr->getSubExpr());
   }
 
-  std::unique_ptr<SymbolicString> symbolize(clang::DeclRefExpr *nameExpr) {
+  std::unique_ptr<SymbolicString> symbolize(const clang::DeclRefExpr *nameExpr) {
     // TODO does this refer to a parameter?
 
     if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(nameExpr->getDecl())) {
@@ -145,15 +145,15 @@ private:
     return valueBuilder.unknown();
   }
 
-  std::unique_ptr<SymbolicString> symbolize(clang::CXXBindTemporaryExpr *expr) {
+  std::unique_ptr<SymbolicString> symbolize(const clang::CXXBindTemporaryExpr *expr) {
     return symbolize(expr->getSubExpr());
   }
 
-  std::unique_ptr<SymbolicString> symbolize(clang::MaterializeTemporaryExpr *expr) {
+  std::unique_ptr<SymbolicString> symbolize(const clang::MaterializeTemporaryExpr *expr) {
     return symbolize(expr->getSubExpr());
   }
 
-  clang::Expr* findDef(clang::VarDecl *decl, clang::Expr *location) {
+  clang::Expr* findDef(const clang::VarDecl *decl, const clang::Expr *location) {
     return FindDefVisitor::find(astContext, decl, location);
   }
 };

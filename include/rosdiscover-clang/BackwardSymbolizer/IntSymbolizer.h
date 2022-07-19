@@ -19,7 +19,7 @@ public:
   )
   : valueBuilder() {}
 
-  std::unique_ptr<SymbolicInteger> symbolize(clang::Expr *expr) {
+  std::unique_ptr<SymbolicInteger> symbolize(const clang::Expr *expr) {
 
     if (expr == nullptr) {
       llvm::outs() << "ERROR! Symbolizing (int): NULLPTR";
@@ -32,7 +32,7 @@ public:
     expr->dump();
     llvm::outs() << "\n";
 
-    if (clang::IntegerLiteral *literal = clang::dyn_cast<clang::IntegerLiteral>(expr)) {
+    if (auto *literal = clang::dyn_cast<clang::IntegerLiteral>(expr)) {
       return symbolize(literal);
     } 
 

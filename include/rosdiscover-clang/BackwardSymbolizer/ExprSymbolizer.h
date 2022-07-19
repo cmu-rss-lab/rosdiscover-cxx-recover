@@ -9,6 +9,7 @@
 
 #include "../Builder/ValueBuilder.h"
 #include "../Value/String.h"
+#include "../Value/Value.h"
 #include "../Helper/FindDefVisitor.h"
 #include "../ApiCall/Calls/Util.h"
 
@@ -16,19 +17,22 @@
 #include "IntSymbolizer.h"
 #include "BoolSymbolizer.h"
 #include "FloatSymbolizer.h"
+#include "StringSymbolizer.h"
 
 namespace rosdiscover {
 
 class ExprSymbolizer {
 public:
   ExprSymbolizer(
-    clang::ASTContext &astContext
+    clang::ASTContext &astContext,
+    std::unordered_map<clang::Expr const *, SymbolicVariable *> &apiCallToVar
   ): 
     astContext(astContext), 
     valueBuilder(), 
     intSymbolizer(),
     boolSymbolizer(astContext),
-    floatSymbolizer()
+    floatSymbolizer(),
+    stringSymbolizer(astContext, apiCallToVar)
   {}
 
   std::unique_ptr<SymbolicExpr> symbolize(const clang::Expr *expr) {
@@ -38,8 +42,6 @@ public:
     }
 
     expr = expr->IgnoreParenCasts()->IgnoreImpCasts()->IgnoreCasts();
-
-    
 
     llvm::outs() << "symbolizing (expr): ";
     expr->dump();
@@ -55,10 +57,6 @@ public:
       return symbolizeDeclRef(declRefExpr);
     } else if (auto *memberExpr = clang::dyn_cast<clang::MemberExpr>(expr)) {
       return symbolizeMemberExpr(memberExpr);
-    } else if (auto *literal = clang::dyn_cast<clang::StringLiteral>(expr)) {
-      return std::make_unique<SymbolicStringConstant>(literal->getString().str());
-    } else if (auto *literal = clang::dyn_cast<clang::CXXBoolLiteralExpr>(expr)) {
-      return symbolizeBoolLiteral(literal);
     } else if (auto *callExpr = clang::dyn_cast<clang::CallExpr>(expr)) {
       return symbolizeCallExpr(callExpr);
     } else if (auto *thisExpr = clang::dyn_cast<clang::CXXThisExpr>(expr)) {
@@ -67,13 +65,7 @@ public:
       return std::make_unique<NullExpr>();
     } 
     
-    auto *constNum = api_call::evaluateNumber("ExprSymbolizer", expr, astContext, false);
-    if (constNum != nullptr) {
-      return std::make_unique<SymbolicConstant>(*constNum);
-    }
-
-    llvm::outs() << "unable to symbolize expression (expr): Unsupported expression type " << expr->getStmtClassName() << ". treating as unknown\n";
-    return valueBuilder.unknown();
+    return symbolizeConstant(expr);
   }
   
   std::unique_ptr<SymbolicExpr> symbolizeOperatorCallExpr(const clang::CXXOperatorCallExpr *operatorCallExpr) {
@@ -100,6 +92,32 @@ public:
       );    
   }
 
+  std::unique_ptr<SymbolicExpr> symbolizeConstant(const clang::Expr *expr) {
+    expr = expr->IgnoreParenCasts()->IgnoreImpCasts()->IgnoreCasts();
+    switch (SymbolicValue::getSymbolicType(expr->getType())) {
+      case SymbolicValueType::String: 
+        return stringSymbolizer.symbolize(expr);
+      case SymbolicValueType::Bool: 
+        return boolSymbolizer.symbolize(expr);
+      case SymbolicValueType::Float:
+        return floatSymbolizer.symbolize(expr);
+      case SymbolicValueType::Integer:
+        return intSymbolizer.symbolize(expr);
+      case SymbolicValueType::NodeHandle: 
+        llvm::outs() << "unable to symbolize expression (expr) Node Handle not supported: treating as unknown\n";
+        expr->dump();
+        return valueBuilder.unknown();
+      case SymbolicValueType::Unsupported:
+        auto *constNum = api_call::evaluateNumber("ExprSymbolizer", expr, astContext, false);
+        if (constNum != nullptr) {
+          return std::make_unique<SymbolicConstant>(*constNum);
+        }
+        llvm::outs() << "unable to symbolize expression (expr) not supported: treating as unknown\n";
+        expr->dump();
+        return valueBuilder.unknown();
+    }
+  }
+
   std::unique_ptr<SymbolicExpr> symbolizeDeclRef(const clang::DeclRefExpr *declRefExpr) {
     if (declRefExpr->getDecl() == nullptr)  {
       llvm::outs() << "unable to symbolize expression (expr) since decl wasn't found: treating as unknown\n";
@@ -120,15 +138,8 @@ public:
       }
       return std::make_unique<SymbolicEnumReference>(enumDecl->getType().getAsString(), enumDecl->getNameAsString(), enumValue);
     }
-
-    auto *constNum = api_call::evaluateNumber("ExprSymbolizer", declRefExpr, astContext, false);
-    if (constNum != nullptr) {
-      return std::make_unique<SymbolicConstant>(*constNum);
-    }
-
-    llvm::outs() << "unable to symbolize expression (expr) due to unsupported decl type: treating as unknown\n";
-    declRefExpr->dump();
-    return valueBuilder.unknown();
+    
+    return symbolizeConstant(declRefExpr);
   }
 
   std::unique_ptr<SymbolicExpr> symbolizeCallExpr(const clang::CallExpr *callExpr) {
@@ -139,7 +150,7 @@ public:
       return valueBuilder.unknown();
     }
     if (funcDecl->getQualifiedNameAsString() == "ros::ok") {
-      return std::make_unique<TrueExpr>();
+      return std::make_unique<BoolLiteral>(true);
     }
     llvm::outs() << "unable to symbolize expression (expr) due to unknown call name: treating as unknown\n";
     callExpr->dump();
@@ -189,14 +200,6 @@ public:
     }
   }
 
-  std::unique_ptr<SymbolicExpr> symbolizeBoolLiteral(const clang::CXXBoolLiteralExpr *literal) {
-    if (literal->getValue()) {
-      return std::make_unique<TrueExpr>();
-    } else {
-      return std::make_unique<FalseExpr>();
-    }
-  }
-
   std::unique_ptr<SymbolicExpr> symbolizeUnaryOp(const clang::UnaryOperator *unaryOpExr) {
     switch (unaryOpExr->getOpcode()) {
       case clang::UnaryOperator::Opcode::UO_LNot:
@@ -213,6 +216,7 @@ private:
   IntSymbolizer intSymbolizer;
   BoolSymbolizer boolSymbolizer;
   FloatSymbolizer floatSymbolizer;
+  StringSymbolizer stringSymbolizer;
 };
 
 } // rosdiscover

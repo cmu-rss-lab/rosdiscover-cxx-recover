@@ -16,11 +16,11 @@ namespace rosdiscover {
 class BoolSymbolizer {
 public:
   BoolSymbolizer(
-    clang::ASTContext &astContext
+    const clang::ASTContext &astContext
   )
   : astContext(astContext), valueBuilder() {}
 
-  std::unique_ptr<SymbolicBool> symbolize(clang::Expr *expr) {
+  std::unique_ptr<SymbolicBool> symbolize(const clang::Expr *expr) {
     if (expr == nullptr) {
       llvm::outs() << "ERROR! Symbolizing (bool): NULLPTR";
       return valueBuilder.unknown();
@@ -43,7 +43,7 @@ public:
   }
 
 private:
-  clang::ASTContext &astContext;
+  const clang::ASTContext &astContext;
   ValueBuilder valueBuilder;
 };
 

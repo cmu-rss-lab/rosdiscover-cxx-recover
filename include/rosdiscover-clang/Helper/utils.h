@@ -38,7 +38,7 @@ clang::FunctionDecl const * getParentFunctionDecl(clang::ASTContext &context, cl
   return nullptr;
 }
 
-clang::FunctionDecl const * getParentFunctionDecl(clang::ASTContext &context, clang::Stmt const *stmt) {
+clang::FunctionDecl const * getParentFunctionDecl(clang::ASTContext &context, const clang::Stmt *stmt) {
   return getParentFunctionDecl(context, clang::DynTypedNode::create(*stmt));
 }
 

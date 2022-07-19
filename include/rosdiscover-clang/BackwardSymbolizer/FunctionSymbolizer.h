@@ -96,6 +96,7 @@ private:
       intSymbolizer(),
       floatSymbolizer(),
       boolSymbolizer(astContext),
+      exprSymbolizer(astContext, apiCallToVar),
       ifMap(),
       whileMap(),
       compoundMap(),
@@ -116,6 +117,7 @@ private:
   IntSymbolizer intSymbolizer;
   FloatSymbolizer floatSymbolizer;
   BoolSymbolizer boolSymbolizer;
+  ExprSymbolizer exprSymbolizer;
   std::unordered_map<long, RawIfStatement*> ifMap; //keys are the IDs of the corresponding clang stmts.
   std::unordered_map<long, RawWhileStatement*> whileMap; //keys are the IDs of the corresponding clang stmts.
   std::unordered_map<long, RawCompound*> compoundMap; //keys are the IDs of the corresponding clang stmts.
@@ -883,6 +885,16 @@ private:
         }
         
         llvm::outs() << "terminator condition found: " << conditionStr << "\n";
+        auto *conditionExpr = clang::dyn_cast<clang::Expr>(condition);
+        if (conditionExpr == nullptr) {
+          llvm::outs() << "ERROR: Terminiator condition is no expression: ";
+          condition->dump();
+          abort();
+        }
+        auto symbolicCondition = exprSymbolizer.symbolize(conditionExpr);
+        llvm::outs() << "Symbolized Expr: " << symbolicCondition->toString() << " for: " << conditionStr << "\n";
+
+
 
         std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
         std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
