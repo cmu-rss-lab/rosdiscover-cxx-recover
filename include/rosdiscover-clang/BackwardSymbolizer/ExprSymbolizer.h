@@ -57,6 +57,8 @@ public:
       return symbolizeMemberExpr(memberExpr);
     } else if (auto *literal = clang::dyn_cast<clang::StringLiteral>(expr)) {
       return std::make_unique<SymbolicStringConstant>(literal->getString().str());
+    } else if (auto *literal = clang::dyn_cast<clang::BoolLiteral>(expr)) {
+      return symbolizeBoolLiteral(literal);
     } else if (auto *callExpr = clang::dyn_cast<clang::CallExpr>(expr)) {
       return symbolizeCallExpr(callExpr);
     } else if (auto *thisExpr = clang::dyn_cast<clang::CXXThisExpr>(expr)) {
@@ -184,6 +186,16 @@ public:
       default: 
         llvm::outs() << "Unsupported binar operator: " << binOpExpr->getOpcode() << " in expr: " << prettyPrint(binOpExpr, astContext);
         return valueBuilder.unknown();
+    }
+  }
+
+  std::unique_ptr<SymbolicExpr> symbolizeBoolLiteral(const clang::BoolLiteral *literal) {
+    bool result;
+    literal->EvaluateAsBooleanCondition(result, astContext);
+    if (result) {
+      return std::make_unique<TrueExpr>();
+    } else {
+      return std::make_unique<FalseExpr>();
     }
   }
 
