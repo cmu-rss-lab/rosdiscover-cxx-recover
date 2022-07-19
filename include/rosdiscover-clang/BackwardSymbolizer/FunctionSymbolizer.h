@@ -798,7 +798,12 @@ private:
     }
   }
 
-  std::unique_ptr<CFGBlock> buildGraph(const clang::CFGBlock* clangBlockOfInterest, const llvm::SmallVector<clang::CFGBlock *, 4> &deps, clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis, clang::CFGDominatorTreeImpl<false> &dominatorAnalysis) {
+  std::unique_ptr<CFGBlock> buildGraph(
+      const clang::CFGBlock* clangBlockOfInterest,
+      const llvm::SmallVector<clang::CFGBlock *, 4> &deps,
+      clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis,
+      clang::CFGDominatorTreeImpl<false> &dominatorAnalysis
+    ) {
     std::vector<const clang::CFGBlock*> analyzed;
     std::unordered_map<long, std::unique_ptr<CFGBlock>> blockMap; //maps BlockID to CFGBlockObject
     auto cfgBlockOfInterest = std::make_unique<CFGBlock>(clangBlockOfInterest);
