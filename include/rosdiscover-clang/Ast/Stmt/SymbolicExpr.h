@@ -259,6 +259,28 @@ enum class CompareOperator {
 class CompareExpr : public BinaryExpr {
 public:
 
+  static CompareOperator compareOperatorFromOpCode(clang::BinaryOperator::Opcode opCode) {
+    switch (opCode) {
+      case clang::BinaryOperator::Opcode::BO_EQ: 
+        return CompareOperator::EQ;
+      case clang::BinaryOperator::Opcode::BO_NE: 
+        return CompareOperator::NE;
+      case clang::BinaryOperator::Opcode::BO_LT: 
+        return CompareOperator::LT;
+      case clang::BinaryOperator::Opcode::BO_LE: 
+        return CompareOperator::LE;
+      case clang::BinaryOperator::Opcode::BO_GT:
+        return CompareOperator::GT;
+      case clang::BinaryOperator::Opcode::BO_GE: 
+        return CompareOperator::GE;
+      case clang::BinaryOperator::Opcode::BO_Cmp: 
+        return CompareOperator::Spaceship;        
+      default:
+        llvm::outs() << "ERROR: Invalid compare operator: " << opCode;
+        abort();
+    }
+  }
+
   CompareExpr(
     std::unique_ptr<SymbolicExpr> expr1,
     std::unique_ptr<SymbolicExpr> expr2,
@@ -284,8 +306,10 @@ public:
       return CompareOperator::GT;
     else if (str == ">=")
       return CompareOperator::GE;
-      else if (str == "<=>")
-    return CompareOperator::Spaceship;
+    else if (str == "<=>")
+      return CompareOperator::Spaceship;
+
+    llvm::outs() << "ERROR: Invalid compare operator: " << str;
     abort();
   }
 
@@ -333,6 +357,23 @@ public:
     const BinaryMathOperator op
     ) : BinaryExpr(std::move(expr1), std::move(expr2)), op(op) {}
 
+  static BinaryMathOperator binaryMathOperatorFromOpCode(clang::BinaryOperator::Opcode opCode) {
+    switch (opCode) {
+      case clang::BinaryOperator::Opcode::BO_Add: 
+        return BinaryMathOperator::Add;
+      case clang::BinaryOperator::Opcode::BO_Sub: 
+        return BinaryMathOperator::Sub;
+      case clang::BinaryOperator::Opcode::BO_Mul: 
+        return BinaryMathOperator::Mul;
+      case clang::BinaryOperator::Opcode::BO_Div: 
+        return BinaryMathOperator::Div;
+      case clang::BinaryOperator::Opcode::BO_Rem: 
+        return BinaryMathOperator::Rem;
+      default:
+        llvm::outs() << "ERROR: Invalid binary math operator: " << opCode;
+        abort();
+    }
+  }
   std::string binaryOperator() const override {
     switch (op) {
       case BinaryMathOperator::Add:

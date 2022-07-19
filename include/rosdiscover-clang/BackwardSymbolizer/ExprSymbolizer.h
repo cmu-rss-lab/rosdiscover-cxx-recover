@@ -147,33 +147,39 @@ public:
   std::unique_ptr<SymbolicExpr> symbolizeBinaryOp(const clang::BinaryOperator *binOpExpr) {
     switch (binOpExpr->getOpcode()) {
       case clang::BinaryOperator::Opcode::BO_LAnd: 
-        return std::make_unique<AndExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()));
+        return std::make_unique<AndExpr>(
+          symbolize(binOpExpr->getLHS()),
+          symbolize(binOpExpr->getRHS())
+        );
       case clang::BinaryOperator::Opcode::BO_LOr: 
-        return std::make_unique<OrExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()));
+        return std::make_unique<OrExpr>(
+          symbolize(binOpExpr->getLHS()),
+          symbolize(binOpExpr->getRHS())
+        );
 
-      case clang::BinaryOperator::Opcode::BO_EQ: 
-        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::EQ);
-      case clang::BinaryOperator::Opcode::BO_NE: 
-        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::NE);
-      case clang::BinaryOperator::Opcode::BO_LT: 
-        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::LT);
-      case clang::BinaryOperator::Opcode::BO_LE: 
-        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::LE);
+      case clang::BinaryOperator::Opcode::BO_EQ:
+      case clang::BinaryOperator::Opcode::BO_NE:
+      case clang::BinaryOperator::Opcode::BO_LT:
+      case clang::BinaryOperator::Opcode::BO_LE:
       case clang::BinaryOperator::Opcode::BO_GT:
-        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::GT);
-      case clang::BinaryOperator::Opcode::BO_GE: 
-        return std::make_unique<CompareExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), CompareOperator::GE);
+      case clang::BinaryOperator::Opcode::BO_GE:
+      case clang::BinaryOperator::Opcode::BO_Cmp:
+        return std::make_unique<CompareExpr>(
+          symbolize(binOpExpr->getLHS()),
+          symbolize(binOpExpr->getRHS()),
+          CompareExpr::compareOperatorFromOpCode(binOpExpr->getOpcode())
+        );
 
-      case clang::BinaryOperator::Opcode::BO_Add: 
-        return std::make_unique<BinaryMathExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), BinaryMathOperator::Add);
-      case clang::BinaryOperator::Opcode::BO_Sub: 
-        return std::make_unique<BinaryMathExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), BinaryMathOperator::Sub);
-      case clang::BinaryOperator::Opcode::BO_Mul: 
-        return std::make_unique<BinaryMathExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), BinaryMathOperator::Mul);
-      case clang::BinaryOperator::Opcode::BO_Div: 
-        return std::make_unique<BinaryMathExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), BinaryMathOperator::Div);
-      case clang::BinaryOperator::Opcode::BO_Rem: 
-        return std::make_unique<BinaryMathExpr>(symbolize(binOpExpr->getLHS()), symbolize(binOpExpr->getRHS()), BinaryMathOperator::Rem);
+      case clang::BinaryOperator::Opcode::BO_Add:
+      case clang::BinaryOperator::Opcode::BO_Sub:
+      case clang::BinaryOperator::Opcode::BO_Mul:
+      case clang::BinaryOperator::Opcode::BO_Div:
+      case clang::BinaryOperator::Opcode::BO_Rem:
+        return std::make_unique<BinaryMathExpr>(
+          symbolize(binOpExpr->getLHS()),
+          symbolize(binOpExpr->getRHS()),
+          BinaryMathExpr::binaryMathOperatorFromOpCode(binOpExpr->getOpcode())
+        );
 
       default: 
         llvm::outs() << "Unsupported binar operator: " << binOpExpr->getOpcode() << " in expr: " << prettyPrint(binOpExpr, astContext);
