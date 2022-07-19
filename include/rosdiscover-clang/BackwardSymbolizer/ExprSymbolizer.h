@@ -114,6 +114,11 @@ public:
       return std::make_unique<SymbolicEnumReference>(enumDecl->getType().getAsString(), enumDecl->getNameAsString());
     }
 
+    auto *constNum = api_call::evaluateNumber("ExprSymbolizer", declRefExpr, astContext, false);
+    if (constNum != nullptr) {
+      return std::make_unique<SymbolicConstant>(*constNum);
+    }
+
     llvm::outs() << "unable to symbolize expression (expr) due to unsupported decl type: treating as unknown\n";
     declRefExpr->dump();
     return valueBuilder.unknown();
