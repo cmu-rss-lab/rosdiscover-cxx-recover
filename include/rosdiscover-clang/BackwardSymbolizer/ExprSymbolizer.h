@@ -111,7 +111,12 @@ public:
     } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
       return std::make_unique<SymbolicCall>(declRefExpr);
     } else if (auto *enumDecl = clang::dyn_cast<clang::EnumConstantDecl>(decl)) {
-      return std::make_unique<SymbolicEnumReference>(enumDecl->getType().getAsString(), enumDecl->getNameAsString());
+      clang::Expr::EvalResult resultInt;
+      long enumValue = -1;
+      if (declRefExpr->EvaluateAsInt(resultInt, astContext)) {
+        enumValue = resultInt.Val.getInt().getSExtValue();
+      }
+      return std::make_unique<SymbolicEnumReference>(enumDecl->getType().getAsString(), enumDecl->getNameAsString(), enumValue);
     }
 
     auto *constNum = api_call::evaluateNumber("ExprSymbolizer", declRefExpr, astContext, false);
