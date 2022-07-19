@@ -88,7 +88,8 @@ clang::APValue const * evaluateNumber(
   const std::string debugTag, 
   const clang::Expr *expr,
   const clang::ASTContext &Ctx,
-  bool debugPrint=true) {
+  bool debugPrint=true
+  ) {
   //Try evaluating the frequency as integer.
   clang::Expr::EvalResult resultInt;
   if (expr->EvaluateAsInt(resultInt, Ctx)) {
