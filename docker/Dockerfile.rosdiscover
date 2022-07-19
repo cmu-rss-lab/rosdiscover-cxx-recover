@@ -1,15 +1,32 @@
 FROM rosdiscover/cxx-extract:builder
-COPY --from=christimperley/llvm11 /opt/llvm11/ /opt/llvm11/
+COPY --from=christimperley/llvm11 /opt/llvm/ /opt/llvm11/
 WORKDIR /tmp/rosdiscover
 COPY . .
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null \
+  | gpg --dearmor - \
+  | tee /etc/apt/trusted.gpg.d/kitware.gpg > /dev/null \
+ && apt-add-repository 'deb https://apt.kitware.com/ubuntu/ xenial main' \
+ && add-apt-repository -y ppa:ubuntu-toolchain-r/test \
+ && apt-get update -qq \
+ && apt-get install -y \
+      gcc-9 \
+      g++-9 \
+      cmake \
+      musl-dev \
+      zlib1g-dev \
+ && update-alternatives \
+      --install /usr/bin/gcc gcc /usr/bin/gcc-9 60 \
+      --slave /usr/bin/g++ g++ /usr/bin/g++-9 \
+ && apt-get clean \
+ && rm -rf /var/lib/apt/lists/*
 RUN mkdir build \
  && cd build \
  && cmake \
       -DCMAKE_PREFIX_PATH=/opt/llvm11 \
-      -DCMAKE_CXX_COMPILER=/opt/llvm11/bin/clang++ \
+      -DCMAKE_CXX_COMPILER=g++ \
       -DCMAKE_LINKER=/opt/llvm11/bin/lld \
       -DCMAKE_INSTALL_PREFIX=/opt/rosdiscover \
-      -DCMAKE_CXX_FLAGS="-I/opt/llvm11/include -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS" \
+      -DCMAKE_CXX_FLAGS="-I/opt/llvm11/include -w -Wno-error -D_GNU_SOURCE -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS" \
       .. \
  && make install \
  && rm -rf /tmp/*
