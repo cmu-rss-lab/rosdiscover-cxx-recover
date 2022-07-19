@@ -15,22 +15,16 @@ public:
   SymbolicControlDependency(
     std::vector<std::unique_ptr<SymbolicCall>> functionCalls,
     std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences, 
-    bool negate,
     std::string const location,
     std::string const condition=""
   ) : functionCalls(std::move(functionCalls)), 
       variableReferences(std::move(variableReferences)), 
-      negate(negate),
       location(location), 
       condition(condition) {}
   ~SymbolicControlDependency(){}
 
   void print(llvm::raw_ostream &os) const override {
     os << "(controlDependency)";
-  }
-
-  bool isNegated() const {
-    return negate;
   }
 
   nlohmann::json toJson() const override {
@@ -46,7 +40,6 @@ public:
       {"kind", "controlDependency"},
       {"calls", jCalls},
       {"variableReferences", jVarrefs},
-      {"negate", negate},
       {"source-location", location},
       {"condition", condition},
     };
@@ -55,7 +48,6 @@ public:
 private:
   std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
   std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
-  bool negate;
   std::string const location;
   std::string const condition;
 };
