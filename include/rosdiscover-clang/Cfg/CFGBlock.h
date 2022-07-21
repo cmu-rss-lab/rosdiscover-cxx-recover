@@ -85,6 +85,9 @@ public:
     }
 
     auto symbolicCondition = exprSymbolizer.symbolize(condExpr);
+    auto symbolicConditionStr = symbolicCondition->toString();
+    llvm::outs() << "[DEBUG] Symbolized Expr: " << symbolicConditionStr << " for: " << prettyPrint(condExpr, astContext) << "\n";
+    
     std::unique_ptr<SymbolicExpr> myExpr = negate ? std::make_unique<NegateExpr>(std::move(symbolicCondition)) : std::move(symbolicCondition);
     if (result == nullptr) 
       return myExpr;

@@ -762,7 +762,7 @@ private:
             } 
             if (i > 1) {
               //TODO: Handle switch-case here.
-              llvm::outs() << "Too many branches. Swich not yet supported\n";
+              llvm::outs() << "Too many branches. Switch not yet supported\n";
               abort();
             }
             i++;
