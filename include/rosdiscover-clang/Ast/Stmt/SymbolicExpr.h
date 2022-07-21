@@ -213,11 +213,11 @@ public:
       case clang::BinaryOperator::Opcode::BO_Cmp: 
         return CompareOperator::Spaceship;        
       default:
-        llvm::outs() << "ERROR: Invalid compare operator: " << opCode;
+        llvm::outs() << "ERROR: Invalid compare operator (opCode): " << opCode;
         abort();
     }
   }
-
+ 
   CompareExpr(
     std::unique_ptr<SymbolicExpr> expr1,
     std::unique_ptr<SymbolicExpr> expr2,
@@ -246,7 +246,7 @@ public:
     else if (str == "<=>")
       return CompareOperator::Spaceship;
 
-    llvm::outs() << "ERROR: Invalid compare operator: " << str;
+    llvm::outs() << "ERROR: Invalid compare operator (str): " << str;
     abort();
   }
 
