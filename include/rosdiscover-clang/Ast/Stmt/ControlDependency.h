@@ -20,7 +20,9 @@ public:
   ) : functionCalls(std::move(functionCalls)), 
       variableReferences(std::move(variableReferences)), 
       location(location), 
-      condition(std::move(condition)) {}
+      condition(std::move(condition)) {
+        assert(this->condition != nullptr);
+      }
   ~SymbolicControlDependency(){}
 
   void print(llvm::raw_ostream &os) const override {
@@ -36,12 +38,13 @@ public:
     for (auto const &variableReference : variableReferences) {
       jVarrefs.push_back(variableReference->toJson());
     }
+
     return {
       {"kind", "controlDependency"},
       {"calls", jCalls},
       {"variableReferences", jVarrefs},
       {"source-location", location},
-      {"condition", condition->toJson()},
+      {"condition", condition->toString()},
     };
   }
 

@@ -825,7 +825,7 @@ private:
     return idToBlock.at(clangBlockOfInterest->getBlockID());
   }
 
-  std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const clang::Stmt* stmt) {
+  std::unique_ptr<SymbolicExpr> getControlDependenciesObjects(const clang::Stmt* stmt) {
     const std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
           function, function->getBody(), &astContext, clang::CFG::BuildOptions());
     clang::ControlDependencyCalculator cdc(sourceCFG.get());
@@ -837,9 +837,6 @@ private:
     stmt_block->dump();
     auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
     
-    std::vector<std::unique_ptr<SymbolicControlDependency>> results;
-
-    auto prevBlock = stmt_block;
     auto analysis = std::make_unique<clang::CFGReverseBlockReachabilityAnalysis>(*(sourceCFG.get()));
     clang::CFGDominatorTreeImpl<true> postDominatorAnalysis(sourceCFG.get());
     clang::CFGDominatorTreeImpl<false> dominatorAnalysis(sourceCFG.get());
@@ -854,8 +851,9 @@ private:
       condExpr = std::make_unique<BoolLiteral>(true);
     }
     llvm::outs() << "\nFullControlCondition: " << condExpr->toString() << "\n";
+    return condExpr;
 
-
+/*
     for (clang::CFGBlock *block: deps) {
 
       //To identify whether the control condition needs to be negated, we need to see if the true or false branch is 
@@ -924,7 +922,7 @@ private:
 
     llvm::outs() << "getControlDependenciesObjects end\n";
 
-    return results;
+    return results;*/
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {

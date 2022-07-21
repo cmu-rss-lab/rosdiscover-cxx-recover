@@ -9,6 +9,7 @@
 #include <fmt/core.h>
 
 #include "../Value/Value.h"
+#include "../Value/Bool.h"
 #include "Decl/LocalVariable.h"
 #include "Decl/Parameter.h"
 #include "Stmt/Stmt.h"
@@ -35,6 +36,7 @@ public:
       jsonParams.push_back(entry.second.toJson());
     }
 
+    llvm::outs() << "toJson : " << qualifiedName << "\n";
     return {
       {"name", qualifiedName},
       {"parameters", jsonParams},
@@ -132,14 +134,16 @@ public:
   SymbolicFunctionCall(
     SymbolicFunction *callee,
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
-    std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies = {}
-  ) : callee(callee), args(std::move(args)), controlDependencies(std::move(controlDependencies)) {}
+    std::unique_ptr<SymbolicExpr> controlDependencies = std::make_unique<BoolLiteral>(true)
+  ) : callee(callee), args(std::move(args)), controlDependencies(std::move(controlDependencies)) {
+    assert(this->controlDependencies != nullptr);
+  }
   ~SymbolicFunctionCall(){}
 
   static std::unique_ptr<SymbolicFunctionCall> create(
     SymbolicFunction *function,
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
-    std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies
+    std::unique_ptr<SymbolicExpr> controlDependencies
   ) {
     return std::make_unique<SymbolicFunctionCall>(function, args, std::move(controlDependencies));
   }
@@ -148,7 +152,7 @@ public:
     SymbolicFunction *function
   ) {
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> emptyArgs;
-    return create(function, emptyArgs, {});
+    return create(function, emptyArgs, std::make_unique<BoolLiteral>(true));
   }
 
   void print(llvm::raw_ostream &os) const override {
@@ -166,15 +170,11 @@ public:
     for (auto const &entry : args) {
       argsJson[entry.first] = entry.second->toJson();
     }
-    auto jDeps = nlohmann::json::array();
-    for (auto const &controlDependency : controlDependencies) {
-      jDeps.push_back(controlDependency->toJson());
-    }
     return {
       {"kind", "call"},
       {"callee", callee->getName()},
       {"arguments", argsJson},
-      {"control_dependencies", jDeps},
+      {"control_dependencies", controlDependencies->toString()},
     };
   }
 
@@ -185,7 +185,7 @@ public:
 private:
   SymbolicFunction *callee;
   std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
-  std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies;
+  std::unique_ptr<SymbolicExpr> controlDependencies;
 };
 
 class UnknownSymbolicFunctionCall : public SymbolicFunctionCall {

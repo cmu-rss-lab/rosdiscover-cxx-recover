@@ -3,6 +3,7 @@
 #include "Stmt.h"
 #include "../../Value/String.h"
 #include "../../Value/Value.h"
+#include "../../Value/Bool.h"
 
 #include "ControlDependency.h"
 
@@ -22,7 +23,9 @@ public:
   }
 
 protected:
-  NamedSymbolicRosApiCall(std::unique_ptr<SymbolicString> name) : name(std::move(name)) {}
+  NamedSymbolicRosApiCall(std::unique_ptr<SymbolicString> name) : name(std::move(name)) {
+    assert(getName() !+= nullptr);
+  }
 
 private:
   std::unique_ptr<SymbolicString> name;
@@ -96,7 +99,9 @@ private:
 
 class RateSleep : public SymbolicRosApiCall {
 public:
-  RateSleep(std::unique_ptr<SymbolicFloat> rate) : SymbolicRosApiCall(), rate(std::move(rate)) {}
+  RateSleep(std::unique_ptr<SymbolicFloat> rate) : SymbolicRosApiCall(), rate(std::move(rate)) {
+    assert(this->rate != nullptr);
+  }
 
   void print(llvm::raw_ostream &os) const override {
     os << "(ratesleep ";
@@ -117,31 +122,29 @@ private:
 
 class Publish : public SymbolicRosApiCall {
 public:
-  Publish(std::string const &publisher, std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies={}) : 
+  Publish(std::string const &publisher, std::unique_ptr<SymbolicExpr> controlDependencies = std::make_unique<BoolLiteral>(true)) : 
     SymbolicRosApiCall(), 
     publisher(publisher), 
     controlDependencies(std::move(controlDependencies)
-  ) {}
+  ) {
+    assert(this->controlDependencies != nullptr);
+  }
 
   void print(llvm::raw_ostream &os) const override {
     os << "(publish " << publisher << ")";
   }
 
-  nlohmann::json toJson() const override {
-    auto jDeps = nlohmann::json::array();
-    for (auto const &controlDependency : controlDependencies) {
-      jDeps.push_back(controlDependency->toJson());
-    }
+  nlohmann::json toJson() const override {    
     return {
       {"kind", "publish"},
       {"publisher", publisher},
-      {"control_dependencies", jDeps}
+      {"control_dependencies", controlDependencies->toString()}
     };
   }
 
 private:
   std::string const publisher;
-  std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies;
+  std::unique_ptr<SymbolicExpr> controlDependencies;
 };
 
 class ServiceCaller : public NamedSymbolicRosApiCall {
@@ -212,6 +215,7 @@ public:
   }
 
   std::string toString() const override {
+    llvm::outs() << "[DEBUG] ReadParam::toString()";
     return "ros::param::get(param=" + getName()->toString() + ")";
   }
 
@@ -279,6 +283,7 @@ public:
   }
 
   std::string toString() const override {
+    llvm::outs() << "[DEBUG] HasParam::toString()";
     return "ros::param::has(param=" + getName()->toString() + ")";
   }
 
@@ -298,14 +303,17 @@ public:
   ReadParamWithDefault(
     std::unique_ptr<SymbolicString> name,
     std::unique_ptr<SymbolicValue> defaultValue
-  ) : NamedSymbolicRosApiCall(std::move(name)), defaultValue(std::move(defaultValue))
-  {}
+  ) : NamedSymbolicRosApiCall(std::move(name)), defaultValue(std::move(defaultValue)) {
+    assert(getName() != nullptr);    
+    assert(getDefaultValue() != nullptr);
+  }
 
   SymbolicValue const * getDefaultValue() const {
     return defaultValue.get();
   }
 
   std::string toString() const override {
+    llvm::outs() << "[DEBUG] ReadParamWithDefault::toString()";
     return "ros::param::read(param=" + getName()->toString() + ", default=" + getDefaultValue()->toString() + ")";
   }
 
