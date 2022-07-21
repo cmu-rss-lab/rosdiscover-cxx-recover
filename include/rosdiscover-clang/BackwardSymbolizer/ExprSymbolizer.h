@@ -29,9 +29,9 @@ public:
   ): 
     astContext(astContext), 
     valueBuilder(), 
-    intSymbolizer(),
+    intSymbolizer(astContext),
     boolSymbolizer(astContext),
-    floatSymbolizer(),
+    floatSymbolizer(astContext),
     stringSymbolizer(astContext, apiCallToVar)
   {}
 
@@ -195,7 +195,7 @@ public:
         );
 
       default: 
-        llvm::outs() << "Unsupported binar operator: " << binOpExpr->getOpcode() << " in expr: " << prettyPrint(binOpExpr, astContext);
+        llvm::outs() << "Unsupported binar operator: " << binOpExpr->getOpcode() << " in expr: " << prettyPrint(binOpExpr, astContext) << "\n";
         return valueBuilder.unknown();
     }
   }
@@ -204,8 +204,12 @@ public:
     switch (unaryOpExr->getOpcode()) {
       case clang::UnaryOperator::Opcode::UO_LNot:
         return std::make_unique<NegateExpr>(symbolize(unaryOpExr->getSubExpr()));
+      case clang::UnaryOperator::Opcode::UO_Minus:
+      case clang::UnaryOperator::Opcode::UO_Plus:
+      case clang::UnaryOperator::Opcode::UO_Not:
+        return symbolizeConstant(unaryOpExr);
       default: 
-        llvm::outs() << "Unsupported unary operator: " << unaryOpExr->getOpcode() << " in expr: " << prettyPrint(unaryOpExr, astContext);
+        llvm::outs() << "Unsupported unary operator: " << unaryOpExr->getOpcode() << " in expr: " << prettyPrint(unaryOpExr, astContext) << "\n";
         return valueBuilder.unknown();
     }
   }
