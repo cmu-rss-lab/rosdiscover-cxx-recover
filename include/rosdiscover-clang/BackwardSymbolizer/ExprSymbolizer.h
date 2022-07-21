@@ -69,10 +69,12 @@ public:
   }
   
   std::unique_ptr<SymbolicExpr> symbolizeOperatorCallExpr(const clang::CXXOperatorCallExpr *operatorCallExpr) {
-    const std::string op = prettyPrint(operatorCallExpr->getCallee(), astContext);
     if (operatorCallExpr->isComparisonOp()) {
-      return std::make_unique<CompareExpr>(symbolize(operatorCallExpr->getArg(0)), symbolize(operatorCallExpr->getArg(1)), op);
-    } else if (op == "!") {
+      return std::make_unique<CompareExpr>(
+        symbolize(operatorCallExpr->getArg(0)), 
+        symbolize(operatorCallExpr->getArg(1)), 
+        CompareExpr::compareOperatorFromOverloadedOperatorKind(operatorCallExpr->getOperator()));
+    } else if (operatorCallExpr->getOperator() == clang::OO_Exclaim) {
       return std::make_unique<NegateExpr>(symbolize(operatorCallExpr->getArg(0)));
     }
     llvm::outs() << "unable to symbolize expression (expr): treating as unknown\n";
