@@ -30,12 +30,14 @@ public:
     auto typeName = clangType.getAsString();
     llvm::outs() << "DEBUG: determining symbolic type for Clang type [" << typeName << "]\n";
     if (typeName == "std::string"
+     || typeName.find("const char") != std::string::npos
      || typeName == "std::string &"
      || typeName == "const std::string &") {
       return SymbolicValueType::String;
     } else if (typeName == "bool") {
       return SymbolicValueType::Bool;
-    } else if (typeName == "int") {
+    } else if (typeName == "int"
+            || typeName == "long") {
       return SymbolicValueType::Integer;
     } else if (typeName == "float" 
             || typeName == "double") {
@@ -161,16 +163,23 @@ public:
   }
 
   void print(llvm::raw_ostream &os) const override {
+    assert(name != nullptr);
+    
     os << "(node-handle ";
-    name.get()->print(os);
+    name->print(os);
     os << ")";
   }
 
   std::string toString() const override {
+    assert(name != nullptr);
+    
+    llvm::outs() << "[DEBUG] SymbolicNodeHandleImpl::toString()";
     return name->toString();
   }
 
   nlohmann::json toJson() const override {
+    assert(name != nullptr);
+    
     return {
       {"kind", "node-handle"},
       {"namespace", name->toJson()}
