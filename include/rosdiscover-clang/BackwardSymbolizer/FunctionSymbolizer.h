@@ -93,8 +93,8 @@ private:
       functionCalls(functionCalls),
       apiCallToVar(),
       stringSymbolizer(astContext, apiCallToVar),
-      intSymbolizer(),
-      floatSymbolizer(),
+      intSymbolizer(astContext),
+      floatSymbolizer(astContext),
       boolSymbolizer(astContext),
       exprSymbolizer(astContext, apiCallToVar),
       ifMap(),
@@ -850,7 +850,11 @@ private:
     auto graph = buildGraph(stmt_block, deps, postDominatorAnalysis, dominatorAnalysis);
     graph->getClangBlock()->dump();
     auto condExpr = graph->getFullConditionExpr(astContext, exprSymbolizer);
+    if(condExpr == nullptr) {
+      condExpr = std::make_unique<BoolLiteral>(true);
+    }
     llvm::outs() << "\nFullControlCondition: " << condExpr->toString() << "\n";
+
 
     for (clang::CFGBlock *block: deps) {
 

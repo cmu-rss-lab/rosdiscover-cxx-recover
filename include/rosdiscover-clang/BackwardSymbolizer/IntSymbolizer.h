@@ -15,9 +15,8 @@ namespace rosdiscover {
 
 class IntSymbolizer {
 public:
-  IntSymbolizer(
-  )
-  : valueBuilder() {}
+  IntSymbolizer(clang::ASTContext &astContext)
+  : valueBuilder(), astContext(astContext) {}
 
   std::unique_ptr<SymbolicInteger> symbolize(const clang::Expr *expr) {
 
@@ -34,9 +33,16 @@ public:
 
     if (auto *literal = clang::dyn_cast<clang::IntegerLiteral>(expr)) {
       return symbolize(literal);
-    } 
+    }
 
-    llvm::outs() << "unable to symbolize expression: treating as unknown\n";
+    //Try evaluating the frequency as integer.
+    clang::Expr::EvalResult resultInt;
+    if (expr->EvaluateAsInt(resultInt, astContext)) {
+      llvm::outs() << "DEBUG [IntSymbolizer]: evaluated INT: (" << resultInt.Val.getInt().getSExtValue() << ")\n";
+      return valueBuilder.integerLiteral(resultInt.Val.getInt().getSExtValue());
+    }
+
+    llvm::outs() << "unable to symbolize expression (int): treating as unknown\n";
     return valueBuilder.unknown();
   }
   
@@ -50,6 +56,7 @@ public:
   }
 private:
   ValueBuilder valueBuilder;
+  clang::ASTContext &astContext;
 
   std::unique_ptr<SymbolicInteger> symbolize(const clang::IntegerLiteral *literal) {
     if (literal == nullptr) {

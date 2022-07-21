@@ -67,7 +67,7 @@ public:
       return symbolize(materializeTempExpr);
     }
 
-    llvm::outs() << "unable to symbolize expression: treating as unknown\n";
+    llvm::outs() << "unable to symbolize expression (str): treating as unknown\n";
     return valueBuilder.unknown();
   }
 
