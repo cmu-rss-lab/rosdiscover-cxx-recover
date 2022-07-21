@@ -25,7 +25,9 @@ class VariableReference :
   public virtual SymbolicInteger
 {
 public:
-  VariableReference(SymbolicVariable const *variable) : variable(variable) {}
+  VariableReference(SymbolicVariable const *variable) : variable(variable) {
+    assert(this->variable != nullptr);
+  }
   ~VariableReference(){}
 
   SymbolicVariable const * getVariable() const {

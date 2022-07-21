@@ -15,8 +15,10 @@ public:
     clang::Stmt* stmt,
     std::unique_ptr<SymbolicBool> condition,
     std::unique_ptr<SymbolicCompound> body
-  ) : stmt(stmt), condition(std::move(condition)), body(std::move(body))
-  {}
+  ) : stmt(stmt), condition(std::move(condition)), body(std::move(body)) {    
+    assert(this->body != nullptr);
+    assert(this->condition != nullptr);
+  }
   ~SymbolicWhileStmt(){}
 
   void print(llvm::raw_ostream &os) const override {

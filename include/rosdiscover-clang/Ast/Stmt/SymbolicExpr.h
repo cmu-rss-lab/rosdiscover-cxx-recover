@@ -103,7 +103,6 @@ public:
   }
 
   std::string toString() const override {
-    llvm::outs() << "[DEBUG] NegateExpr::toString()";
     return "!(" + subExpr->toString() + ")";
   }
 
@@ -132,8 +131,7 @@ public:
   virtual std::string binaryOperator() const = 0;
   
   std::string toString() const override {
-    llvm::outs() << "[DEBUG] BinaryExpr::toString()";
-    return "(" + expr1->toString() + " " +  binaryOperator() + " " + expr2->toString() + ")";
+    return "(" + expr1->toString() + " " + binaryOperator() + " " + expr2->toString() + ")";
   }
 
   void print(llvm::raw_ostream &os) const override {

@@ -58,8 +58,10 @@ public:
   Concatenate(
     std::unique_ptr<SymbolicString> lhs,
     std::unique_ptr<SymbolicString> rhs
-  ) : lhs(std::move(lhs)), rhs(std::move(rhs))
-  {}
+  ) : lhs(std::move(lhs)), rhs(std::move(rhs)) {
+    assert(this->lhs != nullptr); 
+    assert(this->rhs != nullptr);
+  }
   ~Concatenate(){}
 
   void print(llvm::raw_ostream &os) const override {

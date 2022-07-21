@@ -24,7 +24,7 @@ public:
 
 protected:
   NamedSymbolicRosApiCall(std::unique_ptr<SymbolicString> name) : name(std::move(name)) {
-    assert(getName() !+= nullptr);
+    assert(getName() != nullptr);
   }
 
 private:
@@ -215,7 +215,6 @@ public:
   }
 
   std::string toString() const override {
-    llvm::outs() << "[DEBUG] ReadParam::toString()";
     return "ros::param::get(param=" + getName()->toString() + ")";
   }
 
@@ -283,7 +282,6 @@ public:
   }
 
   std::string toString() const override {
-    llvm::outs() << "[DEBUG] HasParam::toString()";
     return "ros::param::has(param=" + getName()->toString() + ")";
   }
 
@@ -313,7 +311,6 @@ public:
   }
 
   std::string toString() const override {
-    llvm::outs() << "[DEBUG] ReadParamWithDefault::toString()";
     return "ros::param::read(param=" + getName()->toString() + ", default=" + getDefaultValue()->toString() + ")";
   }
 

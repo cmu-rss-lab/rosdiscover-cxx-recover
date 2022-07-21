@@ -147,11 +147,13 @@ class SymbolicNodeHandleImpl :
 {
 public:
   SymbolicNodeHandleImpl(std::unique_ptr<SymbolicString> name)
-    : name(std::move(name))
-  {}
+    : name(std::move(name)) { 
+      assert(this->name != nullptr); 
+  }
   SymbolicNodeHandleImpl(SymbolicNodeHandleImpl &&other)
-    : name(std::move(other.name))
-  {}
+    : name(std::move(other.name)) { 
+    assert(this->name != nullptr); 
+  }
   ~SymbolicNodeHandleImpl(){}
 
   static std::unique_ptr<SymbolicNodeHandle> unknown() {
@@ -163,23 +165,16 @@ public:
   }
 
   void print(llvm::raw_ostream &os) const override {
-    assert(name != nullptr);
-    
     os << "(node-handle ";
     name->print(os);
     os << ")";
   }
 
   std::string toString() const override {
-    assert(name != nullptr);
-    
-    llvm::outs() << "[DEBUG] SymbolicNodeHandleImpl::toString()";
     return name->toString();
   }
 
   nlohmann::json toJson() const override {
-    assert(name != nullptr);
-    
     return {
       {"kind", "node-handle"},
       {"namespace", name->toJson()}
