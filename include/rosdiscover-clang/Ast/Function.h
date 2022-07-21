@@ -36,7 +36,6 @@ public:
       jsonParams.push_back(entry.second.toJson());
     }
 
-    llvm::outs() << "toJson : " << qualifiedName << "\n";
     return {
       {"name", qualifiedName},
       {"parameters", jsonParams},

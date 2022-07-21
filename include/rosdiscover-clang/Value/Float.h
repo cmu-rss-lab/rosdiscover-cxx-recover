@@ -20,13 +20,14 @@ public:
   }
 
   std::string toString() const override {
-    return "\"" + std::to_string(literal) + "\"";
+    return "'" + std::to_string(literal) + "'";
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "float-literal"},
-      {"literal", literal}
+      {"literal", literal},
+      {"string", toString()},
     };
   }
 

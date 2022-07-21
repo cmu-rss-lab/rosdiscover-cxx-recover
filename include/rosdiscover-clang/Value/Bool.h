@@ -15,16 +15,17 @@ public:
 
   std::string toString() const override {
     if (literal) {
-      return "true";
+      return "'true'";
     } else {
-      return "false";
+      return "'false'";
     }
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "bool-literal"},
-      {"literal", literal}
+      {"literal", literal},
+      {"string", toString()},
     };
   }
 
