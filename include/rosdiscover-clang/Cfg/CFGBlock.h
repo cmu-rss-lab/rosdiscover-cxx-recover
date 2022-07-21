@@ -32,6 +32,9 @@ public:
 
   std::string getConditionStr(const clang::ASTContext &astContext, ExprSymbolizer &exprSymbolizer) const {
     const auto *condition = clangBlock->getTerminatorCondition();
+    if (condition == nullptr) {
+      return "true"; //No condition in block
+    }
     auto *conditionExpr = clang::dyn_cast<clang::Expr>(condition);
     if (conditionExpr == nullptr) {
       llvm::outs() << "ERROR: Terminiator condition is no expression: ";
@@ -90,7 +93,11 @@ public:
   }
 
   std::unique_ptr<SymbolicExpr> getFullConditionExpr(clang::ASTContext &astContext, ExprSymbolizer &exprSymbolizer) const {
-    return getFullConditionExpr(false, astContext, false, exprSymbolizer);
+    auto result = getFullConditionExpr(false, astContext, false, exprSymbolizer);
+    if(result == nullptr) {
+      return std::make_unique<BoolLiteral>(true);
+    }
+    return result;
   }
 
   bool createEdge(CFGBlock* successor, CFGEdge::EdgeType type) {
