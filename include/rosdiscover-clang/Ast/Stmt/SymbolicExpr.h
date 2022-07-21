@@ -91,7 +91,9 @@ class NegateExpr : public SymbolicExpr {
 public:
   NegateExpr(
     std::unique_ptr<SymbolicExpr> subExpr
-  ) : subExpr(std::move(subExpr)) {}
+  ) : subExpr(std::move(subExpr)) {
+    assert(subExpr != nullptr);
+  }
   ~NegateExpr(){}
   
   void print(llvm::raw_ostream &os) const override {
@@ -101,6 +103,7 @@ public:
   }
 
   std::string toString() const override {
+    llvm::outs() << "[DEBUG] NegateExpr::toString()";
     return "!(" + subExpr->toString() + ")";
   }
 
@@ -121,11 +124,15 @@ public:
   BinaryExpr(
     std::unique_ptr<SymbolicExpr> expr1,
     std::unique_ptr<SymbolicExpr> expr2
-  ) : expr1(std::move(expr1)), expr2(std::move(expr2)) {}
+  ) : expr1(std::move(expr1)), expr2(std::move(expr2)) {
+    assert(expr1 != nullptr);
+    assert(expr2 != nullptr);
+  }
  
   virtual std::string binaryOperator() const = 0;
   
   std::string toString() const override {
+    llvm::outs() << "[DEBUG] BinaryExpr::toString()";
     return "(" + expr1->toString() + " " +  binaryOperator() + " " + expr2->toString() + ")";
   }
 
@@ -171,7 +178,7 @@ public:
   AndExpr(
     std::unique_ptr<SymbolicExpr> expr1,
     std::unique_ptr<SymbolicExpr> expr2
-  ) : BinaryExpr(std::move(expr1), std::move(expr2)) {}
+  ) : BinaryExpr(std::move(expr1), std::move(expr2)) {} 
 
   std::string binaryOperator() const override {
     return "&&";
