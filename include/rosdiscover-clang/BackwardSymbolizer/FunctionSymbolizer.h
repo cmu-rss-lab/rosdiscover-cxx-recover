@@ -23,7 +23,7 @@
 #include "../RawStatement.h"
 #include "../Value/String.h"
 #include "../Value/Value.h"
-#include "../Cfg/CFGBlock.h"
+#include "../Cfg/ControlDependenceGraph.h"
 #include "StringSymbolizer.h"
 #include "IntSymbolizer.h"
 #include "BoolSymbolizer.h"
@@ -702,7 +702,7 @@ private:
     clang::CFGDominatorTreeImpl<false> &dominatorAnalysis,
     std::vector<const clang::CFGBlock*> &analyzed,
     std::vector<CFGBlock*> &controlDependencyGraphNodes,
-    std::unordered_map<long, CFGBlock*> &idToBlock
+    std::unique_ptr<ControlDependenceGraph> &graph
   ) {
     std::vector<CFGBlock*> predecessors;
     if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
@@ -724,17 +724,14 @@ private:
         dominatorAnalysis,
         analyzed,
         controlDependencyGraphNodes,
-        idToBlock
+        graph
       );
       predecessors.insert(predecessors.end(), indirectPredecessors.begin(), indirectPredecessors.end()); //merge results
     }
 
     // Create a node for control dependencies and the first block
     if (first || llvm::is_contained(deps, block)) {
-      if (!idToBlock.count(block->getBlockID())) //lazy creation of CFG blocks
-        idToBlock.emplace(block->getBlockID(), new CFGBlock(block));
-
-      auto newControlDependencyNode = idToBlock.at(block->getBlockID());
+      auto newControlDependencyNode = graph->getBlock(block);
 
       // Create edges for predecessors
       for (auto *predecessor: predecessors) {
@@ -801,28 +798,25 @@ private:
     }
   }
 
-  CFGBlock* buildGraph(
+  std::unique_ptr<ControlDependenceGraph> buildGraph(
       const clang::CFGBlock* clangBlockOfInterest,
       const llvm::SmallVector<clang::CFGBlock *, 4> &deps,
       clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis,
       clang::CFGDominatorTreeImpl<false> &dominatorAnalysis
     ) {
     std::vector<const clang::CFGBlock*> analyzed;
-    std::unordered_map<long, CFGBlock*> idToBlock; //maps BlockID to CFGBlockObject
-    auto cfgBlockOfInterest = new CFGBlock(clangBlockOfInterest);
+    std::unique_ptr<ControlDependenceGraph> graph; //maps BlockID to CFGBlockObject
+    auto cfgBlockOfInterest = graph->getBlock(clangBlockOfInterest);
     std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlockOfInterest};
-    idToBlock.emplace(clangBlockOfInterest->getBlockID(), cfgBlockOfInterest);
     for (auto depsBlock: deps) {
       if (postdominatorAnalysis.dominates(depsBlock, clangBlockOfInterest) && !dominatorAnalysis.dominates(depsBlock, clangBlockOfInterest))
         continue; //ignore CFG blocks that come after the block of interest.
-      auto depsCfgBlock = new CFGBlock(depsBlock);
-      controlDependencyGraphNodes.push_back(depsCfgBlock);
-      idToBlock.emplace(depsBlock->getBlockID(), depsCfgBlock);
+      controlDependencyGraphNodes.push_back(graph->getBlock(depsBlock));
     }
     llvm::outs() << "#### buildGraph ####\n";
-    buildGraph(true, clangBlockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, idToBlock);
+    buildGraph(true, clangBlockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, graph);
     llvm::outs() << "#### graph built ####\n";
-    return idToBlock.at(clangBlockOfInterest->getBlockID());
+    return graph;
   }
 
   std::unique_ptr<SymbolicExpr> getControlDependenciesObjects(const clang::Stmt* stmt) {
@@ -845,8 +839,7 @@ private:
       block->dump();
     }
     auto graph = buildGraph(stmt_block, deps, postDominatorAnalysis, dominatorAnalysis);
-    graph->getClangBlock()->dump();
-    auto condExpr = graph->getFullConditionExpr(astContext, exprSymbolizer);
+    auto condExpr = graph->getBlock(stmt_block)->getFullConditionExpr(astContext, exprSymbolizer);
     if(condExpr == nullptr) {
       condExpr = std::make_unique<BoolLiteral>(true);
     }
