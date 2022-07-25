@@ -138,7 +138,7 @@ public:
     return {
       {"kind", "publish"},
       {"publisher", publisher},
-      {"control_dependencies", pathCondition->toString()}
+      {"path_condition", pathCondition->toString()}
     };
   }
 
