@@ -713,10 +713,10 @@ private:
       block->dump();
     }
     auto graph = ControlDependenceGraph::buildGraph(stmt_block, deps, postDominatorAnalysis, dominatorAnalysis, astContext, exprSymbolizer);
-    auto /*condExpr = graph->getBlock(stmt_block)->getFullConditionExpr(astContext, exprSymbolizer);
-    if(condExpr == nullptr) {*/
+    auto condExpr = graph->getBlock(stmt_block)->getFullConditionExpr(astContext, exprSymbolizer);
+    if(condExpr == nullptr) {
       condExpr = std::make_unique<BoolLiteral>(true);
-    //}
+    }
     llvm::outs() << "\nFullControlCondition: " << condExpr->toString() << "\n";
     return condExpr;
 
