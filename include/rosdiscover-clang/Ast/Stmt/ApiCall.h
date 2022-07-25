@@ -122,12 +122,12 @@ private:
 
 class Publish : public SymbolicRosApiCall {
 public:
-  Publish(std::string const &publisher, std::unique_ptr<SymbolicExpr> controlDependencies = std::make_unique<BoolLiteral>(true)) : 
+  Publish(std::string const &publisher, std::unique_ptr<SymbolicExpr> pathCondition = std::make_unique<BoolLiteral>(true)) : 
     SymbolicRosApiCall(), 
     publisher(publisher), 
-    controlDependencies(std::move(controlDependencies)
+    pathCondition(std::move(pathCondition)
   ) {
-    assert(this->controlDependencies != nullptr);
+    assert(this->pathCondition != nullptr);
   }
 
   void print(llvm::raw_ostream &os) const override {
@@ -138,13 +138,13 @@ public:
     return {
       {"kind", "publish"},
       {"publisher", publisher},
-      {"control_dependencies", controlDependencies->toString()}
+      {"control_dependencies", pathCondition->toString()}
     };
   }
 
 private:
   std::string const publisher;
-  std::unique_ptr<SymbolicExpr> controlDependencies;
+  std::unique_ptr<SymbolicExpr> pathCondition;
 };
 
 class ServiceCaller : public NamedSymbolicRosApiCall {
