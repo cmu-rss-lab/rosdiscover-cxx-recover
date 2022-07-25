@@ -19,7 +19,7 @@ public:
     os << toString();
   }
   std::string toString() const override {
-    return "'\"" + literal + "\"'";
+    return fmt::format("'\"{}\"'", literal);
   }
 
   nlohmann::json toJson() const override {
@@ -74,7 +74,7 @@ public:
   }
 
   std::string toString() const override {
-    return lhs->toString() + " " + rhs->toString();
+    return fmt::format("{} {}", lhs->toString(), rhs->toString());
   }
 
   nlohmann::json toJson() const override {

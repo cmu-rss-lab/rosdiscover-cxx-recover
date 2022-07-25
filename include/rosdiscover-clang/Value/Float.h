@@ -20,7 +20,7 @@ public:
   }
 
   std::string toString() const override {
-    return "'" + std::to_string(literal) + "'";
+    return fmt::format("'{}'", literal);
   }
 
   nlohmann::json toJson() const override {

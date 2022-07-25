@@ -92,7 +92,7 @@ public:
   ~SymbolicMemberVariableReference(){}
 
   std::string toString() const override {
-    return  base->toString() + "." + getName();
+    return fmt::format("{}.{}", base->toString(), getName());
   }
 
   void print(llvm::raw_ostream &os) const override {

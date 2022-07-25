@@ -215,7 +215,7 @@ public:
   }
 
   std::string toString() const override {
-    return "ros::param::get(param=" + getName()->toString() + ")";
+    return fmt::format("ros::param::get(param={})", getName()->toString());
   }
 
   nlohmann::json toJson() const override {
@@ -281,8 +281,8 @@ public:
     os << ")";
   }
 
-  std::string toString() const override {
-    return "ros::param::has(param=" + getName()->toString() + ")";
+  std::string toString() const override {    
+    return fmt::format("ros::param::has(param={})", getName()->toString());
   }
 
   nlohmann::json toJson() const override {
@@ -311,7 +311,7 @@ public:
   }
 
   std::string toString() const override {
-    return "ros::param::read(param=" + getName()->toString() + ", default=" + getDefaultValue()->toString() + ")";
+    return fmt::format("ros::param::read(param={}, default={})", getName()->toString(), getDefaultValue()->toString());
   }
 
   void print(llvm::raw_ostream &os) const override {

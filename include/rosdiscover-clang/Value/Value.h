@@ -3,9 +3,9 @@
 #include <memory>
 
 #include <nlohmann/json.hpp>
-
 #include <llvm/Support/raw_ostream.h>
 #include "../Ast/Stmt/SymbolicExpr.h"
+#include <fmt/core.h>
 
 namespace rosdiscover {
 

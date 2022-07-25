@@ -103,7 +103,7 @@ public:
   }
 
   std::string toString() const override {
-    return "!(" + subExpr->toString() + ")";
+    return fmt::format("!({})", subExpr->toString());
   }
 
   nlohmann::json toJson() const override {
@@ -131,7 +131,7 @@ public:
   virtual std::string binaryOperator() const = 0;
   
   std::string toString() const override {
-    return "(" + expr1->toString() + " " + binaryOperator() + " " + expr2->toString() + ")";
+    return fmt::format("({} {} {})", expr1->toString(), binaryOperator(), expr2->toString());
   }
 
   void print(llvm::raw_ostream &os) const override {
