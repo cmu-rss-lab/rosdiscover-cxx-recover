@@ -25,7 +25,7 @@ public:
   }
 
   std::string toString() const override {
-    return getName() + ":=" + std::to_string(value);
+    return fmt::format("{}:={}", getName(), value);
   }
 
   long getValue() const {

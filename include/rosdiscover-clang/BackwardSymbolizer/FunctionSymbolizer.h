@@ -93,9 +93,10 @@ private:
       functionCalls(functionCalls),
       apiCallToVar(),
       stringSymbolizer(astContext, apiCallToVar),
-      intSymbolizer(),
-      floatSymbolizer(),
+      intSymbolizer(astContext),
+      floatSymbolizer(astContext),
       boolSymbolizer(astContext),
+      exprSymbolizer(astContext, apiCallToVar),
       ifMap(),
       whileMap(),
       compoundMap(),
@@ -116,6 +117,7 @@ private:
   IntSymbolizer intSymbolizer;
   FloatSymbolizer floatSymbolizer;
   BoolSymbolizer boolSymbolizer;
+  ExprSymbolizer exprSymbolizer;
   std::unordered_map<long, RawIfStatement*> ifMap; //keys are the IDs of the corresponding clang stmts.
   std::unordered_map<long, RawWhileStatement*> whileMap; //keys are the IDs of the corresponding clang stmts.
   std::unordered_map<long, RawCompound*> compoundMap; //keys are the IDs of the corresponding clang stmts.
@@ -700,7 +702,7 @@ private:
     clang::CFGDominatorTreeImpl<false> &dominatorAnalysis,
     std::vector<const clang::CFGBlock*> &analyzed,
     std::vector<CFGBlock*> &controlDependencyGraphNodes,
-    std::unordered_map<long, std::unique_ptr<CFGBlock>> &idToBlock
+    std::unordered_map<long, CFGBlock*> &idToBlock
   ) {
     std::vector<CFGBlock*> predecessors;
     if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
@@ -730,9 +732,9 @@ private:
     // Create a node for control dependencies and the first block
     if (first || llvm::is_contained(deps, block)) {
       if (!idToBlock.count(block->getBlockID())) //lazy creation of CFG blocks
-        idToBlock.emplace(block->getBlockID(), std::make_unique<CFGBlock>(block));
+        idToBlock.emplace(block->getBlockID(), new CFGBlock(block));
 
-      auto newControlDependencyNode = idToBlock.at(block->getBlockID()).get();
+      auto newControlDependencyNode = idToBlock.at(block->getBlockID());
 
       // Create edges for predecessors
       for (auto *predecessor: predecessors) {
@@ -760,7 +762,7 @@ private:
             } 
             if (i > 1) {
               //TODO: Handle switch-case here.
-              llvm::outs() << "Too many branches. Swich not yet supported\n";
+              llvm::outs() << "Too many branches. Switch not yet supported\n";
               abort();
             }
             i++;
@@ -789,7 +791,7 @@ private:
           }
 
           if (predecessor->createEdge(depBlock, type)) {
-            llvm::outs() << "created edge between " << predecessor->getConditionStr(astContext) << " and " << depBlock->getConditionStr(astContext) << " of type " << CFGEdge::getEdgeTypeName(type) << "\n";
+            llvm::outs() << "created edge between " << predecessor->getConditionStr(astContext, exprSymbolizer) << " and " << depBlock->getConditionStr(astContext, exprSymbolizer) << " of type " << CFGEdge::getEdgeTypeName(type) << "\n";
           }
         }
       }
@@ -799,31 +801,31 @@ private:
     }
   }
 
-  std::unique_ptr<CFGBlock> buildGraph(
+  CFGBlock* buildGraph(
       const clang::CFGBlock* clangBlockOfInterest,
       const llvm::SmallVector<clang::CFGBlock *, 4> &deps,
       clang::CFGDominatorTreeImpl<true> &postdominatorAnalysis,
       clang::CFGDominatorTreeImpl<false> &dominatorAnalysis
     ) {
     std::vector<const clang::CFGBlock*> analyzed;
-    std::unordered_map<long, std::unique_ptr<CFGBlock>> idToBlock; //maps BlockID to CFGBlockObject
-    auto cfgBlockOfInterest = std::make_unique<CFGBlock>(clangBlockOfInterest);
-    std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlockOfInterest.get()};
-    idToBlock.emplace(clangBlockOfInterest->getBlockID(), std::move(cfgBlockOfInterest));
+    std::unordered_map<long, CFGBlock*> idToBlock; //maps BlockID to CFGBlockObject
+    auto cfgBlockOfInterest = new CFGBlock(clangBlockOfInterest);
+    std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlockOfInterest};
+    idToBlock.emplace(clangBlockOfInterest->getBlockID(), cfgBlockOfInterest);
     for (auto depsBlock: deps) {
       if (postdominatorAnalysis.dominates(depsBlock, clangBlockOfInterest) && !dominatorAnalysis.dominates(depsBlock, clangBlockOfInterest))
         continue; //ignore CFG blocks that come after the block of interest.
-      auto depsCfgBlock = std::make_unique<CFGBlock>(depsBlock);
-      controlDependencyGraphNodes.push_back(depsCfgBlock.get());
-      idToBlock.emplace(depsBlock->getBlockID(), std::move(depsCfgBlock));
+      auto depsCfgBlock = new CFGBlock(depsBlock);
+      controlDependencyGraphNodes.push_back(depsCfgBlock);
+      idToBlock.emplace(depsBlock->getBlockID(), depsCfgBlock);
     }
     llvm::outs() << "#### buildGraph ####\n";
     buildGraph(true, clangBlockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, idToBlock);
     llvm::outs() << "#### graph built ####\n";
-    return std::move(idToBlock.at(clangBlockOfInterest->getBlockID()));
+    return idToBlock.at(clangBlockOfInterest->getBlockID());
   }
 
-  std::vector<std::unique_ptr<SymbolicControlDependency>> getControlDependenciesObjects(const clang::Stmt* stmt) {
+  std::unique_ptr<SymbolicExpr> getControlDependenciesObjects(const clang::Stmt* stmt) {
     const std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
           function, function->getBody(), &astContext, clang::CFG::BuildOptions());
     clang::ControlDependencyCalculator cdc(sourceCFG.get());
@@ -835,9 +837,6 @@ private:
     stmt_block->dump();
     auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
     
-    std::vector<std::unique_ptr<SymbolicControlDependency>> results;
-
-    auto prevBlock = stmt_block;
     auto analysis = std::make_unique<clang::CFGReverseBlockReachabilityAnalysis>(*(sourceCFG.get()));
     clang::CFGDominatorTreeImpl<true> postDominatorAnalysis(sourceCFG.get());
     clang::CFGDominatorTreeImpl<false> dominatorAnalysis(sourceCFG.get());
@@ -847,9 +846,14 @@ private:
     }
     auto graph = buildGraph(stmt_block, deps, postDominatorAnalysis, dominatorAnalysis);
     graph->getClangBlock()->dump();
-    auto condStr = graph->getFullConditionStr(astContext);
-    llvm::outs() << "\nFullControlCondition: " << condStr << "\n";
+    auto condExpr = graph->getFullConditionExpr(astContext, exprSymbolizer);
+    if(condExpr == nullptr) {
+      condExpr = std::make_unique<BoolLiteral>(true);
+    }
+    llvm::outs() << "\nFullControlCondition: " << condExpr->toString() << "\n";
+    return condExpr;
 
+/*
     for (clang::CFGBlock *block: deps) {
 
       //To identify whether the control condition needs to be negated, we need to see if the true or false branch is 
@@ -883,7 +887,7 @@ private:
         }
         
         llvm::outs() << "terminator condition found: " << conditionStr << "\n";
-
+        
         std::vector<std::unique_ptr<SymbolicCall>> functionCalls;
         std::vector<std::unique_ptr<SymbolicVariableReference>> variableReferences;
         for (auto delcRef : getTransitiveChildenByType(condition, true, false)) {
@@ -905,7 +909,7 @@ private:
             std::move(functionCalls), 
             std::move(variableReferences),
             condition->getSourceRange().printToString(astContext.getSourceManager()),
-            conditionStr
+            std::move(condExpr)
           )
         );
 
@@ -918,7 +922,7 @@ private:
 
     llvm::outs() << "getControlDependenciesObjects end\n";
 
-    return results;
+    return results;*/
   }
 
   std::unique_ptr<SymbolicStmt> symbolizeFunctionCall(clang::Expr *callExpr) {

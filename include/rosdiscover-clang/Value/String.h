@@ -16,13 +16,17 @@ public:
   }
 
   void print(llvm::raw_ostream &os) const override {
-    os << "\"" << literal << "\"";
+    os << toString();
+  }
+  std::string toString() const override {
+    return fmt::format("'\"{}\"'", literal);
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "string-literal"},
-      {"literal", literal}
+      {"literal", literal},
+      {"string", toString()},
     };
   }
 
@@ -39,6 +43,10 @@ public:
     os << "(node-name)";
   }
 
+  std::string toString() const override {
+    return "node-name";
+  }
+
   nlohmann::json toJson() const override {
     return {
       {"kind", "node-name"}
@@ -51,8 +59,10 @@ public:
   Concatenate(
     std::unique_ptr<SymbolicString> lhs,
     std::unique_ptr<SymbolicString> rhs
-  ) : lhs(std::move(lhs)), rhs(std::move(rhs))
-  {}
+  ) : lhs(std::move(lhs)), rhs(std::move(rhs)) {
+    assert(this->lhs != nullptr); 
+    assert(this->rhs != nullptr);
+  }
   ~Concatenate(){}
 
   void print(llvm::raw_ostream &os) const override {
@@ -63,11 +73,16 @@ public:
     os << ")";
   }
 
+  std::string toString() const override {
+    return fmt::format("{} {}", lhs->toString(), rhs->toString());
+  }
+
   nlohmann::json toJson() const override {
     return {
       {"kind", "concatenate"},
       {"lhs", lhs->toJson()},
-      {"rhs", rhs->toJson()}
+      {"rhs", rhs->toJson()},
+      {"string", toString()},
     };
   }
 

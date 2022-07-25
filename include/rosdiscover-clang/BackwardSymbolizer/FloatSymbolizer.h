@@ -15,11 +15,10 @@ namespace rosdiscover {
 
 class FloatSymbolizer {
 public:
-  FloatSymbolizer(
-  )
-  : valueBuilder() {}
+  FloatSymbolizer(clang::ASTContext &astContext)
+  : valueBuilder(), astContext(astContext) {}
 
-  std::unique_ptr<SymbolicFloat> symbolize(clang::Expr *expr) {
+  std::unique_ptr<SymbolicFloat> symbolize(const clang::Expr *expr) {
 
     if (expr == nullptr) {
       llvm::outs() << "ERROR! Symbolizing (float): NULLPTR";
@@ -32,11 +31,18 @@ public:
     expr->dump();
     llvm::outs() << "\n";
 
-    if (clang::FloatingLiteral *literal = clang::dyn_cast<clang::FloatingLiteral>(expr)) {
+    if (auto *literal = clang::dyn_cast<clang::FloatingLiteral>(expr)) {
       return symbolize(literal);
     } 
 
-    llvm::outs() << "unable to symbolize expression: treating as unknown\n";
+    //Try evaluating the frequency as float.
+    llvm::APFloat resultFloat(0.0);
+    if (expr->EvaluateAsFloat(resultFloat, astContext)) {
+      llvm::outs() << "DEBUG [FloatSymbolizer]: evaluated Float: (" << resultFloat.convertToDouble() << ")\n";
+      return valueBuilder.floatingLiteral(resultFloat.convertToDouble());
+    }
+
+    llvm::outs() << "unable to symbolize expression (float): " << prettyPrint(expr, astContext) << ". treating as unknown\n";
     return valueBuilder.unknown();
   }
   
@@ -58,6 +64,7 @@ public:
   }
 private:
   ValueBuilder valueBuilder;
+  clang::ASTContext &astContext;
 
   std::unique_ptr<SymbolicFloat> symbolize(const clang::FloatingLiteral *literal) {
     return valueBuilder.floatingLiteral(literal->getValue().convertToDouble());

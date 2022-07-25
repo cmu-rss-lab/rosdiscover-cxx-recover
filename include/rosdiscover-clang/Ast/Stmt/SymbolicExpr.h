@@ -13,28 +13,6 @@ public:
 
 };
 
-class TrueExpr : public SymbolicExpr {
-public:
-  TrueExpr() {}
-  ~TrueExpr(){}
-
-  void print(llvm::raw_ostream &os) const override {
-    os << toString();
-  }
-
-  std::string toString() const override {
-    return "true";
-  }
-
-  nlohmann::json toJson() const override {
-    return {
-      {"kind", "TrueExpr"},
-      {"string", toString()},
-    };
-
-  }
-};
-
 class ThisExpr : public SymbolicExpr {
 public:
   ThisExpr() {}
@@ -77,52 +55,6 @@ public:
   }
 };
 
-class FalseExpr : public SymbolicExpr {
-public:
-  FalseExpr() {}
-  ~FalseExpr(){}
-  
-  void print(llvm::raw_ostream &os) const override {
-    os << toString();
-  }
-
-  std::string toString() const override {
-    return "false";
-  }
-
-  nlohmann::json toJson() const override {
-    return {
-      {"kind", "FalseExpr"},
-      {"string", toString()},
-    };
-  }
-};
-
-class SymbolicStringConstant : public SymbolicExpr {
-public:
-  SymbolicStringConstant(
-    std::string const value
-  ) : value(value) {}
-  ~SymbolicStringConstant(){}
-  
-  void print(llvm::raw_ostream &os) const override {
-    os << "(SymbolicStringConstant " << toString() << ")";
-  }
-
-  std::string toString() const override {
-    return "\""+value+"\"";
-  }
-
-  nlohmann::json toJson() const override {
-    return {
-      {"kind", "SymbolicConstant"},
-      {"string", value},
-    };
-  }
-
-private:
-  std::string value;
-};
 
 class SymbolicConstant : public SymbolicExpr {
 public:
@@ -159,7 +91,9 @@ class NegateExpr : public SymbolicExpr {
 public:
   NegateExpr(
     std::unique_ptr<SymbolicExpr> subExpr
-  ) : subExpr(std::move(subExpr)) {}
+  ) : subExpr(std::move(subExpr)) {
+    assert(this->subExpr != nullptr);
+  }
   ~NegateExpr(){}
   
   void print(llvm::raw_ostream &os) const override {
@@ -169,7 +103,7 @@ public:
   }
 
   std::string toString() const override {
-    return "!(" + subExpr->toString() + ")";
+    return fmt::format("!({})", subExpr->toString());
   }
 
   nlohmann::json toJson() const override {
@@ -189,12 +123,15 @@ public:
   BinaryExpr(
     std::unique_ptr<SymbolicExpr> expr1,
     std::unique_ptr<SymbolicExpr> expr2
-  ) : expr1(std::move(expr1)), expr2(std::move(expr2)) {}
+  ) : expr1(std::move(expr1)), expr2(std::move(expr2)) {
+    assert(this->expr1 != nullptr);
+    assert(this->expr2 != nullptr);
+  }
  
   virtual std::string binaryOperator() const = 0;
   
   std::string toString() const override {
-    return "(" + expr1->toString() + " " +  binaryOperator() + " " + expr2->toString() + ")";
+    return fmt::format("({} {} {})", expr1->toString(), binaryOperator(), expr2->toString());
   }
 
   void print(llvm::raw_ostream &os) const override {
@@ -261,22 +198,22 @@ public:
 
   static CompareOperator compareOperatorFromOpCode(clang::BinaryOperator::Opcode opCode) {
     switch (opCode) {
-      case clang::BinaryOperator::Opcode::BO_EQ: 
+      case clang::BinaryOperator::Opcode::BO_EQ:
         return CompareOperator::EQ;
-      case clang::BinaryOperator::Opcode::BO_NE: 
+      case clang::BinaryOperator::Opcode::BO_NE:
         return CompareOperator::NE;
-      case clang::BinaryOperator::Opcode::BO_LT: 
+      case clang::BinaryOperator::Opcode::BO_LT:
         return CompareOperator::LT;
-      case clang::BinaryOperator::Opcode::BO_LE: 
+      case clang::BinaryOperator::Opcode::BO_LE:
         return CompareOperator::LE;
       case clang::BinaryOperator::Opcode::BO_GT:
         return CompareOperator::GT;
-      case clang::BinaryOperator::Opcode::BO_GE: 
+      case clang::BinaryOperator::Opcode::BO_GE:
         return CompareOperator::GE;
       case clang::BinaryOperator::Opcode::BO_Cmp: 
-        return CompareOperator::Spaceship;        
+        return CompareOperator::Spaceship;
       default:
-        llvm::outs() << "ERROR: Invalid compare operator: " << opCode;
+        llvm::outs() << "ERROR: Invalid compare operator (opCode): " << opCode;
         abort();
     }
   }
@@ -284,33 +221,29 @@ public:
   CompareExpr(
     std::unique_ptr<SymbolicExpr> expr1,
     std::unique_ptr<SymbolicExpr> expr2,
-    const std::string op
-    ) : BinaryExpr(std::move(expr1), std::move(expr2)), op(compareOperatorFromString(op)) {}
-
-  CompareExpr(
-    std::unique_ptr<SymbolicExpr> expr1,
-    std::unique_ptr<SymbolicExpr> expr2,
     const CompareOperator op
     ) : BinaryExpr(std::move(expr1), std::move(expr2)), op(op) {}
 
-  static const CompareOperator compareOperatorFromString(const std::string str) {
-    if (str == "==")
-      return CompareOperator::EQ;
-    else if (str == "!=")      
-      return CompareOperator::NE;
-    else if (str == "<")
-      return CompareOperator::LT;
-    else if (str == "<=")
-      return CompareOperator::LE;
-    else if (str == ">")
-      return CompareOperator::GT;
-    else if (str == ">=")
-      return CompareOperator::GE;
-    else if (str == "<=>")
-      return CompareOperator::Spaceship;
-
-    llvm::outs() << "ERROR: Invalid compare operator: " << str;
-    abort();
+  static const CompareOperator compareOperatorFromOverloadedOperatorKind(const clang::OverloadedOperatorKind opCode) {
+    switch (opCode) {
+      case clang::OO_EqualEqual: 
+        return CompareOperator::EQ;
+      case clang::OO_ExclaimEqual: 
+        return CompareOperator::NE;
+      case clang::OO_Less:
+        return CompareOperator::LT;
+      case clang::OO_LessEqual:
+        return CompareOperator::LE;
+      case clang::OO_Greater:
+        return CompareOperator::GT;
+      case clang::OO_GreaterEqual:
+        return CompareOperator::GE;
+      case clang::OO_Spaceship:
+        return CompareOperator::Spaceship;
+      default:
+        llvm::outs() << "ERROR: Invalid compare operator (opCode): " << opCode;
+        abort();
+    }
   }
 
   std::string binaryOperator() const override {

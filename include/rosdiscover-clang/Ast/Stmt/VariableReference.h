@@ -77,20 +77,22 @@ public:
     bool isModulePrivate,
     std::unique_ptr<SymbolicExpr> base
   ) : SymbolicVariableReference(isInstanceMember, isClassMember, typeName, name, isFileVarDecl, isLocalVarDeclOrParm, isModulePrivate),
-      base(std::move(base))
-  {}
+      base(std::move(base)) {
+        assert(this->base != nullptr); 
+  }
   
   SymbolicMemberVariableReference(
     const clang::DeclRefExpr* varRef,
     const clang::VarDecl* varDecl,
     std::unique_ptr<SymbolicExpr> base
   ) : SymbolicVariableReference(varRef, varDecl),
-      base(std::move(base))
-  {}
+      base(std::move(base)) {
+        assert(this->base != nullptr); 
+  }
   ~SymbolicMemberVariableReference(){}
 
   std::string toString() const override {
-    return  base->toString() + "." + getName();
+    return fmt::format("{}.{}", base->toString(), getName());
   }
 
   void print(llvm::raw_ostream &os) const override {

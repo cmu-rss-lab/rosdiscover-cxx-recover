@@ -15,6 +15,7 @@ public:
   std::string getTypeAsString() const {
     return SymbolicValue::getSymbolicTypeAsString(getType());
   }
+  
 };
 
 class VariableReference :
@@ -24,7 +25,9 @@ class VariableReference :
   public virtual SymbolicInteger
 {
 public:
-  VariableReference(SymbolicVariable const *variable) : variable(variable) {}
+  VariableReference(SymbolicVariable const *variable) : variable(variable) {
+    assert(this->variable != nullptr);
+  }
   ~VariableReference(){}
 
   SymbolicVariable const * getVariable() const {
@@ -32,7 +35,11 @@ public:
   }
 
   void print(llvm::raw_ostream &os) const override {
-    os << variable->getName();
+    os << toString();
+  }
+
+  std::string toString() const override {
+    return variable->getName();
   }
 
   nlohmann::json toJson() const override {

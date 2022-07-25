@@ -9,6 +9,7 @@
 #include <fmt/core.h>
 
 #include "../Value/Value.h"
+#include "../Value/Bool.h"
 #include "Decl/LocalVariable.h"
 #include "Decl/Parameter.h"
 #include "Stmt/Stmt.h"
@@ -132,23 +133,25 @@ public:
   SymbolicFunctionCall(
     SymbolicFunction *callee,
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
-    std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies = {}
-  ) : callee(callee), args(std::move(args)), controlDependencies(std::move(controlDependencies)) {}
+    std::unique_ptr<SymbolicExpr> pathCondition = std::make_unique<BoolLiteral>(true)
+  ) : callee(callee), args(std::move(args)), pathCondition(std::move(pathCondition)) {
+    assert(this->pathCondition != nullptr);
+  }
   ~SymbolicFunctionCall(){}
 
   static std::unique_ptr<SymbolicFunctionCall> create(
     SymbolicFunction *function,
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
-    std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies
+    std::unique_ptr<SymbolicExpr> pathCondition
   ) {
-    return std::make_unique<SymbolicFunctionCall>(function, args, std::move(controlDependencies));
+    return std::make_unique<SymbolicFunctionCall>(function, args, std::move(pathCondition));
   }
 
   static std::unique_ptr<SymbolicFunctionCall> create(
     SymbolicFunction *function
   ) {
     std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> emptyArgs;
-    return create(function, emptyArgs, {});
+    return create(function, emptyArgs, std::make_unique<BoolLiteral>(true));
   }
 
   void print(llvm::raw_ostream &os) const override {
@@ -166,15 +169,11 @@ public:
     for (auto const &entry : args) {
       argsJson[entry.first] = entry.second->toJson();
     }
-    auto jDeps = nlohmann::json::array();
-    for (auto const &controlDependency : controlDependencies) {
-      jDeps.push_back(controlDependency->toJson());
-    }
     return {
       {"kind", "call"},
       {"callee", callee->getName()},
       {"arguments", argsJson},
-      {"control_dependencies", jDeps},
+      {"path_condition", pathCondition->toString()},
     };
   }
 
@@ -185,7 +184,7 @@ public:
 private:
   SymbolicFunction *callee;
   std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
-  std::vector<std::unique_ptr<SymbolicControlDependency>> controlDependencies;
+  std::unique_ptr<SymbolicExpr> pathCondition;
 };
 
 class UnknownSymbolicFunctionCall : public SymbolicFunctionCall {

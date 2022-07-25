@@ -41,7 +41,7 @@ public:
   static clang::Expr* find(
       clang::ASTContext &astContext,
       clang::VarDecl const *decl,
-      clang::Expr *location
+      const clang::Expr *location
   ) {
     auto visitor = FindDefVisitor(astContext, decl, location);
 

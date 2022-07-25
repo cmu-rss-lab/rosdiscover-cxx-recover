@@ -3,9 +3,9 @@
 #include <memory>
 
 #include <nlohmann/json.hpp>
-
 #include <llvm/Support/raw_ostream.h>
 #include "../Ast/Stmt/SymbolicExpr.h"
+#include <fmt/core.h>
 
 namespace rosdiscover {
 
@@ -18,7 +18,7 @@ enum class SymbolicValueType {
   NodeHandle
 };
 
-class SymbolicValue {
+class SymbolicValue : public SymbolicExpr {
 public:
   virtual ~SymbolicValue(){};
   virtual void print(llvm::raw_ostream &os) const = 0;
@@ -30,12 +30,14 @@ public:
     auto typeName = clangType.getAsString();
     llvm::outs() << "DEBUG: determining symbolic type for Clang type [" << typeName << "]\n";
     if (typeName == "std::string"
+     || typeName.find("const char") != std::string::npos
      || typeName == "std::string &"
      || typeName == "const std::string &") {
       return SymbolicValueType::String;
     } else if (typeName == "bool") {
       return SymbolicValueType::Bool;
-    } else if (typeName == "int") {
+    } else if (typeName == "int"
+            || typeName == "long") {
       return SymbolicValueType::Integer;
     } else if (typeName == "float" 
             || typeName == "double") {
@@ -85,7 +87,6 @@ class SymbolicUnknown :
   public virtual SymbolicBool,
   public virtual SymbolicInteger,
   public virtual SymbolicFloat,
-  public virtual SymbolicExpr,
   public virtual SymbolicNodeHandle
 {
 public:
@@ -97,7 +98,7 @@ public:
   }
 
   std::string toString() const override {
-    return "unknown";
+    return "UNKNOWN";
   }
 
   void print(llvm::raw_ostream &os) const override {
@@ -126,6 +127,10 @@ public:
     os << "(arg " << name << ")";
   }
 
+  std::string toString() const override {
+    return name;
+  }
+
   nlohmann::json toJson() const override {
     return {
       {"kind", "arg"},
@@ -142,11 +147,13 @@ class SymbolicNodeHandleImpl :
 {
 public:
   SymbolicNodeHandleImpl(std::unique_ptr<SymbolicString> name)
-    : name(std::move(name))
-  {}
+    : name(std::move(name)) { 
+      assert(this->name != nullptr); 
+  }
   SymbolicNodeHandleImpl(SymbolicNodeHandleImpl &&other)
-    : name(std::move(other.name))
-  {}
+    : name(std::move(other.name)) { 
+    assert(this->name != nullptr); 
+  }
   ~SymbolicNodeHandleImpl(){}
 
   static std::unique_ptr<SymbolicNodeHandle> unknown() {
@@ -159,8 +166,12 @@ public:
 
   void print(llvm::raw_ostream &os) const override {
     os << "(node-handle ";
-    name.get()->print(os);
+    name->print(os);
     os << ")";
+  }
+
+  std::string toString() const override {
+    return name->toString();
   }
 
   nlohmann::json toJson() const override {

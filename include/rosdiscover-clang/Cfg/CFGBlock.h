@@ -6,6 +6,8 @@
 #include <clang/AST/Stmt.h>
 
 #include "CFGEdge.h"
+#include "../BackwardSymbolizer/ExprSymbolizer.h"
+
 
 namespace rosdiscover {
 class CFGEdge;
@@ -28,51 +30,77 @@ public:
     return predecessors;
   }
 
-  std::string getConditionStr(clang::ASTContext &astContext) const {
+  std::string getConditionStr(const clang::ASTContext &astContext, ExprSymbolizer &exprSymbolizer) const {
     const auto *condition = clangBlock->getTerminatorCondition();
     if (condition == nullptr) {
-      return "[" + std::to_string(clangBlock->getBlockID()) + "]";
+      return "true"; //No condition in block
     }
-    return rosdiscover::prettyPrint(condition, astContext);
+    auto *conditionExpr = clang::dyn_cast<clang::Expr>(condition);
+    if (conditionExpr == nullptr) {
+      llvm::outs() << "ERROR: Terminiator condition is no expression: ";
+      condition->dump();
+      abort();
+    }
+    auto symbolicCondition = exprSymbolizer.symbolize(conditionExpr);
+
+    auto result = symbolicCondition->toString();
+    llvm::outs() << "[DEBUG] Symbolized Expr: " << result << " for: " << prettyPrint(condition, astContext) << "\n";
+    
+    return result;
   }
 
-  std::string getFullConditionStr(bool includeSelf, clang::ASTContext &astContext, bool negate) const {
-    std::string result = "";
+  std::unique_ptr<SymbolicExpr> getFullConditionExpr(
+      bool includeSelf,
+      const clang::ASTContext &astContext,
+      bool negate,
+      ExprSymbolizer &exprSymbolizer
+    ) const {
+    std::unique_ptr<SymbolicExpr> result = nullptr;
     for (auto edge: predecessors) {
-      auto pStr = edge->getPredecessor()->getFullConditionStr(true, astContext, edge->getType() == CFGEdge::EdgeType::False);
-      if (pStr == "")
+      auto pExpr = edge->getPredecessor()->getFullConditionExpr(true, astContext, edge->getType() == CFGEdge::EdgeType::False, exprSymbolizer);
+      if (pExpr == nullptr)
         continue;
 
-      if (edge->getType() == CFGEdge::EdgeType::False) {
-        if (result == "") 
-          result = pStr;
+      if (edge->getType() == CFGEdge::EdgeType::False ||
+          edge->getType() == CFGEdge::EdgeType::True
+      ) {
+        if (result == nullptr) 
+          result = std::move(pExpr);
         else 
-          result = pStr + " || " + result;
-      }
-      else if (edge->getType() == CFGEdge::EdgeType::True) {
-        if (result == "") 
-          result = pStr;
-        else
-          result = pStr + " || " + result;
+          result = std::make_unique<OrExpr>(std::move(pExpr), std::move(result));
       }
       else if (edge->getType() == CFGEdge::EdgeType::Normal) {
         abort();
       }
     }
-    
-    if (!includeSelf) {
+
+    if (!includeSelf || clangBlock->getTerminatorCondition() == nullptr) {
       return result;
     }
+    auto condExpr = clang::dyn_cast<clang::Expr>(clangBlock->getTerminatorCondition());
+    if (condExpr == nullptr) {
+      llvm::outs() << "ERROR: Terminiator condition is no expression: ";
+      clangBlock->getTerminatorCondition()->dump();
+      abort();
+    }
 
-    auto myStr = negate ? "!(" + getConditionStr(astContext) + ")" : getConditionStr(astContext);
-    if (result == "") 
-      return myStr;
+    auto symbolicCondition = exprSymbolizer.symbolize(condExpr);
+    auto symbolicConditionStr = symbolicCondition->toString();
+    llvm::outs() << "[DEBUG] Symbolized Expr: " << symbolicConditionStr << " for: " << prettyPrint(condExpr, astContext) << "\n";
+    
+    std::unique_ptr<SymbolicExpr> myExpr = negate ? std::make_unique<NegateExpr>(std::move(symbolicCondition)) : std::move(symbolicCondition);
+    if (result == nullptr) 
+      return myExpr;
     else
-      return "(" + result + ") && " + myStr;
+      return std::make_unique<AndExpr>(std::move(result), std::move(myExpr));
   }
 
-  std::string getFullConditionStr(clang::ASTContext &astContext) const {
-    return getFullConditionStr(false, astContext, false);
+  std::unique_ptr<SymbolicExpr> getFullConditionExpr(clang::ASTContext &astContext, ExprSymbolizer &exprSymbolizer) const {
+    auto result = getFullConditionExpr(false, astContext, false, exprSymbolizer);
+    if(result == nullptr) {
+      return std::make_unique<BoolLiteral>(true);
+    }
+    return result;
   }
 
   bool createEdge(CFGBlock* successor, CFGEdge::EdgeType type) {

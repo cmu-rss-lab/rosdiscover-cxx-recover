@@ -16,13 +16,18 @@ public:
   }
 
   void print(llvm::raw_ostream &os) const override {
-    os << "\"" << literal << "\"";
+    os << toString();
+  }
+
+  std::string toString() const override {
+    return fmt::format("'{}'", literal);
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "float-literal"},
-      {"literal", literal}
+      {"literal", literal},
+      {"string", toString()},
     };
   }
 

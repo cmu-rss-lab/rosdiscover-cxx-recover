@@ -10,17 +10,22 @@ public:
   ~BoolLiteral() {}
 
   void print(llvm::raw_ostream &os) const override {
+    os << toString();
+  }
+
+  std::string toString() const override {
     if (literal) {
-      os << "true";
+      return "'true'";
     } else {
-      os << "false";
+      return "'false'";
     }
   }
 
   nlohmann::json toJson() const override {
     return {
       {"kind", "bool-literal"},
-      {"literal", literal}
+      {"literal", literal},
+      {"string", toString()},
     };
   }
 

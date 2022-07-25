@@ -49,8 +49,9 @@ public:
     std::unique_ptr<SymbolicStmt> symbolicStmt,
     clang::Stmt* clangStmt,
     std::string const &location
-  ) : symbolicStmt(std::move(symbolicStmt)), clangStmt(clangStmt), location(location)
-  {}
+  ) : symbolicStmt(std::move(symbolicStmt)), clangStmt(clangStmt), location(location) {
+    assert(this->symbolicStmt != nullptr);
+  }
 
 private:
   // TODO this probably ought to be const?
