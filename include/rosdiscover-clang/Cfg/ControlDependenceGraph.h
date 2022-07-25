@@ -5,8 +5,9 @@
 namespace rosdiscover {
 class ControlDependenceGraph {
 public:
+  ControlDependenceGraph() : idToBlockDict() {}
   ~ControlDependenceGraph(){}
-
+  
   static std::unique_ptr<ControlDependenceGraph> buildGraph(
       const clang::CFGBlock* clangBlockOfInterest,
       const llvm::SmallVector<clang::CFGBlock *, 4> &deps,
@@ -16,13 +17,17 @@ public:
       ExprSymbolizer &exprSymbolizer
     ) {
     std::vector<const clang::CFGBlock*> analyzed;
-    std::unique_ptr<ControlDependenceGraph> graph; //maps BlockID to CFGBlockObject
+    std::unique_ptr<ControlDependenceGraph> graph = std::make_unique<ControlDependenceGraph>(); //maps BlockID to CFGBlockObject
     auto cfgBlockOfInterest = graph->getBlock(clangBlockOfInterest);
+    assert(cfgBlockOfInterest != nullptr);
     std::vector<CFGBlock*> controlDependencyGraphNodes = {cfgBlockOfInterest};
     for (auto depsBlock: deps) {
+      assert(depsBlock != nullptr);
       if (postdominatorAnalysis.dominates(depsBlock, clangBlockOfInterest) && !dominatorAnalysis.dominates(depsBlock, clangBlockOfInterest))
         continue; //ignore CFG blocks that come after the block of interest.
-      controlDependencyGraphNodes.push_back(graph->getBlock(depsBlock));
+      auto depsCfgBlock = graph->getBlock(depsBlock);
+      assert(depsCfgBlock != nullptr);
+      controlDependencyGraphNodes.push_back(depsCfgBlock);
     }
     llvm::outs() << "#### buildGraph ####\n";
     graph->buildGraph(true, clangBlockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, astContext, exprSymbolizer);
@@ -31,16 +36,15 @@ public:
   }
   
   CFGBlock* getBlock(const clang::CFGBlock* block) {
-    if (!idToBlockDict.count(block->getBlockID())) { //lazy creation of CFG blocks 
-        idToBlockDict.emplace(block->getBlockID(), std::make_unique<CFGBlock>(block));
+    auto id = block->getBlockID();
+    if (!idToBlockDict.count(id)) { //lazy creation of CFG blocks 
+        idToBlockDict.emplace(id, std::make_unique<CFGBlock>(block));
     }
-    return idToBlockDict.at(block->getBlockID()).get();
+    return idToBlockDict.at(id).get();
   }
 
 private: 
   std::unordered_map<long, std::unique_ptr<CFGBlock>> idToBlockDict;
-
-  ControlDependenceGraph() : idToBlockDict() {}
 
   // Recursively builds a graph of control dependencies starting from the last block.
   std::vector<CFGBlock*> buildGraph(
@@ -83,12 +87,16 @@ private:
     // Create a node for control dependencies and the first block
     if (first || llvm::is_contained(deps, block)) {
       auto newControlDependencyNode = this->getBlock(block);
+      assert(newControlDependencyNode != nullptr);
 
       // Create edges for predecessors
       for (auto *predecessor: predecessors) {
-
+        assert(predecessor != nullptr);
+        assert(predecessor->getClangBlock() != nullptr);
         // Check all nodes of the control dependency graph for potential edges to be created and their type
         for(auto *depBlock : controlDependencyGraphNodes) {
+          assert(depBlock != nullptr);
+
           bool trueBranchDominates = false;
           bool falseBranchDominates = false;
 
