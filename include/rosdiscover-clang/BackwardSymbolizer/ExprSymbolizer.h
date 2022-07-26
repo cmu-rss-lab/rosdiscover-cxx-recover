@@ -87,6 +87,7 @@ public:
       false, 
       memberExpr->getType().getAsString(), 
       memberExpr->getMemberNameInfo().getAsString(), 
+      memberExpr->getMemberDecl()->getQualifiedNameAsString(),
       false, 
       false, 
       false,
@@ -138,7 +139,7 @@ public:
       if (declRefExpr->EvaluateAsInt(resultInt, astContext)) {
         enumValue = resultInt.Val.getInt().getSExtValue();
       }
-      return std::make_unique<SymbolicEnumReference>(enumDecl->getType().getAsString(), enumDecl->getNameAsString(), enumValue);
+      return std::make_unique<SymbolicEnumReference>(enumDecl->getType().getAsString(), enumDecl->getNameAsString(), enumDecl->getQualifiedNameAsString(), enumValue);
     }
     
     return symbolizeConstant(declRefExpr);

@@ -15,10 +15,11 @@ public:
     bool isClassMember,
     std::string typeName,
     std::string name,
+    std::string qualitfiedName,
     bool isFileVarDecl,
     bool isLocalVarDeclOrParm,
     bool isModulePrivate
-  ) : SymbolicDeclRef(isInstanceMember, isClassMember, typeName, name),
+  ) : SymbolicDeclRef(isInstanceMember, isClassMember, typeName, name, qualitfiedName),
       isFileVarDecl(isFileVarDecl),
       isLocalVarDeclOrParm(isLocalVarDeclOrParm),
       isModulePrivate(isModulePrivate)
@@ -72,11 +73,12 @@ public:
     bool isClassMember,
     std::string typeName,
     std::string name,
+    std::string qualitfiedName,
     bool isFileVarDecl,
     bool isLocalVarDeclOrParm,
     bool isModulePrivate,
     std::unique_ptr<SymbolicExpr> base
-  ) : SymbolicVariableReference(isInstanceMember, isClassMember, typeName, name, isFileVarDecl, isLocalVarDeclOrParm, isModulePrivate),
+  ) : SymbolicVariableReference(isInstanceMember, isClassMember, typeName, name, qualitfiedName, isFileVarDecl, isLocalVarDeclOrParm, isModulePrivate),
       base(std::move(base)) {
         assert(this->base != nullptr); 
   }

@@ -14,8 +14,9 @@ public:
   SymbolicEnumReference(
     std::string typeName,
     std::string name,
+    std::string qualifiedName,
     long value
-  ) : SymbolicDeclRef(false, false, typeName, name), value(value)
+  ) : SymbolicDeclRef(false, false, typeName, name, qualifiedName), value(value)
    {}
 
   ~SymbolicEnumReference(){}
