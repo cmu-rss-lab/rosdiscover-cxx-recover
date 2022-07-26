@@ -106,7 +106,7 @@ public:
     return j;
   }
 
-  std::vector<SymbolicExpr*> getChildren() const override {
+  std::vector<const SymbolicExpr*> getChildren() const override {
     return {base.get()};
   }
 

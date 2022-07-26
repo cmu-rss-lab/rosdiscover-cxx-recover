@@ -11,12 +11,12 @@ public:
   virtual nlohmann::json toJson() const = 0;
   virtual std::string toString() const = 0;
 
-  virtual std::vector<SymbolicExpr*> getChildren() const {
+  virtual std::vector<const SymbolicExpr*> getChildren() const {
     return {};
   }
 
-  std::vector<SymbolicExpr*> getTransitiveChildren() const {
-    std::vector<SymbolicExpr*> result = getChildren();
+  std::vector<const SymbolicExpr*> getTransitiveChildren() const {
+    std::vector<const SymbolicExpr*> result = getChildren();
     for (auto child: getChildren()) {
       auto transitiveChildren = child->getTransitiveChildren();
       result.insert(result.end(), transitiveChildren.begin(), transitiveChildren.end());
@@ -127,7 +127,7 @@ public:
     };
   }
 
-  std::vector<SymbolicExpr*> getChildren() const override {
+  std::vector<const SymbolicExpr*> getChildren() const override {
     return {subExpr.get()};
   }
 
@@ -169,7 +169,7 @@ public:
     };
   }
 
-  std::vector<SymbolicExpr*> getChildren() const override {
+  std::vector<const SymbolicExpr*> getChildren() const override {
     return {expr1.get(), expr2.get()};
   }
 
