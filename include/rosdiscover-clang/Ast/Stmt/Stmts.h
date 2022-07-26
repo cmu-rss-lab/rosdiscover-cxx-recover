@@ -8,3 +8,4 @@
 #include "While.h"
 #include "Stmt.h"
 #include "SymbolicExpr.h"
+#include "SymbolicAssignment.h"

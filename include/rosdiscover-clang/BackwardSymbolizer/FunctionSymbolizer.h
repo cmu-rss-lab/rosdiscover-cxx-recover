@@ -18,6 +18,8 @@
 
 #include "../ApiCall/Calls/Util.h"
 #include "../Ast/Ast.h"
+#include "../Ast/Stmt/SymbolicAssignment.h"
+#include "../Ast/Assign/AssignVisitor.h"
 #include "../Ast/Stmt/ControlDependency.h"
 #include "../Helper/StmtOrderingVisitor.h"
 #include "../RawStatement.h"
@@ -97,6 +99,7 @@ private:
       floatSymbolizer(astContext),
       boolSymbolizer(astContext),
       exprSymbolizer(astContext, apiCallToVar),
+      assignments(FindVarAssignVisitor::findAssignments(astContext, apiCallToVar, function)),
       ifMap(),
       whileMap(),
       compoundMap(),
@@ -118,6 +121,7 @@ private:
   FloatSymbolizer floatSymbolizer;
   BoolSymbolizer boolSymbolizer;
   ExprSymbolizer exprSymbolizer;
+  std::vector<const clang::BinaryOperator*> assignments;
   std::unordered_map<long, RawIfStatement*> ifMap; //keys are the IDs of the corresponding clang stmts.
   std::unordered_map<long, RawWhileStatement*> whileMap; //keys are the IDs of the corresponding clang stmts.
   std::unordered_map<long, RawCompound*> compoundMap; //keys are the IDs of the corresponding clang stmts.
@@ -868,7 +872,7 @@ private:
 
 
   std::unique_ptr<SymbolicIfStmt> symbolizeIf(RawIfStatement* rawIf) {
-    clang::IfStmt *stmt = rawIf->getIfStmt();
+    auto *stmt = rawIf->getIfStmt();
 
     llvm::outs() << "DEBUG: symbolizing if: ";
     stmt->dump();
@@ -892,7 +896,7 @@ private:
 
   std::unique_ptr<SymbolicWhileStmt> symbolizeWhile(RawWhileStatement* rawWhile) {
 
-    clang::WhileStmt *stmt = rawWhile->getWhileStmt();
+    auto *stmt = rawWhile->getWhileStmt();
     llvm::outs() << "DEBUG: symbolizing while: ";
     stmt->dump();
     llvm::outs() << "\n";
@@ -902,6 +906,41 @@ private:
     symbolicWhile->print(llvm::outs());
     return symbolicWhile;
   }
+
+  std::unique_ptr<SymbolicAssignment> symbolizeAssignment(RawAssignment* assignment) {
+    auto *assign = assignment->getBinaryOperator();
+    llvm::outs() << "DEBUG: symbolizing assignment: ";
+    assign->dump();
+    llvm::outs() << "\n";
+
+    std::string varName;
+    std::unique_ptr<SymbolicVariableReference> var;
+
+    if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(assign->getLHS()->IgnoreCasts()->IgnoreImpCasts())) {
+      varName = declRefExpr->getDecl()->getQualifiedNameAsString();
+      llvm::outs() << "declRefExpr assign: " << varName;
+      auto *varDecl = clang::dyn_cast<clang::VarDecl>(declRefExpr->getDecl());
+      if (varDecl == nullptr) {
+        llvm::outs() << "Unsupported LHS of Assignment: ";
+        declRefExpr->dump();
+        abort();
+      }
+      var = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
+    } else if (auto *memberExpr = clang::dyn_cast<clang::MemberExpr>(assign->getLHS()->IgnoreCasts()->IgnoreImpCasts())) {
+      varName = memberExpr->getMemberDecl()->getQualifiedNameAsString();
+      llvm::outs() << "memberExpr assign: " << varName;
+      var = exprSymbolizer.symbolizeMemberExpr(memberExpr);
+    } else {
+      llvm::outs() << "[ERROR] Unsupported LHS of Assignment: ";
+      assign->dump();
+      abort();
+    }
+    auto symbolicAssignment = std::make_unique<SymbolicAssignment>(std::move(var), exprSymbolizer.symbolize(assign->getRHS()));
+    
+    llvm::outs() << "Symbolized Assignment: ";
+    symbolicAssignment->print(llvm::outs());
+    return symbolicAssignment;
+  }  
   
   /* 
   Recursively adds the given statement to the control flow nodes of its parents and returns the highest level control flow parent.
@@ -977,6 +1016,9 @@ private:
   std::vector<RawStatement*> computeStatementOrder() {
     // unify all of the statements in this function
     std::vector<RawStatement*> unordered;
+    for (auto *assignment : assignments) {
+      unordered.push_back(new RawAssignment(assignment));
+    }
     for (auto *apiCall : apiCalls) {
       unordered.push_back(new RawRosApiCallStatement(apiCall));
     }
@@ -1060,6 +1102,9 @@ private:
       case RawStatementKind::While:
         symbolic = symbolizeWhile(((RawWhileStatement*) statement));
         break;
+      case RawStatementKind::Assignment:
+        symbolic = symbolizeAssignment(((RawAssignment*) statement));
+        break;        
       case RawStatementKind::Compound:
         symbolic = symbolizeCompound((RawCompound*) statement);
         break;
@@ -1073,8 +1118,8 @@ private:
 
   void run() {
     // TODO this should operate on a reference instead!
-    auto compound = std::make_unique<SymbolicCompound>();
-
+    auto compound = std::make_unique<SymbolicCompound>();    
+    
     for (auto &rawStmt : computeStatementOrder()) {
       compound->append(symbolizeStatement(rawStmt));
     }
