@@ -106,6 +106,10 @@ public:
     return j;
   }
 
+  std::vector<SymbolicExpr*> getChildren() const override {
+    return {base.get()};
+  }
+
 private: 
   std::unique_ptr<SymbolicExpr> base;
 };
