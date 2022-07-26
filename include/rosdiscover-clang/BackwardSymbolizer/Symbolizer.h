@@ -8,12 +8,14 @@
 
 #include <clang/AST/ASTContext.h>
 #include <clang/AST/Decl.h>
+
 #include <clang/Analysis/CallGraph.h>
 
 #include <llvm/Support/raw_ostream.h>
 
 #include "../ApiCall/Finder.h"
 #include "../ApiCall/RosApiCall.h"
+#include "../Ast/Assign/AssignVisitor.h"
 #include "../Ast/Ast.h"
 #include "../Helper/utils.h"
 #include "../Callback/Callback.h"
@@ -325,8 +327,18 @@ private:
 
     // produce initial definitions for each function
     llvm::outs() << "obtaining symbolic function definitions...\n";
-    for (auto const *function : relevantFunctions)
+    
+    for (auto const *function : relevantFunctions) {
       symbolize(function);
+      std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar = {};
+      FindVarAssignVisitor visitor(astContext, apiCallToVar);
+      visitor.TraverseDecl(const_cast<clang::FunctionDecl*>(function));
+    }
+    for (auto *callback: callbacks) {
+      std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar = {};
+      FindVarAssignVisitor visitor(astContext, apiCallToVar);
+      visitor.TraverseDecl(const_cast<clang::FunctionDecl*>(callback->getTargetFunction()));
+    }
     llvm::outs() << "obtained symbolic function definitions...\n";
 
     symContext.print(llvm::outs());
