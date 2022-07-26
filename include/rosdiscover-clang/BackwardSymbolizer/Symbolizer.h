@@ -330,17 +330,6 @@ private:
     for (auto const *function : relevantFunctions) {
       symbolize(function);      
     }
-    /*for (auto *callback: callbacks) {
-      std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar = {};
-      FindVarAssignVisitor visitor(astContext, apiCallToVar);
-      visitor.TraverseDecl(const_cast<clang::FunctionDecl*>(callback->getTargetFunction()));
-      llvm::outs() << "Assignments: \n";
-      auto results = visitor.getResults();
-      for (auto &assign: results) {
-        assert(assign != nullptr);
-        assign->print(llvm::outs());
-      }
-    }*/
     llvm::outs() << "obtained symbolic function definitions...\n";
 
     symContext.print(llvm::outs());
