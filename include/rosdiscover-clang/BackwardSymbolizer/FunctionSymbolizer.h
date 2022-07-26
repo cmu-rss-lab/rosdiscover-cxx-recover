@@ -915,6 +915,7 @@ private:
 
     std::string varName;
     std::unique_ptr<SymbolicVariableReference> var;
+    std::unique_ptr<SymbolicVariableReference> varCopy; //needed for compound operators, such as += or -=
 
     if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(assign->getLHS()->IgnoreCasts()->IgnoreImpCasts())) {
       varName = declRefExpr->getDecl()->getQualifiedNameAsString();
@@ -926,16 +927,29 @@ private:
         abort();
       }
       var = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
+      varCopy = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
     } else if (auto *memberExpr = clang::dyn_cast<clang::MemberExpr>(assign->getLHS()->IgnoreCasts()->IgnoreImpCasts())) {
       varName = memberExpr->getMemberDecl()->getQualifiedNameAsString();
       llvm::outs() << "memberExpr assign: " << varName;
       var = exprSymbolizer.symbolizeMemberExpr(memberExpr);
+      varCopy = exprSymbolizer.symbolizeMemberExpr(memberExpr);
     } else {
       llvm::outs() << "[ERROR] Unsupported LHS of Assignment: ";
       assign->dump();
       abort();
     }
-    auto symbolicAssignment = std::make_unique<SymbolicAssignment>(std::move(var), exprSymbolizer.symbolize(assign->getRHS()));
+
+    std::unique_ptr<SymbolicExpr> expr = exprSymbolizer.symbolize(assign->getRHS());
+    if (assign->getOpcodeStr() == "+=") {
+      expr = std::make_unique<BinaryMathExpr>(std::move(varCopy), std::move(expr), BinaryMathOperator::Add);
+    } else if (assign->getOpcodeStr() == "-=") {
+      expr = std::make_unique<BinaryMathExpr>(std::move(varCopy), std::move(expr), BinaryMathOperator::Sub);
+    } else if (assign->getOpcodeStr() == "*=") {
+      expr = std::make_unique<BinaryMathExpr>(std::move(varCopy), std::move(expr), BinaryMathOperator::Mul);
+    } else if (assign->getOpcodeStr() == "/=") {
+      expr = std::make_unique<BinaryMathExpr>(std::move(varCopy), std::move(expr), BinaryMathOperator::Div);
+    }
+    auto symbolicAssignment = std::make_unique<SymbolicAssignment>(std::move(var), std::move(expr));
     
     llvm::outs() << "Symbolized Assignment: ";
     symbolicAssignment->print(llvm::outs());
