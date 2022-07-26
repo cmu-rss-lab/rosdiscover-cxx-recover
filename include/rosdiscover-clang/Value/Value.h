@@ -34,7 +34,8 @@ public:
      || typeName == "std::string &"
      || typeName == "const std::string &") {
       return SymbolicValueType::String;
-    } else if (typeName == "bool") {
+    } else if (typeName == "bool" ||
+               typeName == "_Bool" ) {
       return SymbolicValueType::Bool;
     } else if (typeName == "int"
             || typeName == "long") {

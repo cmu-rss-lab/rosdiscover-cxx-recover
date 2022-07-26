@@ -32,10 +32,14 @@ public:
     expr->dump();
     llvm::outs() << "\n";
 
+    if (auto *literal = clang::dyn_cast<clang::CXXBoolLiteralExpr>(expr)) {
+      return valueBuilder.boolLiteral(literal->getValue());
+    } 
+
     if (expr->isKnownToHaveBooleanValue()) {
       bool result;
       expr->EvaluateAsBooleanCondition(result, astContext);
-      valueBuilder.boolLiteral(result);
+      return valueBuilder.boolLiteral(result);
     }
 
     llvm::outs() << "unable to symbolize expression (bool): treating as unknown\n";
