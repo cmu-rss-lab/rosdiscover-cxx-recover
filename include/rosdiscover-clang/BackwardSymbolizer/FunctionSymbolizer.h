@@ -714,6 +714,12 @@ private:
     }
     auto graph = ControlDependenceGraph::buildGraph(stmt_block, deps, postDominatorAnalysis, dominatorAnalysis, astContext, exprSymbolizer);
     auto condExpr = graph->getBlock(stmt_block)->getFullConditionExpr(astContext, exprSymbolizer);
+    std::vector<SymbolicVariableReference*> varRefs = {};
+    for (auto child : condExpr->getTransitiveChildren()) {
+      if (auto *varRef = clang::dyn_cast<SymbolicVariableReference>(child)) {
+        varRefs.push_back(varRef);
+      }
+    }
     if(condExpr == nullptr) {
       condExpr = std::make_unique<BoolLiteral>(true);
     }
