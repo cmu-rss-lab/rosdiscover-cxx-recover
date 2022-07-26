@@ -1118,8 +1118,8 @@ private:
 
   void run() {
     // TODO this should operate on a reference instead!
-    auto compound = std::make_unique<SymbolicCompound>();    
-    
+    auto compound = std::make_unique<SymbolicCompound>();
+
     for (auto &rawStmt : computeStatementOrder()) {
       compound->append(symbolizeStatement(rawStmt));
     }
