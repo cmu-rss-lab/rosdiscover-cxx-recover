@@ -8,7 +8,6 @@
 
 #include <clang/AST/ASTContext.h>
 #include <clang/AST/Decl.h>
-
 #include <clang/Analysis/CallGraph.h>
 
 #include <llvm/Support/raw_ostream.h>
@@ -333,11 +332,23 @@ private:
       std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar = {};
       FindVarAssignVisitor visitor(astContext, apiCallToVar);
       visitor.TraverseDecl(const_cast<clang::FunctionDecl*>(function));
+      llvm::outs() << "Assignments: \n";
+      auto results = visitor.getResults();
+      for (auto &assign: results) {
+        assert(assign != nullptr);
+        assign->print(llvm::outs());
+      }
     }
     for (auto *callback: callbacks) {
       std::unordered_map<clang::Expr const *, SymbolicVariable *> apiCallToVar = {};
       FindVarAssignVisitor visitor(astContext, apiCallToVar);
       visitor.TraverseDecl(const_cast<clang::FunctionDecl*>(callback->getTargetFunction()));
+      llvm::outs() << "Assignments: \n";
+      auto results = visitor.getResults();
+      for (auto &assign: results) {
+        assert(assign != nullptr);
+        assign->print(llvm::outs());
+      }
     }
     llvm::outs() << "obtained symbolic function definitions...\n";
 

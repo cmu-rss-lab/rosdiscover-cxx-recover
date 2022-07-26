@@ -81,7 +81,7 @@ public:
     return valueBuilder.unknown();
   }
   
-  std::unique_ptr<SymbolicExpr> symbolizeMemberExpr(const clang::MemberExpr *memberExpr) {
+  std::unique_ptr<SymbolicMemberVariableReference> symbolizeMemberExpr(const clang::MemberExpr *memberExpr) {
     return std::make_unique<SymbolicMemberVariableReference>(
       true, 
       false, 
@@ -92,7 +92,7 @@ public:
       false, 
       false,
       symbolize(memberExpr->getBase())
-      );    
+      );
   }
 
   std::unique_ptr<SymbolicExpr> symbolizeConstant(const clang::Expr *expr) {
