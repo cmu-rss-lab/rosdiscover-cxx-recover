@@ -915,7 +915,11 @@ private:
 
     std::string varName;
     std::unique_ptr<SymbolicVariableReference> var;
-    std::unique_ptr<SymbolicVariableReference> varCopy; //needed for compound operators, such as += or -=
+
+    // Needed for compound operators, such as += or -=.
+    // Can't be the same object as var since both are unique pointer 
+    // thatrare potentially owned by a different object.
+    std::unique_ptr<SymbolicVariableReference> compountOperatorLHS;
 
     if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(assign->getLHS()->IgnoreCasts()->IgnoreImpCasts())) {
       varName = declRefExpr->getDecl()->getQualifiedNameAsString();
@@ -927,29 +931,29 @@ private:
         abort();
       }
       var = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
-      varCopy = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
+      compountOperatorLHS = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
     } else if (auto *memberExpr = clang::dyn_cast<clang::MemberExpr>(assign->getLHS()->IgnoreCasts()->IgnoreImpCasts())) {
       varName = memberExpr->getMemberDecl()->getQualifiedNameAsString();
       llvm::outs() << "memberExpr assign: " << varName;
       var = exprSymbolizer.symbolizeMemberExpr(memberExpr);
-      varCopy = exprSymbolizer.symbolizeMemberExpr(memberExpr);
+      compountOperatorLHS = exprSymbolizer.symbolizeMemberExpr(memberExpr);
     } else {
       llvm::outs() << "[ERROR] Unsupported LHS of Assignment: ";
       assign->dump();
       abort();
     }
 
-    std::unique_ptr<SymbolicExpr> expr = exprSymbolizer.symbolize(assign->getRHS());
+    std::unique_ptr<SymbolicExpr> assignRHS = exprSymbolizer.symbolize(assign->getRHS());
     if (assign->getOpcodeStr() == "+=") {
-      expr = std::make_unique<BinaryMathExpr>(std::move(varCopy), std::move(expr), BinaryMathOperator::Add);
+      assignRHS = std::make_unique<BinaryMathExpr>(std::move(compountOperatorLHS), std::move(assignRHS), BinaryMathOperator::Add);
     } else if (assign->getOpcodeStr() == "-=") {
-      expr = std::make_unique<BinaryMathExpr>(std::move(varCopy), std::move(expr), BinaryMathOperator::Sub);
+      assignRHS = std::make_unique<BinaryMathExpr>(std::move(compountOperatorLHS), std::move(assignRHS), BinaryMathOperator::Sub);
     } else if (assign->getOpcodeStr() == "*=") {
-      expr = std::make_unique<BinaryMathExpr>(std::move(varCopy), std::move(expr), BinaryMathOperator::Mul);
+      assignRHS = std::make_unique<BinaryMathExpr>(std::move(compountOperatorLHS), std::move(assignRHS), BinaryMathOperator::Mul);
     } else if (assign->getOpcodeStr() == "/=") {
-      expr = std::make_unique<BinaryMathExpr>(std::move(varCopy), std::move(expr), BinaryMathOperator::Div);
+      assignRHS = std::make_unique<BinaryMathExpr>(std::move(compountOperatorLHS), std::move(assignRHS), BinaryMathOperator::Div);
     }
-    auto symbolicAssignment = std::make_unique<SymbolicAssignment>(std::move(var), std::move(expr));
+    auto symbolicAssignment = std::make_unique<SymbolicAssignment>(std::move(var), std::move(assignRHS));
     
     llvm::outs() << "Symbolized Assignment: ";
     symbolicAssignment->print(llvm::outs());
