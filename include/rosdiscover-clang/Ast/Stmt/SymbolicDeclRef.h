@@ -50,6 +50,7 @@ public:
       {"isClassMember", isClassMember},
       {"type", typeName},
       {"name", name},
+      {"qualified_name", qualifiedName},
       {"string", this->toString()},
     };
   }
