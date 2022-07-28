@@ -10,6 +10,7 @@
 
 #include "../Value/Value.h"
 #include "../Value/Bool.h"
+#include "../Value/String.h"
 #include "Decl/LocalVariable.h"
 #include "Decl/Parameter.h"
 #include "Stmt/Stmt.h"
@@ -21,7 +22,9 @@ namespace rosdiscover {
 class SymbolicFunction {
 public:
   void print(llvm::raw_ostream &os) const {
-    os << "function " << qualifiedName << " [";
+    os << "function ";
+    qualifiedName->print(os);
+    os << " [";
     for (auto const &paramEntry : parameters) {
       paramEntry.second.print(os);
       os << "; ";
@@ -37,7 +40,7 @@ public:
     }
 
     return {
-      {"name", qualifiedName},
+      {"name", qualifiedName->toJson()},
       {"parameters", jsonParams},
       {"source-location", location},
       {"body", body.get()->toJson()}
@@ -54,8 +57,8 @@ public:
     return locals.back().get();
   }
 
-  std::string getName() const {
-    return qualifiedName;
+  SymbolicString* getName() const {
+    return qualifiedName.get();
   }
 
   static SymbolicFunction* create(
@@ -64,7 +67,7 @@ public:
   ) {
     auto qualifiedName = function->getQualifiedNameAsString();
     auto location = function->getLocation().printToString(context.getSourceManager());
-    auto symbolic = new SymbolicFunction(qualifiedName, location);
+    auto symbolic = new SymbolicFunction(std::make_unique<StringLiteral>(qualifiedName), location);
 
     // TODO check whether this is the "main" function
     auto numParams = function->getNumParams();
@@ -84,7 +87,7 @@ public:
   }
 
 private:
-  std::string qualifiedName;
+  std::unique_ptr<SymbolicString> qualifiedName;
   std::string location;
   std::unique_ptr<SymbolicCompound> body;
   size_t nextLocalNumber;
@@ -92,9 +95,9 @@ private:
   std::vector<std::unique_ptr<LocalVariable>> locals;
 
   SymbolicFunction(
-    std::string const &qualifiedName,
+    std::unique_ptr<SymbolicString> qualifiedName,
     std::string const &location
-  ) : qualifiedName(qualifiedName),
+  ) : qualifiedName(std::move(qualifiedName)),
       location(location),
       body(std::make_unique<SymbolicCompound>()),
       nextLocalNumber(0),
@@ -171,13 +174,13 @@ public:
     }
     return {
       {"kind", "call"},
-      {"callee", callee->getName()},
+      {"callee", callee->getName()->toJson()},
       {"arguments", argsJson},
       {"path_condition", pathCondition->toString()},
     };
   }
 
-  virtual std::string const getCalleeName() const {
+  virtual SymbolicString* const getCalleeName() const {
     return callee->getName();
   }
 
@@ -189,7 +192,7 @@ private:
 
 class UnknownSymbolicFunctionCall : public SymbolicFunctionCall {
 public:
-  UnknownSymbolicFunctionCall(std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args) : SymbolicFunctionCall(nullptr, args) {}
+  UnknownSymbolicFunctionCall(std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args) : SymbolicFunctionCall(nullptr, args), calleeName(std::make_unique<SymbolicUnknown>()) {}
   ~UnknownSymbolicFunctionCall(){}
   
   static std::unique_ptr<UnknownSymbolicFunctionCall> create() {
@@ -208,9 +211,15 @@ public:
     };
   }
 
-  std::string const getCalleeName() const override {
-    return "unknown";
+  virtual SymbolicString* const getCalleeName() const override {
+    return calleeName.get();
   }
+
+private:
+  std::unique_ptr<SymbolicString> calleeName;
+
+
+
 };
 
 } // rosdiscover
