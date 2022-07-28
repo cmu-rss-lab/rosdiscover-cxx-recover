@@ -11,8 +11,9 @@ class FindVarAssignVisitor
   : public clang::RecursiveASTVisitor<FindVarAssignVisitor> {
 public:
   FindVarAssignVisitor(
+    std::vector<const clang::BinaryOperator *> &results,
     clang::ASTContext &astContext, 
-    std::unordered_map<clang::Expr const *, SymbolicVariable *> &apiCallToVar) : exprSymbolizer(astContext, apiCallToVar), results() {}
+    std::unordered_map<clang::Expr const *, SymbolicVariable *> &apiCallToVar) : exprSymbolizer(astContext, apiCallToVar), results(results) {}
 
   bool shouldVisitImplicitCode () const {
     return true;
@@ -30,7 +31,6 @@ public:
     return true;
   }
 
-  // WARNING: Do not call more than once!
   std::vector<const clang::BinaryOperator *> getResults() {
     return results;
   }
@@ -38,14 +38,15 @@ public:
   static std::vector<const clang::BinaryOperator *> findAssignments(clang::ASTContext &astContext, 
     std::unordered_map<clang::Expr const *, SymbolicVariable *> &apiCallToVar,
     const clang::FunctionDecl *function) {
-    FindVarAssignVisitor visitor(astContext, apiCallToVar);
+    std::vector<const clang::BinaryOperator *> results = {};
+    FindVarAssignVisitor visitor(results, astContext, apiCallToVar);
     visitor.TraverseDecl(const_cast<clang::FunctionDecl*>(function));
-    return visitor.getResults();
+    return results;
   }
 
 private:
   ExprSymbolizer exprSymbolizer;
-  std::vector<const clang::BinaryOperator *> results;
+  std::vector<const clang::BinaryOperator *> &results;
 };
 
 } // rosdiscover
