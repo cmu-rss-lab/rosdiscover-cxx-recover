@@ -12,6 +12,7 @@ namespace rosdiscover {
 enum class RawStatementKind {
   RosApiCall,
   FunctionCall,
+  Assignment,
   Callback,
   If,
   While,
@@ -158,6 +159,29 @@ public:
 
 private:
   clang::Expr *expr;
+};
+
+class RawAssignment : public RawStatement {
+public:
+  RawAssignment(RawAssignment *other) : assign(other->assign) {}
+  
+  RawAssignment(const clang::BinaryOperator *assign) : assign(assign) {}
+  ~RawAssignment(){}
+  
+  const clang::BinaryOperator* getBinaryOperator() {
+    return assign;
+  }
+
+  clang::Stmt* getUnderlyingStmt() override {
+    return const_cast<clang::BinaryOperator *>(assign);
+  }
+
+  RawStatementKind getKind() override {
+    return RawStatementKind::Assignment;
+  }
+
+private:
+  const clang::BinaryOperator *assign;
 };
 
 class RawCallbackStatement : public RawStatement {

@@ -81,17 +81,18 @@ public:
     return valueBuilder.unknown();
   }
   
-  std::unique_ptr<SymbolicExpr> symbolizeMemberExpr(const clang::MemberExpr *memberExpr) {
+  std::unique_ptr<SymbolicMemberVariableReference> symbolizeMemberExpr(const clang::MemberExpr *memberExpr) {
     return std::make_unique<SymbolicMemberVariableReference>(
       true, 
       false, 
       memberExpr->getType().getAsString(), 
       memberExpr->getMemberNameInfo().getAsString(), 
+      memberExpr->getMemberDecl()->getQualifiedNameAsString(),
       false, 
       false, 
       false,
       symbolize(memberExpr->getBase())
-      );    
+      );
   }
 
   std::unique_ptr<SymbolicExpr> symbolizeConstant(const clang::Expr *expr) {
@@ -138,7 +139,7 @@ public:
       if (declRefExpr->EvaluateAsInt(resultInt, astContext)) {
         enumValue = resultInt.Val.getInt().getSExtValue();
       }
-      return std::make_unique<SymbolicEnumReference>(enumDecl->getType().getAsString(), enumDecl->getNameAsString(), enumValue);
+      return std::make_unique<SymbolicEnumReference>(enumDecl->getType().getAsString(), enumDecl->getNameAsString(), enumDecl->getQualifiedNameAsString(), enumValue);
     }
     
     return symbolizeConstant(declRefExpr);

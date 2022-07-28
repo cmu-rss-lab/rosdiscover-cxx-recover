@@ -11,6 +11,19 @@ public:
   virtual nlohmann::json toJson() const = 0;
   virtual std::string toString() const = 0;
 
+  virtual std::vector<const SymbolicExpr*> getChildren() const {
+    return {};
+  }
+
+  std::vector<const SymbolicExpr*> getDescendants() const {
+    std::vector<const SymbolicExpr*> result = getChildren();
+    for (auto child: getChildren()) {
+      auto transitiveChildren = child->getDescendants();
+      result.insert(result.end(), transitiveChildren.begin(), transitiveChildren.end());
+    }
+    return result;
+  }
+
 };
 
 class ThisExpr : public SymbolicExpr {
@@ -114,6 +127,10 @@ public:
     };
   }
 
+  std::vector<const SymbolicExpr*> getChildren() const override {
+    return {subExpr.get()};
+  }
+
 private:
   std::unique_ptr<SymbolicExpr> subExpr;
 };
@@ -121,24 +138,24 @@ private:
 class BinaryExpr : public SymbolicExpr {
 public:
   BinaryExpr(
-    std::unique_ptr<SymbolicExpr> expr1,
-    std::unique_ptr<SymbolicExpr> expr2
-  ) : expr1(std::move(expr1)), expr2(std::move(expr2)) {
-    assert(this->expr1 != nullptr);
-    assert(this->expr2 != nullptr);
+    std::unique_ptr<SymbolicExpr> lhs,
+    std::unique_ptr<SymbolicExpr> rhs
+  ) : lhs(std::move(lhs)), rhs(std::move(rhs)) {
+    assert(this->lhs != nullptr);
+    assert(this->rhs != nullptr);
   }
  
   virtual std::string binaryOperator() const = 0;
   
   std::string toString() const override {
-    return fmt::format("({} {} {})", expr1->toString(), binaryOperator(), expr2->toString());
+    return fmt::format("({} {} {})", lhs->toString(), binaryOperator(), rhs->toString());
   }
 
   void print(llvm::raw_ostream &os) const override {
     os << "(BinaryExpr ";
-    expr1->print(os);
+    lhs->print(os);
     os << " " << binaryOperator() << " ";
-    expr2->print(os);
+    rhs->print(os);
     os << ")";
   }
 
@@ -146,24 +163,29 @@ public:
     return {
       {"kind", "BinaryExpr"},
       {"operator", binaryOperator()},
-      {"expr1", expr1->toJson()},
-      {"expr2", expr2->toJson()},
+      {"lhs", lhs->toJson()},
+      {"rhs", rhs->toJson()},
       {"string", toString()},
     };
   }
 
+  std::vector<const SymbolicExpr*> getChildren() const override {
+    return {lhs.get(), rhs.get()};
+  }
+
+
 private:
-  std::unique_ptr<SymbolicExpr> expr1;
-  std::unique_ptr<SymbolicExpr> expr2;
+  std::unique_ptr<SymbolicExpr> lhs;
+  std::unique_ptr<SymbolicExpr> rhs;
 };
 
 class OrExpr : public BinaryExpr {
 public:
 
   OrExpr(
-    std::unique_ptr<SymbolicExpr> expr1,
-    std::unique_ptr<SymbolicExpr> expr2
-  ) : BinaryExpr(std::move(expr1), std::move(expr2)) {}
+    std::unique_ptr<SymbolicExpr> lhs,
+    std::unique_ptr<SymbolicExpr> rhs
+  ) : BinaryExpr(std::move(lhs), std::move(rhs)) {}
 
   std::string binaryOperator() const override {
     return "||";
@@ -174,9 +196,9 @@ class AndExpr : public BinaryExpr {
 public:
 
   AndExpr(
-    std::unique_ptr<SymbolicExpr> expr1,
-    std::unique_ptr<SymbolicExpr> expr2
-  ) : BinaryExpr(std::move(expr1), std::move(expr2)) {}
+    std::unique_ptr<SymbolicExpr> lhs,
+    std::unique_ptr<SymbolicExpr> rhs
+  ) : BinaryExpr(std::move(lhs), std::move(rhs)) {}
 
   std::string binaryOperator() const override {
     return "&&";
@@ -219,10 +241,10 @@ public:
   }
 
   CompareExpr(
-    std::unique_ptr<SymbolicExpr> expr1,
-    std::unique_ptr<SymbolicExpr> expr2,
+    std::unique_ptr<SymbolicExpr> lhs,
+    std::unique_ptr<SymbolicExpr> rhs,
     const CompareOperator op
-    ) : BinaryExpr(std::move(expr1), std::move(expr2)), op(op) {}
+    ) : BinaryExpr(std::move(lhs), std::move(rhs)), op(op) {}
 
   static const CompareOperator compareOperatorFromOverloadedOperatorKind(const clang::OverloadedOperatorKind opCode) {
     switch (opCode) {
@@ -285,10 +307,10 @@ class BinaryMathExpr : public BinaryExpr {
 public:
 
   BinaryMathExpr(
-    std::unique_ptr<SymbolicExpr> expr1,
-    std::unique_ptr<SymbolicExpr> expr2,
+    std::unique_ptr<SymbolicExpr> lhs,
+    std::unique_ptr<SymbolicExpr> rhs,
     const BinaryMathOperator op
-    ) : BinaryExpr(std::move(expr1), std::move(expr2)), op(op) {}
+    ) : BinaryExpr(std::move(lhs), std::move(rhs)), op(op) {}
 
   static BinaryMathOperator binaryMathOperatorFromOpCode(clang::BinaryOperator::Opcode opCode) {
     switch (opCode) {

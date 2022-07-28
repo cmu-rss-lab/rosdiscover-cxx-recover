@@ -16,11 +16,13 @@ public:
     bool isInstanceMember,
     bool isClassMember,
     std::string typeName,
-    std::string name
+    std::string name,
+    std::string qualifiedName
   ) : isInstanceMember(isInstanceMember),
       isClassMember(isClassMember),
       typeName(typeName),
-      name(name)
+      name(name),
+      qualifiedName(qualifiedName)
    {}
 
   ~SymbolicDeclRef(){}
@@ -30,7 +32,8 @@ public:
   ) : isInstanceMember(declRef->getDecl()->isCXXInstanceMember()), 
       isClassMember(declRef->getDecl()->isCXXClassMember()),
       typeName(declRef->getType().getAsString()),
-      name(createName(declRef)) {}
+      name(createName(declRef)),
+      qualifiedName(declRef->getDecl()->getQualifiedNameAsString()) {}
 
   virtual std::string toString() const override {
     return name;
@@ -47,6 +50,7 @@ public:
       {"isClassMember", isClassMember},
       {"type", typeName},
       {"name", name},
+      {"qualified_name", qualifiedName},
       {"string", this->toString()},
     };
   }
@@ -59,11 +63,16 @@ public:
     return name;
   }
 
+  std::string getQualifiedName() const {
+    return qualifiedName;
+  }
+
 private:
   bool isInstanceMember;
   bool isClassMember;
   std::string typeName;
   std::string name;
+  std::string qualifiedName;
 };
 
 } // rosdiscover
