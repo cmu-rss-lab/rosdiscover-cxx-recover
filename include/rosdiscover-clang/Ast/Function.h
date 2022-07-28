@@ -173,7 +173,7 @@ public:
       {"kind", "call"},
       {"callee", callee->getName()},
       {"arguments", argsJson},
-      {"path_condition", pathCondition->toString()},
+      {"path_condition", pathCondition->toJson()},
     };
   }
 

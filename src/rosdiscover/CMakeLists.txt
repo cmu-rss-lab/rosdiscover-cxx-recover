@@ -20,7 +20,7 @@ target_link_libraries(rosdiscover-cxx-extract PRIVATE
   fmt::fmt-header-only
 )
 target_compile_options(rosdiscover-cxx-extract PRIVATE
-  -Wall -Werror -fno-rtti
+  -Wall -Werror
 )
 target_link_options(rosdiscover-cxx-extract PRIVATE
   -static-libgcc -static-libstdc++ -static

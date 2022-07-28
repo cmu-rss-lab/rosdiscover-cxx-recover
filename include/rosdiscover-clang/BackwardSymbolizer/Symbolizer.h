@@ -14,6 +14,7 @@
 
 #include "../ApiCall/Finder.h"
 #include "../ApiCall/RosApiCall.h"
+#include "../Ast/Assign/AssignVisitor.h"
 #include "../Ast/Ast.h"
 #include "../Helper/utils.h"
 #include "../Callback/Callback.h"
@@ -325,8 +326,10 @@ private:
 
     // produce initial definitions for each function
     llvm::outs() << "obtaining symbolic function definitions...\n";
-    for (auto const *function : relevantFunctions)
-      symbolize(function);
+    
+    for (auto const *function : relevantFunctions) {
+      symbolize(function);      
+    }
     llvm::outs() << "obtained symbolic function definitions...\n";
 
     symContext.print(llvm::outs());
