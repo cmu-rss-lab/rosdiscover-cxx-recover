@@ -719,7 +719,7 @@ private:
     auto graph = ControlDependenceGraph::buildGraph(stmt_block, deps, postDominatorAnalysis, dominatorAnalysis, astContext, exprSymbolizer);
     auto condExpr = graph->getBlock(stmt_block)->getFullConditionExpr(astContext, exprSymbolizer);
     std::vector<const SymbolicVariableReference*> varRefs = {};
-    for (const SymbolicExpr* child : condExpr->getTransitiveChildren()) {
+    for (const SymbolicExpr* child : condExpr->getDescendants()) {
       if (const auto *varRef = dynamic_cast<const SymbolicVariableReference*>(child)) {
         varRefs.push_back(varRef);
         llvm::outs() << "SymbolicVariableReference: ";

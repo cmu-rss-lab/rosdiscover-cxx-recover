@@ -15,10 +15,10 @@ public:
     return {};
   }
 
-  std::vector<const SymbolicExpr*> getTransitiveChildren() const {
+  std::vector<const SymbolicExpr*> getDescendants() const {
     std::vector<const SymbolicExpr*> result = getChildren();
     for (auto child: getChildren()) {
-      auto transitiveChildren = child->getTransitiveChildren();
+      auto transitiveChildren = child->getDescendants();
       result.insert(result.end(), transitiveChildren.begin(), transitiveChildren.end());
     }
     return result;
