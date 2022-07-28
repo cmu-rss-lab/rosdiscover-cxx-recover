@@ -918,7 +918,7 @@ private:
 
     // Needed for compound operators, such as += or -=.
     // Can't be the same object as var since both are unique pointer 
-    // thatrare potentially owned by a different object.
+    // that are potentially owned by a different object.
     std::unique_ptr<SymbolicVariableReference> compountOperatorLHS;
 
     if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(assign->getLHS()->IgnoreCasts()->IgnoreImpCasts())) {
