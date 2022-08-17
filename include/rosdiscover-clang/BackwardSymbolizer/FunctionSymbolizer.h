@@ -953,7 +953,7 @@ private:
     } else if (assign->getOpcodeStr() == "/=") {
       assignRHS = std::make_unique<BinaryMathExpr>(std::move(compountOperatorLHS), std::move(assignRHS), BinaryMathOperator::Div);
     }
-    auto symbolicAssignment = std::make_unique<SymbolicAssignment>(std::move(var), std::move(assignRHS));
+    auto symbolicAssignment = std::make_unique<SymbolicAssignment>(std::move(var), std::move(assignRHS), getControlDependenciesObjects(assignment->getUnderlyingStmt()));
     
     llvm::outs() << "Symbolized Assignment: ";
     symbolicAssignment->print(llvm::outs());

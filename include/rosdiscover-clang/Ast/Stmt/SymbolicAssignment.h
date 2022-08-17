@@ -12,10 +12,12 @@ class SymbolicAssignment : public SymbolicStmt {
 public:
   SymbolicAssignment(
     std::unique_ptr<SymbolicVariableReference> var,
-    std::unique_ptr<SymbolicExpr> expr
-  ) : var(std::move(var)), expr(std::move(expr)) {
+    std::unique_ptr<SymbolicExpr> expr,
+    std::unique_ptr<SymbolicExpr> pathCondition
+  ) : var(std::move(var)), expr(std::move(expr)), pathCondition(std::move(pathCondition)) {
     assert(this->var != nullptr);
     assert(this->expr != nullptr);
+    assert(this->pathCondition != nullptr);
   }
   
   ~SymbolicAssignment(){}
@@ -25,7 +27,9 @@ public:
     var->print(os);
     os << " = ";
     expr->print(os);
-    os << ")";
+    os << "[";
+    pathCondition->print(os);
+    os << "])";
   }
 
   nlohmann::json toJson() const override {
@@ -33,6 +37,7 @@ public:
       {"kind", "assign"},
       {"var", var->toJson()},
       {"expr", expr->toJson()},
+      {"condition", pathCondition->toJson()},
     };
   }
 
@@ -44,9 +49,14 @@ public:
     return expr.get();
   }
 
+  const SymbolicExpr* getPathCondition() const {
+    return pathCondition.get();
+  }
+
 private: 
   std::unique_ptr<SymbolicVariableReference> var;
   std::unique_ptr<SymbolicExpr> expr;
+  std::unique_ptr<SymbolicExpr> pathCondition;
 };
 
 } // rosdiscover
