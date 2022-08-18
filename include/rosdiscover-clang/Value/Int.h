@@ -25,7 +25,7 @@ public:
 
   nlohmann::json toJson() const override {
     return {
-      {"kind", "integer-literal"},
+      {"kind", "int-literal"},
       {"literal", literal},
       {"string", toString()},
     };

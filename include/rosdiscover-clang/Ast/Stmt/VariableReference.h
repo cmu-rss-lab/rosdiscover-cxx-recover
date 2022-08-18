@@ -36,12 +36,12 @@ public:
   ~SymbolicVariableReference(){}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(varRef " << getName() << " : " << getTypeName() << ")";
+    os << "(var-ref " << getName() << " : " << getTypeName() << ")";
   }
 
   nlohmann::json toJson() const override {
     auto j = SymbolicDeclRef::toJson();
-    j["kind"] = "varRef";
+    j["kind"] = "var-ref";
     j["isFileVarDecl"] = isFileVarDecl;
     j["isLocalVarDeclOrParm"] = isLocalVarDeclOrParm;
     j["isModulePrivate"] = isModulePrivate;
