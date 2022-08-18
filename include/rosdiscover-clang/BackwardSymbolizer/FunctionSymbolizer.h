@@ -891,6 +891,10 @@ private:
       auto symbolicStmt = symbolizeStatement(s);
       if (symbolicStmt != nullptr) {
         result->append(std::move(symbolicStmt));
+      } else {
+        llvm::outs() << "[ERROR] Unable to symboliz statement: ";
+        rawStmt->getUnderlyingStmt()->dump();
+        llvm::outs() << "\n";
       }
     }
 
@@ -1148,6 +1152,10 @@ private:
       auto stmt = symbolizeStatement(rawStmt);
       if (stmt != nullptr) {
         compound->append(std::move(stmt));
+      } else {
+        llvm::outs() << "[ERROR] Unable to symboliz statement: ";
+        rawStmt->getUnderlyingStmt()->dump();
+        llvm::outs() << "\n";
       }
     }
 
