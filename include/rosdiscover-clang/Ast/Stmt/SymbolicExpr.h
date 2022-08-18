@@ -41,7 +41,7 @@ public:
 
   nlohmann::json toJson() const override {
     return {
-      {"kind", "ThisExpr"},
+      {"kind", "this-expr"},
       {"string", toString()},
     };
   }
@@ -62,7 +62,7 @@ public:
 
   nlohmann::json toJson() const override {
     return {
-      {"kind", "NullExpr"},
+      {"kind", "null-expr"},
       {"string", toString()},
     };
   }
@@ -77,7 +77,7 @@ public:
   ~SymbolicConstant(){}
   
   void print(llvm::raw_ostream &os) const override {
-    os << "(SymbolicConstant " << toString() << ")";
+    os << "(symbolic-constant " << toString() << ")";
   }
 
   std::string toString() const override {
@@ -91,7 +91,7 @@ public:
 
   nlohmann::json toJson() const override {
     return {
-      {"kind", "SymbolicConstant"},
+      {"kind", "symbolic-constant"},
       {"string", toString()},
     };
   }
@@ -110,7 +110,7 @@ public:
   ~NegateExpr(){}
   
   void print(llvm::raw_ostream &os) const override {
-    os << "(NegateExpr ";
+    os << "(negate-expr ";
     subExpr->print(os);
     os << ")";
   }
@@ -121,7 +121,7 @@ public:
 
   nlohmann::json toJson() const override {
     return {
-      {"kind", "NegateExpr"},
+      {"kind", "negate-expr"},
       {"subExpr", subExpr->toJson()},
       {"string", toString()},
     };
@@ -152,7 +152,7 @@ public:
   }
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(BinaryExpr ";
+    os << "(binary-expr ";
     lhs->print(os);
     os << " " << binaryOperator() << " ";
     rhs->print(os);
@@ -161,7 +161,7 @@ public:
 
   nlohmann::json toJson() const override {
     return {
-      {"kind", "BinaryExpr"},
+      {"kind", "binary-expr"},
       {"operator", binaryOperator()},
       {"lhs", lhs->toJson()},
       {"rhs", rhs->toJson()},

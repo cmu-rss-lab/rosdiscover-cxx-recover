@@ -40,12 +40,12 @@ public:
   }
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(declRef " << name << " : " << typeName << ")";
+    os << "(decl-ref " << name << " : " << typeName << ")";
   }
 
   nlohmann::json toJson() const override {
     return {
-      {"kind", "declRef"},
+      {"kind", "decl-ref"},
       {"isInstanceMember", isInstanceMember},
       {"isClassMember", isClassMember},
       {"type", typeName},

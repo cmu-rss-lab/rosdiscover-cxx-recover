@@ -22,7 +22,7 @@ public:
   ~SymbolicEnumReference(){}
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(enumRef " << toString() << " : " << getTypeName() << ")";
+    os << "(enum-ref " << toString() << " : " << getTypeName() << ")";
   }
 
   std::string toString() const override {
@@ -35,7 +35,7 @@ public:
 
   nlohmann::json toJson() const override {
     auto j = SymbolicDeclRef::toJson();
-    j["kind"] = "enumRef";
+    j["kind"] = "enum-ref";
     j["value"] = value;
     return j;
   }
