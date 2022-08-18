@@ -138,7 +138,7 @@ public:
     return {
       {"kind", "publish"},
       {"publisher", publisher},
-      {"path_condition", pathCondition->toString()}
+      {"path_condition", pathCondition->toJson()}
     };
   }
 
