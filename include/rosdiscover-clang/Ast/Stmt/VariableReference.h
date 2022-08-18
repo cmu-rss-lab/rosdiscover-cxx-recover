@@ -98,12 +98,12 @@ public:
   }
 
   void print(llvm::raw_ostream &os) const override {
-    os << "(memberVarRef " << toString() << " : " << getTypeName() << ")";
+    os << "(member-var-ref " << toString() << " : " << getTypeName() << ")";
   }
 
   nlohmann::json toJson() const override {
     auto j = SymbolicVariableReference::toJson();
-    j["kind"] = "memberVarRef";
+    j["kind"] = "member-var-ref";
     j["base"] = base->toJson();
     return j;
   }
