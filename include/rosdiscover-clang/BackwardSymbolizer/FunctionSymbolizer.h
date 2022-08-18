@@ -888,7 +888,10 @@ private:
   std::unique_ptr<SymbolicCompound> symbolizeCompound(RawCompound *stmt) {
     auto result = std::make_unique<SymbolicCompound>();
     for (auto &s: stmt->getStmts()) {
-      result->append(symbolizeStatement(s));
+      auto symbolicStmt = symbolizeStatement(s);
+      if (symbolicStmt != nullptr) {
+        result->append(std::move(symbolicStmt));
+      }
     }
 
     return result;
