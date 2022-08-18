@@ -928,7 +928,7 @@ private:
       if (varDecl == nullptr) {
         llvm::outs() << "Unsupported LHS of Assignment: ";
         declRefExpr->dump();
-        abort();
+        return nullptr;
       }
       var = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
       compountOperatorLHS = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
@@ -940,7 +940,7 @@ private:
     } else {
       llvm::outs() << "[ERROR] Unsupported LHS of Assignment: ";
       assign->dump();
-      abort();
+      return nullptr;
     }
 
     std::unique_ptr<SymbolicExpr> assignRHS = exprSymbolizer.symbolize(assign->getRHS());
@@ -1127,6 +1127,9 @@ private:
         symbolic = symbolizeCompound((RawCompound*) statement);
         break;
     }
+    if (symbolic == nullptr) {
+      return nullptr;
+    }
     return AnnotatedSymbolicStmt::create(
       astContext,
       std::move(symbolic),
@@ -1139,7 +1142,10 @@ private:
     auto compound = std::make_unique<SymbolicCompound>();
 
     for (auto &rawStmt : computeStatementOrder()) {
-      compound->append(symbolizeStatement(rawStmt));
+      auto stmt = symbolizeStatement(rawStmt);
+      if (stmt != nullptr) {
+        compound->append(std::move(stmt));
+      }
     }
 
     llvm::outs() << "Symbolized Function\n";
