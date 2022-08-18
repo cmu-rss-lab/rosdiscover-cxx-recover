@@ -893,7 +893,7 @@ private:
         result->append(std::move(symbolicStmt));
       } else {
         llvm::outs() << "[ERROR] Unable to symboliz statement: ";
-        stmt->getUnderlyingStmt()->dump();
+        s->getUnderlyingStmt()->dump();
         llvm::outs() << "\n";
       }
     }
