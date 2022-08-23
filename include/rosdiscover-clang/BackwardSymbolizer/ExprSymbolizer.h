@@ -82,6 +82,12 @@ public:
   }
   
   std::unique_ptr<SymbolicMemberVariableReference> symbolizeMemberExpr(const clang::MemberExpr *memberExpr) {
+    auto *decl = memberExpr->getFoundDecl().getDecl();
+    std::unique_ptr<SymbolicValue> initial = std::make_unique<SymbolicUnknown>();
+    if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
+      initial = symbolizeConstant(varDecl->getInit());
+    }
+
     return std::make_unique<SymbolicMemberVariableReference>(
       true, 
       false, 
@@ -91,11 +97,15 @@ public:
       false, 
       false, 
       false,
-      symbolize(memberExpr->getBase())
+      symbolize(memberExpr->getBase()),
+      std::move(initial)
       );
   }
 
-  std::unique_ptr<SymbolicExpr> symbolizeConstant(const clang::Expr *expr) {
+  std::unique_ptr<SymbolicValue> symbolizeConstant(const clang::Expr *expr) {
+    if (expr == nullptr) {
+      return valueBuilder.unknown();
+    }
     expr = expr->IgnoreParenCasts()->IgnoreImpCasts()->IgnoreCasts();
     switch (SymbolicValue::getSymbolicType(expr->getType())) {
       case SymbolicValueType::String: 
@@ -130,7 +140,7 @@ public:
 
     auto decl = declRefExpr->getDecl();
     if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
-      return std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
+      return std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl, symbolizeConstant(varDecl->getInit()));
     } else if (auto *funcDecl = clang::dyn_cast<clang::FunctionDecl>(decl)) {
       return std::make_unique<SymbolicCall>(declRefExpr);
     } else if (auto *enumDecl = clang::dyn_cast<clang::EnumConstantDecl>(decl)) {
