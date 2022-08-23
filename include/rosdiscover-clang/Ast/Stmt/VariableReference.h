@@ -10,6 +10,8 @@ namespace rosdiscover {
 
 class SymbolicVariableReference : public SymbolicDeclRef {
 public:
+
+  // TODO: Move initial value to variable object
   SymbolicVariableReference(
     bool isInstanceMember,
     bool isClassMember,
