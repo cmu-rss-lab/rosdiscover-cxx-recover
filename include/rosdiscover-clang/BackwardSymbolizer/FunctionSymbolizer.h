@@ -937,8 +937,8 @@ private:
         declRefExpr->dump();
         return nullptr;
       }
-      var = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
-      compountOperatorLHS = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl);
+      var = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl, exprSymbolizer.symbolizeConstant(varDecl->getInit()));
+      compountOperatorLHS = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl, exprSymbolizer.symbolizeConstant(varDecl->getInit()));
     } else if (auto *memberExpr = clang::dyn_cast<clang::MemberExpr>(assign->getLHS()->IgnoreCasts()->IgnoreImpCasts())) {
       varName = memberExpr->getMemberDecl()->getQualifiedNameAsString();
       llvm::outs() << "memberExpr assign: " << varName;
