@@ -28,6 +28,10 @@ public:
   static SymbolicValueType getSymbolicType(clang::QualType clangType) {
     clangType = clangType.getUnqualifiedType();
     auto typeName = clangType.getAsString();
+    return getSymbolicType(typeName);
+  }
+
+  static SymbolicValueType getSymbolicType(std::string typeName) {
     llvm::outs() << "DEBUG: determining symbolic type for Clang type [" << typeName << "]\n";
     if (typeName == "std::string"
      || typeName.find("const char") != std::string::npos

@@ -6,6 +6,7 @@
 #include <clang/AST/Type.h>
 
 #include "SymbolicExpr.h"
+#include "../../Value/Value.h"
 #include "../../ApiCall/Calls/Util.h"
 
 namespace rosdiscover {
@@ -20,7 +21,7 @@ public:
     std::string qualifiedName
   ) : isInstanceMember(isInstanceMember),
       isClassMember(isClassMember),
-      typeName(typeName),
+      typeName(normalizeTypeName(typeName)),
       name(name),
       qualifiedName(qualifiedName)
    {}
@@ -31,9 +32,17 @@ public:
   // Complex logic needed here to avoid duplication in sub-classes.
   ) : isInstanceMember(declRef->getDecl()->isCXXInstanceMember()), 
       isClassMember(declRef->getDecl()->isCXXClassMember()),
-      typeName(declRef->getType().getAsString()),
+      typeName(normalizeTypeName(declRef->getType().getAsString())),
       name(createName(declRef)),
       qualifiedName(declRef->getDecl()->getQualifiedNameAsString()) {}
+
+  static std::string normalizeTypeName(std::string clangTypeName) {
+    auto symbolicType = SymbolicValue::getSymbolicType(clangTypeName);
+    if (symbolicType == SymbolicValueType::Unsupported) {
+      return clangTypeName;
+    }
+    return SymbolicValue::getSymbolicTypeAsString(symbolicType);
+  }
 
   virtual std::string toString() const override {
     return name;
