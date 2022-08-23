@@ -49,7 +49,7 @@ public:
     j["isFileVarDecl"] = isFileVarDecl;
     j["isLocalVarDeclOrParm"] = isLocalVarDeclOrParm;
     j["isModulePrivate"] = isModulePrivate;
-    j["initialValue"] = initialValue->toJson();
+    j["initial-value"] = initialValue->toJson();
     return j;
   }
 
