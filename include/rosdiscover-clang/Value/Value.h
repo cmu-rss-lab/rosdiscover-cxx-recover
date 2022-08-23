@@ -70,6 +70,39 @@ public:
   }
 }; // SymbolicValue
 
+
+class SymbolicConstant : public SymbolicValue {
+public:
+  SymbolicConstant(
+    clang::APValue const value
+  ) : value(value) {}
+  ~SymbolicConstant(){}
+  
+  void print(llvm::raw_ostream &os) const override {
+    os << "(symbolic-constant " << toString() << ")";
+  }
+
+  std::string toString() const override {
+    if (value.isFloat()) {
+      return std::to_string(value.getFloat().convertToDouble());
+    } else if (value.isInt()) {
+      return std::to_string(value.getInt().getSExtValue());
+    }
+    return "unsupported type";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "symbolic-constant"},
+      {"string", toString()},
+    };
+  }
+
+private:
+  clang::APValue value;
+};
+
+
 class SymbolicString : public virtual SymbolicValue {};
 
 class SymbolicBool : public virtual SymbolicValue {};

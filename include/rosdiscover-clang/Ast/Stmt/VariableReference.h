@@ -10,6 +10,8 @@ namespace rosdiscover {
 
 class SymbolicVariableReference : public SymbolicDeclRef {
 public:
+
+  // TODO: Move initial value to variable object
   SymbolicVariableReference(
     bool isInstanceMember,
     bool isClassMember,
@@ -18,20 +20,24 @@ public:
     std::string qualitfiedName,
     bool isFileVarDecl,
     bool isLocalVarDeclOrParm,
-    bool isModulePrivate
+    bool isModulePrivate,
+    std::unique_ptr<SymbolicValue> initialValue
   ) : SymbolicDeclRef(isInstanceMember, isClassMember, typeName, name, qualitfiedName),
       isFileVarDecl(isFileVarDecl),
       isLocalVarDeclOrParm(isLocalVarDeclOrParm),
-      isModulePrivate(isModulePrivate)
+      isModulePrivate(isModulePrivate),
+      initialValue(std::move(initialValue))
   {}
   
   SymbolicVariableReference(
     const clang::DeclRefExpr* varRef,
-    const clang::VarDecl* varDecl
+    const clang::VarDecl* varDecl,
+    std::unique_ptr<SymbolicValue> initialValue
   ) : SymbolicDeclRef(varRef),
       isFileVarDecl(varDecl->isFileVarDecl()),
       isLocalVarDeclOrParm(varDecl->isLocalVarDeclOrParm()),
-      isModulePrivate(varDecl->isModulePrivate())
+      isModulePrivate(varDecl->isModulePrivate()),
+      initialValue(std::move(initialValue))
   {}
   ~SymbolicVariableReference(){}
 
@@ -45,6 +51,7 @@ public:
     j["isFileVarDecl"] = isFileVarDecl;
     j["isLocalVarDeclOrParm"] = isLocalVarDeclOrParm;
     j["isModulePrivate"] = isModulePrivate;
+    j["initial-value"] = initialValue->toJson();
     return j;
   }
 
@@ -64,6 +71,7 @@ private:
   bool isFileVarDecl;
   bool isLocalVarDeclOrParm;
   bool isModulePrivate;
+  std::unique_ptr<SymbolicValue> initialValue;
 };
 
 class SymbolicMemberVariableReference : public SymbolicVariableReference {
@@ -77,8 +85,9 @@ public:
     bool isFileVarDecl,
     bool isLocalVarDeclOrParm,
     bool isModulePrivate,
-    std::unique_ptr<SymbolicExpr> base
-  ) : SymbolicVariableReference(isInstanceMember, isClassMember, typeName, name, qualitfiedName, isFileVarDecl, isLocalVarDeclOrParm, isModulePrivate),
+    std::unique_ptr<SymbolicExpr> base,
+    std::unique_ptr<SymbolicValue> initialValue
+  ) : SymbolicVariableReference(isInstanceMember, isClassMember, typeName, name, qualitfiedName, isFileVarDecl, isLocalVarDeclOrParm, isModulePrivate, std::move(initialValue)),
       base(std::move(base)) {
         assert(this->base != nullptr); 
   }
@@ -86,8 +95,9 @@ public:
   SymbolicMemberVariableReference(
     const clang::DeclRefExpr* varRef,
     const clang::VarDecl* varDecl,
-    std::unique_ptr<SymbolicExpr> base
-  ) : SymbolicVariableReference(varRef, varDecl),
+    std::unique_ptr<SymbolicExpr> base,
+    std::unique_ptr<SymbolicValue> initialValue
+  ) : SymbolicVariableReference(varRef, varDecl, std::move(initialValue)),
       base(std::move(base)) {
         assert(this->base != nullptr); 
   }
