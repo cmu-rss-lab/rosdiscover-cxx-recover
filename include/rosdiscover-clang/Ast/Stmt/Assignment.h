@@ -27,7 +27,7 @@ public:
     return {
       {"kind", "assignment"},
       {"variable", variable->getName()},
-      {"value", value->toJson()}
+      {"value", value->toJson()},
     };
   }
 

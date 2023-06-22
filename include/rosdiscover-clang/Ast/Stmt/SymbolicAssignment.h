@@ -12,7 +12,8 @@ class SymbolicAssignment : public SymbolicStmt {
 public:
   SymbolicAssignment(
     std::unique_ptr<SymbolicVariableReference> var,
-    std::unique_ptr<SymbolicExpr> expr
+    std::unique_ptr<SymbolicExpr> expr,
+    std::unique_ptr<SymbolicExpr> pathCondition = std::make_unique<BoolLiteral>(true)
   ) : var(std::move(var)), expr(std::move(expr)) {
     assert(this->var != nullptr);
     assert(this->expr != nullptr);
@@ -33,6 +34,7 @@ public:
       {"kind", "assign"},
       {"var", var->toJson()},
       {"expr", expr->toJson()},
+      {"path_condition", pathCondition->toJson()},
     };
   }
 
@@ -47,6 +49,7 @@ public:
 private: 
   std::unique_ptr<SymbolicVariableReference> var;
   std::unique_ptr<SymbolicExpr> expr;
+  std::unique_ptr<SymbolicExpr> pathCondition;
 };
 
 } // rosdiscover
