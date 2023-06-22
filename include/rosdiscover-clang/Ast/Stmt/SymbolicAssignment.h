@@ -13,10 +13,11 @@ public:
   SymbolicAssignment(
     std::unique_ptr<SymbolicVariableReference> var,
     std::unique_ptr<SymbolicExpr> expr,
-    std::unique_ptr<SymbolicExpr> pathCondition = std::make_unique<BoolLiteral>(true)
-  ) : var(std::move(var)), expr(std::move(expr)) {
+    std::unique_ptr<SymbolicExpr> pathCondition
+  ) : var(std::move(var)), expr(std::move(expr)), pathCondition(std::move(pathCondition)) {
     assert(this->var != nullptr);
     assert(this->expr != nullptr);
+    assert(this->pathCondition != nullptr);
   }
   
   ~SymbolicAssignment(){}
