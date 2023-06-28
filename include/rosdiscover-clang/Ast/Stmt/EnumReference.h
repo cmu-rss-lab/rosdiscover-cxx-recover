@@ -36,7 +36,7 @@ public:
   nlohmann::json toJson() const override {
     auto j = SymbolicDeclRef::toJson();
     j["kind"] = "enum-ref";
-    j["value"] = value;
+    j["value"] = IntegerLiteral(value).toJson();
     return j;
   }
 private:
