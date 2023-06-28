@@ -31,7 +31,7 @@ public:
     return getSymbolicType(typeName);
   }
 
-  static SymbolicValueType getSymbolicType(std::string typeName) {
+  static SymbolicValueType getSymbolicType(std::string const &typeName) {
     llvm::outs() << "DEBUG: determining symbolic type for Clang type [" << typeName << "]\n";
     if (typeName == "std::string"
      || typeName.find("const char") != std::string::npos
