@@ -15,6 +15,7 @@ public:
       True,
       False,
       Normal,
+      Case,
       Unknown,
   };
 
@@ -26,6 +27,8 @@ public:
         return "False";
       case Normal:
         return "Normal";
+      case Case:
+        return "Case";
       case Unknown:
         return "Unknown";
     }

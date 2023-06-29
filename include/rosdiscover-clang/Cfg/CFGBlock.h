@@ -68,6 +68,11 @@ public:
           result = std::move(pExpr);
         else 
           result = std::make_unique<OrExpr>(std::move(pExpr), std::move(result));
+      } else if (edge->getType() == CFGEdge::EdgeType::Case) {
+        if (result == nullptr) 
+          result = std::move(pExpr);
+        else 
+          result = std::make_unique<CompareExpr>(std::move(pExpr), std::move(result), CompareOperator::EQ);
       }
       else if (edge->getType() == CFGEdge::EdgeType::Normal) {
         abort();
