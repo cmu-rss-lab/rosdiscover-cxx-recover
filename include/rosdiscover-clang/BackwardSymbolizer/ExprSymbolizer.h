@@ -146,7 +146,7 @@ public:
     } else if (auto *enumDecl = clang::dyn_cast<clang::EnumConstantDecl>(decl)) {
       clang::Expr::EvalResult resultInt;
       long enumValue = -1;
-      if (declRefExpr->EvaluateAsInt(resultInt, astContext)) {
+      if (!declRefExpr->isValueDependent() && declRefExpr->EvaluateAsInt(resultInt, astContext)) {
         enumValue = resultInt.Val.getInt().getSExtValue();
       }
       return std::make_unique<SymbolicEnumReference>(enumDecl->getType().getAsString(), enumDecl->getNameAsString(), enumDecl->getQualifiedNameAsString(), enumValue);

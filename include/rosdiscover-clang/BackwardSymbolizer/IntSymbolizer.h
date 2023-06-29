@@ -37,7 +37,7 @@ public:
 
     //Try evaluating the frequency as integer.
     clang::Expr::EvalResult resultInt;
-    if (expr->EvaluateAsInt(resultInt, astContext)) {
+    if (!expr->isValueDependent() && expr->EvaluateAsInt(resultInt, astContext)) {
       llvm::outs() << "DEBUG [IntSymbolizer]: evaluated INT: (" << resultInt.Val.getInt().getSExtValue() << ")\n";
       return valueBuilder.integerLiteral(resultInt.Val.getInt().getSExtValue());
     }
