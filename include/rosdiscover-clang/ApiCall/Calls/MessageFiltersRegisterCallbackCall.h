@@ -8,9 +8,10 @@
 namespace rosdiscover {
 namespace api_call {
 
-class MessageFiltersRegisterCallbackCall : public NodeHandleRosApiCall, public NamedRosApiCall {
+class MessageFiltersRegisterCallbackCall : public BareRosApiCall, public NamedRosApiCall  {
 public:
-  using NodeHandleRosApiCall::NodeHandleRosApiCall;
+
+  using BareRosApiCall::BareRosApiCall;
 
   RosApiCallKind const getKind() const override {
     return RosApiCallKind::MessageFiltersRegisterCallbackCall;
@@ -23,7 +24,7 @@ public:
     llvm::outs() << "[MessageFiltersRegisterCallbackCall] Finding Callback\n";
 
     // if the call only has one argument, then we don't know what the callback is for now
-    if (numArgs < 2) {
+    if (numArgs < 1) {
       llvm::outs() << "[MessageFiltersRegisterCallbackCall] Incorrect number of arguments (" << numArgs << ")\n";
       return nullptr;
     }
@@ -50,7 +51,8 @@ public:
     const clang::ast_matchers::StatementMatcher getPattern() override {
       using namespace clang::ast_matchers;
       return callExpr(
-        callee(cxxMethodDecl(hasName("registerCallback"), ofClass(hasName("message_filters::Subscriber"))))
+ //       callee(cxxMethodDecl(hasName("registerCallback"), ofClass(hasName("message_filters::Subscriber"))))
+          callee(cxxMethodDecl(hasName("registerCallback"), ofClass(anyOf(hasName("message_filters::Synchronizer"), hasName("message_filters::Subscriber")))))
       ).bind("call");
     }
 
