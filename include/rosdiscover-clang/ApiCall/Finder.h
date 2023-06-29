@@ -57,6 +57,7 @@ private:
     addFinder(new RateSleepCall::Finder(calls));  
     addFinder(new RosInitCall::Finder(calls));
     addFinder(new MessageFiltersSubscriberCall::Finder(calls));
+    addFinder(new MessageFiltersRegisterCallbackCall::Finder(calls));
     addFinder(new ServiceClientCall::Finder(calls));
     addFinder(new SetParamCall::Finder(calls));
     addFinder(new SubscribeTopicCall::Finder(calls));

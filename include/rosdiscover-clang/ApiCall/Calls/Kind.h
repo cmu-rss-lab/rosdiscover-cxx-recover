@@ -22,6 +22,7 @@ enum class RosApiCallKind {
   RateSleepCall,
   RosInitCall,
   MessageFiltersSubscriberCall,
+  MessageFiltersRegisterCallbackCall,
   ServiceClientCall,
   SetParamCall,
   SubscribeTopicCall

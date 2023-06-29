@@ -398,7 +398,9 @@ private:
       case RosApiCallKind::PublishCall:
         return symbolizeApiCall((PublishCall*) apiCall);
       case RosApiCallKind::RateSleepCall:
-        return symbolizeApiCall((RateSleepCall*) apiCall);        
+        return symbolizeApiCall((RateSleepCall*) apiCall);
+      case RosApiCallKind::MessageFiltersRegisterCallbackCall:
+        return symbolizeApiCall((MessageFiltersRegisterCallbackCall*) apiCall);
       default:
         llvm::errs() << "unrecognized bare ROS API call: ";
         apiCall->print(llvm::outs());
@@ -624,6 +626,24 @@ private:
     }
     return std::make_unique<Subscriber>(
       symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
+      apiCall->getFormatName(),
+      std::move(symbolicCallBack)
+    );
+  }
+
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    api_call::MessageFiltersRegisterCallbackCall *apiCall
+  ) {
+    llvm::outs() << "DEBUG: symbolizing MessageFiltersRegisterCallbackCall\n";
+    auto* callback = apiCall->getCallback(astContext);
+    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    if (callback == nullptr) {
+      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+    } else {
+      symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
+    }
+    return std::make_unique<Subscriber>(
+      symbolizeApiCallName(apiCall),
       apiCall->getFormatName(),
       std::move(symbolicCallBack)
     );
