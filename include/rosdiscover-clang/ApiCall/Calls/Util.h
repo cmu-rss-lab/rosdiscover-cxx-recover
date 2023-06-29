@@ -90,8 +90,21 @@ clang::APValue const * evaluateNumber(
   const clang::ASTContext &Ctx,
   bool debugPrint=true
   ) {
+
+  if (expr->isValueDependent()) {
+    if (debugPrint) {
+      llvm::outs() << "DEBUG [" << debugTag << "]: Is value-dependent and cannot be evaluated: "; 
+      expr->dump();
+      llvm::outs() << "\n";
+    }
+
+    return nullptr;
+  }
+
+
   //Try evaluating the frequency as integer.
   clang::Expr::EvalResult resultInt;
+
   if (expr->EvaluateAsInt(resultInt, Ctx)) {
     llvm::outs() << "DEBUG [" << debugTag << "]: evaluated INT: (" << resultInt.Val.getInt().getSExtValue() << ")\n";
     return new clang::APValue(resultInt.Val);
