@@ -14,6 +14,8 @@ enum class SymbolicValueType {
   Bool,
   Float,
   Integer,
+  Publisher,
+  Rate,
   Unsupported,
   NodeHandle
 };
@@ -51,6 +53,14 @@ public:
             || typeName == "ros::NodeHandle &"
             || typeName == "ros::NodeHandle *") {
       return SymbolicValueType::NodeHandle;
+    } else if (typeName == "ros::Publisher" 
+            || typeName == "ros::Publisher &" 
+            || typeName == "ros::Publisher *")  {
+      return SymbolicValueType::Publisher;
+    } else if (typeName == "ros::Rate" 
+            || typeName == "ros::Rate &" 
+            || typeName == "ros::Rate *")  {
+      return SymbolicValueType::Rate;
     } else {
       return SymbolicValueType::Unsupported;
     }
@@ -70,6 +80,10 @@ public:
         return "unsupported";
       case SymbolicValueType::NodeHandle:
         return "node-handle";
+      case SymbolicValueType::Publisher:
+        return "publisher";
+      case SymbolicValueType::Rate:
+        return "rate";
     }
   }
 }; // SymbolicValue
@@ -115,6 +129,14 @@ class SymbolicFloat : public virtual SymbolicValue {};
 
 class SymbolicInteger : public virtual SymbolicValue {};
 
+class SymbolicPublisher :
+  public virtual SymbolicValue
+{};
+
+class SymbolicRate :
+  public virtual SymbolicValue
+{};
+
 class SymbolicNodeHandle :
   public virtual SymbolicString,
   public virtual SymbolicValue
@@ -125,7 +147,9 @@ class SymbolicUnknown :
   public virtual SymbolicBool,
   public virtual SymbolicInteger,
   public virtual SymbolicFloat,
-  public virtual SymbolicNodeHandle
+  public virtual SymbolicNodeHandle,
+  public virtual SymbolicPublisher,
+  public virtual SymbolicRate
 {
 public:
   SymbolicUnknown(){}
@@ -155,7 +179,9 @@ class SymbolicArg:
   public virtual SymbolicBool,
   public virtual SymbolicFloat,
   public virtual SymbolicInteger,
-  public virtual SymbolicNodeHandle
+  public virtual SymbolicNodeHandle,
+  public virtual SymbolicPublisher,
+  public virtual SymbolicRate
 {
 public:
   SymbolicArg(std::string const &name) : name(name) {}
@@ -216,6 +242,94 @@ public:
     return {
       {"kind", "node-handle"},
       {"namespace", name->toJson()}
+    };
+  }
+
+private:
+  std::unique_ptr<SymbolicString> name;
+};
+
+
+class SymbolicPublisherImpl :
+  public virtual SymbolicPublisher
+{
+public:
+  SymbolicPublisherImpl(std::unique_ptr<SymbolicString> name)
+    : name(std::move(name)) { 
+      assert(this->name != nullptr); 
+  }
+  SymbolicPublisherImpl(SymbolicPublisherImpl &&other)
+    : name(std::move(other.name)) { 
+    assert(this->name != nullptr); 
+  }
+  ~SymbolicPublisherImpl(){}
+
+  static std::unique_ptr<SymbolicPublisherImpl> unknown() {
+    return std::make_unique<SymbolicPublisherImpl>(std::make_unique<SymbolicUnknown>());
+  }
+
+  bool isUnknown() const override {
+    return name->isUnknown();
+  }
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(publisher ";
+    name->print(os);
+    os << ")";
+  }
+
+  std::string toString() const override {
+    return name->toString();
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "publisher"},
+      {"name", name->toJson()}
+    };
+  }
+
+private:
+  std::unique_ptr<SymbolicString> name;
+};
+
+
+class SymbolicRateImpl :
+  public virtual SymbolicRate
+{
+public:
+  SymbolicRateImpl(std::unique_ptr<SymbolicString> name)
+    : name(std::move(name)) { 
+      assert(this->name != nullptr); 
+  }
+  SymbolicRateImpl(SymbolicRateImpl &&other)
+    : name(std::move(other.name)) { 
+    assert(this->name != nullptr); 
+  }
+  ~SymbolicRateImpl(){}
+
+  static std::unique_ptr<SymbolicRateImpl> unknown() {
+    return std::make_unique<SymbolicRateImpl>(std::make_unique<SymbolicUnknown>());
+  }
+
+  bool isUnknown() const override {
+    return name->isUnknown();
+  }
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(rate ";
+    name->print(os);
+    os << ")";
+  }
+
+  std::string toString() const override {
+    return name->toString();
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "rate"},
+      {"name", name->toJson()}
     };
   }
 
