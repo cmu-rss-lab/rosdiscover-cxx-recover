@@ -97,11 +97,8 @@ private:
         for(auto *depBlock : controlDependencyGraphNodes) {
           assert(depBlock != nullptr);
 
-          bool trueBranchDominates = false;
-          bool falseBranchDominates = false;
-
           int i = 0;
-          int caseEdge = -1;
+          int edge = -1;
           for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
             // The only post-dominating control dependency is the directly following control dependency,
             // The exception to this is the head of a loop, which is the only control dependency which then also pre-dominiates the 
@@ -109,60 +106,43 @@ private:
             if ((postdominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock) 
               && !dominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock)) 
               || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
-              if (i == 0) { //true branch, as defined by clang's order of successors                
-                  llvm::outs() << "true branch dominates stmt\n";
-                  trueBranchDominates = true;
-              } else if (i == 1) { //false branch
-                  llvm::outs() << "false branch dominates stmt\n";
-                  falseBranchDominates = true;
-              } 
-            } 
-            if (i > 1) {
-              //TODO: Handle switch-case here.
-              llvm::outs() << "DEBUG: Attempt switch.\n";
-
-              if ((postdominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock) 
-              && !dominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock)) 
-              || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
-                if (caseEdge != -1) {
-                  llvm::outs() << "ERROR! Multiple Case Edges\n";
+              if (edge != -1) {
+                  llvm::outs() << "ERROR! Multiple Edges\n";
+                  depBlock->getClangBlock()->dump();
+                  llvm::outs() << "\npredecessor->getClangBlock(): ";
+                  predecessor->getClangBlock()->dump();
                   abort();
-                }
-                caseEdge = i;
               }
-              //
+              edge = i;
+              llvm::outs() << "DEBUG: Found Edge " << i << ".\n";
+
             }
             i++;
           }
-          if (!trueBranchDominates && !falseBranchDominates && caseEdge < 0) {
+          llvm::outs() << "DEBUG: caseEdge: " << edge << ".\n";
+          if (edge < 0) {
             continue; // No edge needed
           }
-          if (trueBranchDominates && falseBranchDominates){
-            llvm::outs() << "ERROR: falseBranchDominates: " << falseBranchDominates << " trueBranchDominates: " << trueBranchDominates << "\n";
-            llvm::outs() << "depBlock->getClangBlock(): ";
-            depBlock->getClangBlock()->dump();
-            llvm::outs() << "\npredecessor->getClangBlock(): ";
-            predecessor->getClangBlock()->dump();
-            abort();
-          }
-          
+
+          llvm::outs() << "DEBUG: Creating edge " << predecessor->getClangBlock()->getTerminatorStmt()->getStmtClassName();
           // Creating edge
           CFGEdge::EdgeType type;
-          if (i == 1) {
-            type = CFGEdge::EdgeType::Normal;
-          } else if (i == 2) {
-            type = falseBranchDominates ? CFGEdge::EdgeType::False : CFGEdge::EdgeType::True;
-          } else if (caseEdge != -1){
-            type = CFGEdge::EdgeType::Case;
+          if (predecessor->getClangBlock()->getTerminatorStmt()->getStmtClass() == clang::Stmt::SwitchStmtClass){
+            type = CFGEdge::EdgeType::Case; 
+          } else if (edge == 0) {
+            type = CFGEdge::EdgeType::True;
+          } else if (edge == 1) {
+            type = CFGEdge::EdgeType::False;
           } else {
             type = CFGEdge::EdgeType::Unknown;
             llvm::outs() << "ERROR: Unknown edge type\n";
           }
 
           if (predecessor->createEdge(depBlock, type)) {
-            llvm::outs() << "created edge between " << predecessor->getConditionStr(astContext, exprSymbolizer) << " and " << depBlock->getConditionStr(astContext, exprSymbolizer) << " of type " << CFGEdge::getEdgeTypeName(type) << "\n";
+            llvm::outs() << "DEBUG: Created edge between " << predecessor->getConditionStr(astContext, exprSymbolizer) << " and " << depBlock->getConditionStr(astContext, exprSymbolizer) << " of type " << CFGEdge::getEdgeTypeName(type) << "\n";
           }
         }
+        llvm::outs() << "DEBUG: Graph Built\n";
       }
       return {newControlDependencyNode}; // Return newly created control dependency node
     } else { 
