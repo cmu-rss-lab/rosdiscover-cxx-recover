@@ -399,6 +399,8 @@ private:
         return symbolizeApiCall((PublishCall*) apiCall);
       case RosApiCallKind::RateSleepCall:
         return symbolizeApiCall((RateSleepCall*) apiCall);
+      case RosApiCallKind::ConstSleepCall:
+        return symbolizeApiCall((ConstSleepCall*) apiCall);
       case RosApiCallKind::MessageFiltersRegisterCallbackCall:
         return symbolizeApiCall((MessageFiltersRegisterCallbackCall*) apiCall);
       default:
@@ -655,6 +657,15 @@ private:
     llvm::outs() << "DEBUG: symbolizing RateSleepCall\n";
     return std::make_unique<RateSleep>(
         floatSymbolizer.symbolize(apiCall->getRate(astContext))
+    );    
+  }
+
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    api_call::ConstSleepCall *apiCall
+  ) {
+    llvm::outs() << "DEBUG: symbolizing ConstSleepCall\n";
+    return std::make_unique<ConstSleep>(
+        floatSymbolizer.symbolize(apiCall->getDuration(astContext))
     );    
   }
 

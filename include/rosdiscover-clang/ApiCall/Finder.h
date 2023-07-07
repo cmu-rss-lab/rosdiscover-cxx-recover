@@ -54,7 +54,9 @@ private:
     addFinder(new GetParamWithDefaultCall::Finder(calls));
     addFinder(new HasParamCall::Finder(calls));
     addFinder(new PublishCall::Finder(calls));
-    addFinder(new RateSleepCall::Finder(calls));  
+    addFinder(new SendTransformCall::Finder(calls));
+    addFinder(new RateSleepCall::Finder(calls));
+    addFinder(new ConstSleepCall::Finder(calls));
     addFinder(new RosInitCall::Finder(calls));
     addFinder(new MessageFiltersSubscriberCall::Finder(calls));
     addFinder(new MessageFiltersRegisterCallbackCall::Finder(calls));

@@ -20,6 +20,7 @@ enum class RosApiCallKind {
   HasParamCall,
   PublishCall,
   RateSleepCall,
+  ConstSleepCall,
   RosInitCall,
   MessageFiltersSubscriberCall,
   MessageFiltersRegisterCallbackCall,
