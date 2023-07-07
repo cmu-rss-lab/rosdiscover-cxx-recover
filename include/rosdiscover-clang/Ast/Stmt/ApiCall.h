@@ -120,6 +120,30 @@ private:
   std::unique_ptr<SymbolicFloat> rate;
 };
 
+class ConstSleep : public SymbolicRosApiCall {
+public:
+  ConstSleep(std::unique_ptr<SymbolicFloat> duration) : SymbolicRosApiCall(), duration(std::move(duration)) {
+    assert(this->duration != nullptr);
+  }
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(constsleep ";
+    duration->print(os);
+    os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "constsleep"},
+      {"duration", duration->toJson()}
+    };
+  }
+
+private:
+  std::unique_ptr<SymbolicFloat> duration;
+};
+
+
 class Publish : public SymbolicRosApiCall {
 public:
   Publish(std::string const &publisher, std::unique_ptr<SymbolicExpr> pathCondition = std::make_unique<BoolLiteral>(true)) : 
