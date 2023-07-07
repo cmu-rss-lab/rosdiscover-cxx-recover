@@ -26,7 +26,7 @@ public:
     
     //Check input
     const auto *callExpr = clang::dyn_cast<clang::CallExpr>(getCallExpr());
-    if (case == nullptr) {
+    if (callExpr == nullptr) {
       llvm::outs() << "ERROR [ConstSleepCall]: Sleep call is not a CallExpr: ";
       getCallExpr()->dump();
       llvm::outs() << "\n";
@@ -45,7 +45,7 @@ public:
     const clang::ast_matchers::StatementMatcher getPattern() override {
       using namespace clang::ast_matchers;
       return callExpr(
-        callee(hasName("usleep"))
+        callee(functionDecl(hasName("usleep")))
       ).bind("call"); //TODO: Handle std::this_thread::sleep_for
     }
 

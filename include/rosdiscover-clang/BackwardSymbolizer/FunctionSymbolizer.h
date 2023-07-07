@@ -644,7 +644,7 @@ private:
     api_call::ConstSleepCall *apiCall
   ) {
     llvm::outs() << "DEBUG: symbolizing ConstSleepCall\n";
-    return std::make_unique<const>(
+    return std::make_unique<ConstSleep>(
         floatSymbolizer.symbolize(apiCall->getDuration(astContext))
     );    
   }
