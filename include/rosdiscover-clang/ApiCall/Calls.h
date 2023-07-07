@@ -16,6 +16,7 @@
 #include "Calls/HasParamCall.h"
 #include "Calls/Kind.h"
 #include "Calls/PublishCall.h"
+#include "Calls/SendTransformCall.h"
 #include "Calls/RateSleepCall.h"
 #include "Calls/ConstSleepCall.h"
 #include "Calls/RosInitCall.h"
