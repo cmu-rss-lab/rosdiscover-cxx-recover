@@ -40,6 +40,7 @@ public:
       llvm::outs() << "\n";
       return nullptr;
     }
+    llvm::outs() << "DEBUG [USleepCall]: Sleep Call Qualified Name:" << callExpr->getDirectCallee()->getQualifiedNameAsString() << "\n";
     
     const auto *durationArg = callExpr->getArg(0)->IgnoreImpCasts();
     llvm::outs() << "DEBUG [USleepCall]: Duration found (" << durationArg->getStmtClassName() << ")\n";
@@ -53,7 +54,7 @@ public:
     const clang::ast_matchers::StatementMatcher getPattern() override {
       using namespace clang::ast_matchers;
       return callExpr(
-        callee(functionDecl(hasName("usleep")))
+        callee(functionDecl(anyOf(hasName("usleep"), hasName("::sleep"))))
       ).bind("call"); //TODO: Handle std::this_thread::sleep_for
     }
 
