@@ -86,9 +86,18 @@ public:
     os << "(symbolic-constant " << toString() << ")";
   }
 
+
+
+  double apFloatToDouble(llvm::APFloat apfloat) const {
+    bool loseInfo = true;
+    apfloat.convert(llvm::APFloatBase::IEEEdouble(), llvm::APFloatBase::rmNearestTiesToAway, &loseInfo) ;
+    return apfloat.convertToDouble();
+  }
+
+
   std::string toString() const override {
     if (value.isFloat()) {
-      return std::to_string(value.getFloat().convertToDouble());
+      return std::to_string(apFloatToDouble(value.getFloat()));
     } else if (value.isInt()) {
       return std::to_string(value.getInt().getSExtValue());
     }

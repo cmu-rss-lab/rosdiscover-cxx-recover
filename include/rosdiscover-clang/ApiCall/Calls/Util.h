@@ -84,6 +84,12 @@ std::vector<const clang::Stmt*> getTransitiveChildenByType(const clang::Stmt* pa
   
 namespace api_call {
 
+double apFloatToDouble(llvm::APFloat apfloat) {
+  bool loseInfo = true;
+  apfloat.convert(llvm::APFloatBase::IEEEdouble(), llvm::APFloatBase::rmNearestTiesToAway, &loseInfo) ;
+  return apfloat.convertToDouble();
+}
+
 clang::APValue const * evaluateNumber(
   const std::string debugTag, 
   const clang::Expr *expr,
@@ -113,7 +119,7 @@ clang::APValue const * evaluateNumber(
   //Try evaluating the frequency as float.
   llvm::APFloat resultFloat(0.0);
   if (expr->EvaluateAsFloat(resultFloat, Ctx)) {
-    llvm::outs() << "DEBUG [" << debugTag << "]: evaluated Float: (" << resultFloat.convertToDouble() << ")\n";
+    llvm::outs() << "DEBUG [" << debugTag << "]: evaluated Float: (" << apFloatToDouble(resultFloat) << ")\n";
     return new clang::APValue(resultFloat);
   }
 
