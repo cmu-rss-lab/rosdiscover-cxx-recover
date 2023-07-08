@@ -437,10 +437,21 @@ private:
     auto requestResponseFormatNames = apiCall->getRequestResponseFormatNames();
     auto requestFormatName = std::get<0>(requestResponseFormatNames);
     auto responseFormatName = std::get<1>(requestResponseFormatNames);
+
+    llvm::outs() << "DEBUG: attempting to symbolizing AdvertiseServiceCall callback\n";
+    auto* callback = apiCall->getCallback(astContext);
+    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    if (callback == nullptr) {
+      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+    } else {
+      symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
+    }
+
     return std::make_unique<ServiceProvider>(
       std::move(name),
       requestFormatName,
-      responseFormatName
+      responseFormatName,
+      std::move(symbolicCallBack)
     );
   }
 
@@ -1138,7 +1149,7 @@ private:
     auto result = SymbolicFunctionCall::create(function);
     llvm::outs() << "DEBUG: symbolized callback\n";
     return result;
-  }
+  } // TODOOOOO: FIX ME callback 
 
   std::unique_ptr<SymbolicStmt> symbolizeStatement(RawStatement *statement) {
     std::unique_ptr<SymbolicStmt> symbolic;

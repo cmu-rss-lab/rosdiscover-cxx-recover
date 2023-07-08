@@ -199,10 +199,12 @@ public:
   ServiceProvider(
     std::unique_ptr<SymbolicString> name,
     std::string const &requestFormat,
-    std::string const &responseFormat
+    std::string const &responseFormat,
+    std::unique_ptr<SymbolicFunctionCall> callback
   ) : NamedSymbolicRosApiCall(std::move(name)),
       requestFormat(requestFormat),
-      responseFormat(responseFormat)
+      responseFormat(responseFormat),
+      callback(std::move(callback))
   {}
 
   void print(llvm::raw_ostream &os) const override {
@@ -216,13 +218,15 @@ public:
       {"kind", "provides-service"},
       {"name", getName()->toJson()},
       {"request-format", requestFormat},
-      {"response-format", responseFormat}
+      {"response-format", responseFormat},
+      {"callback-name", (callback == nullptr) ? "unknown" : callback->getCalleeName()}
     };
   }
 
 private:
   std::string const requestFormat;
   std::string const responseFormat;
+  std::unique_ptr<SymbolicFunctionCall> callback;
 };
 
 class ReadParam :
