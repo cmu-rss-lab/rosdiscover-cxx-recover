@@ -124,10 +124,10 @@ private:
             continue; // No edge needed
           }
 
-          llvm::outs() << "DEBUG: Creating edge " << predecessor->getClangBlock()->getTerminatorStmt()->getStmtClassName();
+          llvm::outs() << "DEBUG: Creating edge ";// << predecessor->getClangBlock()->getTerminatorStmt()->getStmtClassName();
           // Creating edge
           CFGEdge::EdgeType type;
-          if (predecessor->getClangBlock()->getTerminatorStmt()->getStmtClass() == clang::Stmt::SwitchStmtClass){
+          if (predecessor->getClangBlock()->getTerminatorStmt() != nullptr && predecessor->getClangBlock()->getTerminatorStmt()->getStmtClass() == clang::Stmt::SwitchStmtClass){
             type = CFGEdge::EdgeType::Case; 
           } else if (edge == 0) {
             type = CFGEdge::EdgeType::True;
