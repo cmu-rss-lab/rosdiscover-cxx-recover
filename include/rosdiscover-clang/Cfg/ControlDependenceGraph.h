@@ -96,16 +96,22 @@ private:
         // Check all nodes of the control dependency graph for potential edges to be created and their type
         for(auto *depBlock : controlDependencyGraphNodes) {
           assert(depBlock != nullptr);
+          assert(depBlock->getClangBlock() != nullptr);
 
           int i = 0;
           int edge = -1;
           for (const clang::CFGBlock *sBlock: predecessor->getClangBlock()->succs()) {
+            if (sBlock == nullptr) {
+              continue;
+            }
             // The only post-dominating control dependency is the directly following control dependency,
             // The exception to this is the head of a loop, which is the only control dependency which then also pre-dominiates the 
             // inner statement. Hence those edges need to be ignored to avoid circles in the control dependcy graph. 
+            llvm::outs() << "DEBUG: Check Dom.\n";
             if ((postdominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock) 
               && !dominatorAnalysis.dominates(depBlock->getClangBlock(), sBlock)) 
               || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
+                llvm::outs() << "DEBUG: Dom Checked.\n";
               if (edge != -1) {
                   llvm::outs() << "ERROR! Multiple Edges\n";
                   depBlock->getClangBlock()->dump();
@@ -115,7 +121,6 @@ private:
               }
               edge = i;
               llvm::outs() << "DEBUG: Found Edge " << i << ".\n";
-
             }
             i++;
           }
