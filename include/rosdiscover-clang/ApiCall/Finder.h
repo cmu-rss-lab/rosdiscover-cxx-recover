@@ -56,7 +56,8 @@ private:
     addFinder(new PublishCall::Finder(calls));
     addFinder(new SendTransformCall::Finder(calls));
     addFinder(new RateSleepCall::Finder(calls));
-    addFinder(new ConstSleepCall::Finder(calls));
+    addFinder(new USleepCall::Finder(calls));
+    addFinder(new ThreadSleepCall::Finder(calls));
     addFinder(new RosInitCall::Finder(calls));
     addFinder(new MessageFiltersSubscriberCall::Finder(calls));
     addFinder(new MessageFiltersRegisterCallbackCall::Finder(calls));
