@@ -16,7 +16,7 @@ public:
     return RosApiCallKind::PublishCall;
   }
 
-  const std::string getPublisherName(clang::ASTContext &astContext) const {
+  virtual const std::string getPublisherName(clang::ASTContext &astContext) const {
     llvm::outs() << "DEBUG [PublishCall] Publish call is : ";
     getCallExpr()->dump();
     llvm::outs() << "\n";

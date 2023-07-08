@@ -4,19 +4,16 @@
 
 #include "../RosApiCall.h"
 #include "./Util.h"
+#include "./PublishCall.h"
 
 namespace rosdiscover {
 namespace api_call {
 
-class SendTransformCall : public BareRosApiCall {
+class SendTransformCall : public PublishCall {
 public:
-  using BareRosApiCall::BareRosApiCall;
+  using PublishCall::PublishCall;
 
-  RosApiCallKind const getKind() const override {
-    return RosApiCallKind::PublishCall;
-  }
-
-  const std::string getPublisherName(clang::ASTContext &astContext) const {
+  virtual const std::string getPublisherName(clang::ASTContext &astContext) const override {
     return "tf_broadcaster";
   }
 
