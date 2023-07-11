@@ -67,7 +67,7 @@ public:
         astContext,
         symContext,
         symFunction,
-        function,
+        function->getDefinition(),
         apiCalls,
         functionCalls,
         symbolicArgNames,
