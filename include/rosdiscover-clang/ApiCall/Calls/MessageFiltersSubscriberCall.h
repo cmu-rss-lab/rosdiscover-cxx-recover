@@ -31,10 +31,20 @@ public:
   }
 
   clang::Expr const * getNameExpr() const override {
+    llvm::outs() << "DEBUG: MessageFiltersSubscriberCall::getNameExpr\n";
+    if (getConstructExpr()->getNumArgs() < 2) {
+      llvm::outs() << "Warning: MessageFiltersSubscriberCall cannot getNameExpr\n";
+      return nullptr;
+    }
     return getConstructExpr()->getArg(1);
   }
 
   clang::Expr const * getNodeHandleExpr() const override {
+    llvm::outs() << "DEBUG: MessageFiltersSubscriberCall::getNodeHandleExpr\n";
+    if (getConstructExpr()->getNumArgs() < 1) {
+      llvm::outs() << "Warning: MessageFiltersSubscriberCall cannot getNodeHandleExpr\n";
+      return nullptr;
+    }
     return getConstructExpr()->getArg(0);
   }
 
@@ -48,7 +58,7 @@ public:
 
     const clang::ast_matchers::StatementMatcher getPattern() override {
       using namespace clang::ast_matchers;
-      return cxxConstructExpr(
+      return cxxConstructExpr(hasArgument(0, expr()),
         hasDeclaration(hasDeclContext(namedDecl(hasName("message_filters::Subscriber"))))
       ).bind("call");
     }
