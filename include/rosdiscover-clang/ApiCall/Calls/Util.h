@@ -132,13 +132,103 @@ clang::APValue const * evaluateNumber(
 
   //All evaluation attempts have failed.
   if (debugPrint) {
-    llvm::outs() << "DEBUG [" << debugTag << "]: has unsupported type: "; 
+    llvm::outs() << "DEBUG [" << debugTag << "]: Cannot be evaluated: "; 
     expr->dump();
     llvm::outs() << "\n";
   }
 
   return nullptr;
 }
+
+
+clang::Expr const * constrInitMemberExpr(const std::string debugTag, 
+  const clang::MemberExpr *declRef) {
+    const auto *valueDecl = declRef->getMemberDecl();
+    if (valueDecl != nullptr) {
+      const auto *fieldDecl = clang::dyn_cast<clang::FieldDecl>(valueDecl);
+      if (fieldDecl != nullptr) {
+        llvm::outs() << "Debug [" << debugTag << "] evaluateNumberDeclRef: ";
+        fieldDecl->dump();
+        llvm::outs() << "\n";
+        if(fieldDecl->hasInClassInitializer()) {
+          llvm::outs() << "Debug [" << debugTag << "] hasInClassInitializer: ";
+          fieldDecl->getInClassInitializer()->dump();
+          llvm::outs() << "\n";
+          return fieldDecl->getInClassInitializer();
+        }
+
+        const auto *parent = fieldDecl->getParent();
+        llvm::outs() << "Debug [" << debugTag << "] getParent ";
+        const auto *classDecl = clang::dyn_cast<clang::CXXRecordDecl>(parent);
+        if (classDecl != nullptr) { 
+          for (const auto *ctor: classDecl->ctors()) {
+            llvm::outs() << "Debug [" << debugTag << "] found constructor: ";
+            ctor->print(llvm::outs());
+            llvm::outs() << "\n";
+            for (const auto *init : ctor->inits()) {
+              llvm::outs() << "Debug [" << debugTag << "] found init: ";
+              init->getMember()->dump();
+              llvm::outs() << "\n";
+              init->getInit()->dump();
+              llvm::outs() << "\n";
+                
+              if (init->getMember()->getID() == fieldDecl->getID()) {
+                return init->getInit();     
+              }
+            }
+          }
+        }
+      } 
+    }
+
+    return nullptr;
+  }
+
+clang::APValue const * evaluateNumberMemberExpr(const std::string debugTag, 
+  const clang::MemberExpr *declRef,
+  const clang::ASTContext &Ctx,
+  bool debugPrint=true) {
+    const auto *valueDecl = declRef->getMemberDecl();
+    if (valueDecl != nullptr) {
+      const auto *fieldDecl = clang::dyn_cast<clang::FieldDecl>(valueDecl);
+      if (fieldDecl != nullptr) {
+        llvm::outs() << "Debug [" << debugTag << "] evaluateNumberDeclRef: ";
+        fieldDecl->dump();
+        llvm::outs() << "\n";
+        if(fieldDecl->hasInClassInitializer()) {
+          llvm::outs() << "Debug [" << debugTag << "] hasInClassInitializer: ";
+          fieldDecl->getInClassInitializer()->dump();
+          llvm::outs() << "\n";
+          return evaluateNumber(debugTag, fieldDecl->getInClassInitializer(), Ctx);
+        }
+
+        const auto *parent = fieldDecl->getParent();
+        llvm::outs() << "Debug [" << debugTag << "] getParent ";
+        const auto *classDecl = clang::dyn_cast<clang::CXXRecordDecl>(parent);
+        if (classDecl != nullptr) { 
+          for (const auto *ctor: classDecl->ctors()) {
+            llvm::outs() << "Debug [" << debugTag << "] found constructor: ";
+            ctor->print(llvm::outs());
+            llvm::outs() << "\n";
+            for (const auto *init : ctor->inits()) {
+              llvm::outs() << "Debug [" << debugTag << "] found init: ";
+              init->getMember()->dump();
+              llvm::outs() << "\n";
+              init->getInit()->dump();
+              llvm::outs() << "\n";
+                
+              if (init->getMember()->getID() == fieldDecl->getID()) {
+                return evaluateNumber(debugTag, init->getInit(), Ctx);     
+              }
+            }
+          }
+        }
+      } 
+    }
+
+    return nullptr;
+  }
+
 
 const clang::ValueDecl *getCallerDecl(const std::string debugTag, const clang::CXXMemberCallExpr * memberCallExpr) {
   const auto *caller = memberCallExpr->getImplicitObjectArgument()->IgnoreImpCasts();
