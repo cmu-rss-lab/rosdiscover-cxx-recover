@@ -96,6 +96,9 @@ clang::APValue const * evaluateNumber(
   const clang::ASTContext &Ctx,
   bool debugPrint=true
   ) {
+  if (expr == nullptr) {
+    return nullptr;
+  }
 
   if (expr->isValueDependent()) {
     if (debugPrint) {
@@ -140,7 +143,6 @@ clang::APValue const * evaluateNumber(
   return nullptr;
 }
 
-
 clang::Expr const * constrInitMemberExpr(const std::string debugTag, 
   const clang::MemberExpr *declRef) {
     const auto *valueDecl = declRef->getMemberDecl();
@@ -158,14 +160,18 @@ clang::Expr const * constrInitMemberExpr(const std::string debugTag,
         }
 
         const auto *parent = fieldDecl->getParent();
-        llvm::outs() << "Debug [" << debugTag << "] getParent ";
+        llvm::outs() << "Debug [" << debugTag << "] getParent\n";
         const auto *classDecl = clang::dyn_cast<clang::CXXRecordDecl>(parent);
         if (classDecl != nullptr) { 
-          for (const auto *ctor: classDecl->ctors()) {
+          for (const auto *ctorDecl: classDecl->ctors()) {
+            const auto *constructorDef = clang::dyn_cast<clang::CXXConstructorDecl>(ctorDecl->getDefinition());
+            if (constructorDef == nullptr) {
+              continue;
+            }
             llvm::outs() << "Debug [" << debugTag << "] found constructor: ";
-            ctor->print(llvm::outs());
+            constructorDef->print(llvm::outs());
             llvm::outs() << "\n";
-            for (const auto *init : ctor->inits()) {
+            for (const auto *init : constructorDef->inits()) {
               llvm::outs() << "Debug [" << debugTag << "] found init: ";
               init->getMember()->dump();
               llvm::outs() << "\n";
@@ -173,7 +179,7 @@ clang::Expr const * constrInitMemberExpr(const std::string debugTag,
               llvm::outs() << "\n";
                 
               if (init->getMember()->getID() == fieldDecl->getID()) {
-                return init->getInit();     
+                return init->getInit(); //TODO: Return all of them
               }
             }
           }
@@ -188,45 +194,7 @@ clang::APValue const * evaluateNumberMemberExpr(const std::string debugTag,
   const clang::MemberExpr *declRef,
   const clang::ASTContext &Ctx,
   bool debugPrint=true) {
-    const auto *valueDecl = declRef->getMemberDecl();
-    if (valueDecl != nullptr) {
-      const auto *fieldDecl = clang::dyn_cast<clang::FieldDecl>(valueDecl);
-      if (fieldDecl != nullptr) {
-        llvm::outs() << "Debug [" << debugTag << "] evaluateNumberDeclRef: ";
-        fieldDecl->dump();
-        llvm::outs() << "\n";
-        if(fieldDecl->hasInClassInitializer()) {
-          llvm::outs() << "Debug [" << debugTag << "] hasInClassInitializer: ";
-          fieldDecl->getInClassInitializer()->dump();
-          llvm::outs() << "\n";
-          return evaluateNumber(debugTag, fieldDecl->getInClassInitializer(), Ctx);
-        }
-
-        const auto *parent = fieldDecl->getParent();
-        llvm::outs() << "Debug [" << debugTag << "] getParent ";
-        const auto *classDecl = clang::dyn_cast<clang::CXXRecordDecl>(parent);
-        if (classDecl != nullptr) { 
-          for (const auto *ctor: classDecl->ctors()) {
-            llvm::outs() << "Debug [" << debugTag << "] found constructor: ";
-            ctor->print(llvm::outs());
-            llvm::outs() << "\n";
-            for (const auto *init : ctor->inits()) {
-              llvm::outs() << "Debug [" << debugTag << "] found init: ";
-              init->getMember()->dump();
-              llvm::outs() << "\n";
-              init->getInit()->dump();
-              llvm::outs() << "\n";
-                
-              if (init->getMember()->getID() == fieldDecl->getID()) {
-                return evaluateNumber(debugTag, init->getInit(), Ctx);     
-              }
-            }
-          }
-        }
-      } 
-    }
-
-    return nullptr;
+    return evaluateNumber(debugTag, constrInitMemberExpr(debugTag, declRef), Ctx);
   }
 
 
