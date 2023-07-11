@@ -164,17 +164,35 @@ clang::Expr const * constrInitMemberExpr(const std::string debugTag,
         const auto *classDecl = clang::dyn_cast<clang::CXXRecordDecl>(parent);
         if (classDecl != nullptr) { 
           for (const auto *ctorDecl: classDecl->ctors()) {
-            const auto *constructorDef = clang::dyn_cast<clang::CXXConstructorDecl>(ctorDecl->getDefinition());
-            if (constructorDef == nullptr) {
+            if (ctorDecl->getDefinition() == nullptr) {
+              llvm::outs() << "Warning [" << debugTag << "] Constructor has no definition: ";
+              ctorDecl->print(llvm::outs());
+              llvm::outs() << "\n";
               continue;
             }
+            const auto *constructorDef = clang::dyn_cast<clang::CXXConstructorDecl>(ctorDecl->getDefinition());
+            if (constructorDef == nullptr) {
+              llvm::outs() << "Warning [" << debugTag << "] Constructor definition is not CXXConstructorDecl: ";
+              ctorDecl->print(llvm::outs());
+              llvm::outs() << "\n";
+              continue;
+            }
+
             llvm::outs() << "Debug [" << debugTag << "] found constructor: ";
             constructorDef->print(llvm::outs());
             llvm::outs() << "\n";
             for (const auto *init : constructorDef->inits()) {
+              if (init == nullptr || init->getMember() == nullptr) {
+                llvm::outs() << "Warning [" << debugTag << "] init incomplete";
+                continue;
+              }
               llvm::outs() << "Debug [" << debugTag << "] found init: ";
               init->getMember()->dump();
               llvm::outs() << "\n";
+              if (init->getInit() == nullptr) {
+                llvm::outs() << "Init empty\n";
+                continue; //empty init
+              }
               init->getInit()->dump();
               llvm::outs() << "\n";
                 
