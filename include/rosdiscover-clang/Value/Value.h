@@ -129,12 +129,16 @@ class SymbolicFloat : public virtual SymbolicValue {};
 
 class SymbolicInteger : public virtual SymbolicValue {};
 
-class SymbolicPublisher :
+class SymbolicObject :
   public virtual SymbolicValue
 {};
 
+class SymbolicPublisher :
+  public virtual SymbolicObject
+{};
+
 class SymbolicRate :
-  public virtual SymbolicValue
+  public virtual SymbolicObject
 {};
 
 class SymbolicNodeHandle :

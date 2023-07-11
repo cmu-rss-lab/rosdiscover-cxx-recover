@@ -865,6 +865,16 @@ private:
           llvm::outs() << "DEBUG: attempting to symbolize node handle param\n";
           symbolicParam = symbolizeNodeHandle(paramExpr->IgnoreParenCasts());
           break;
+        // where was the publisher defined?
+        case SymbolicValueType::Publisher:
+          llvm::outs() << "DEBUG: attempting to symbolize publisher param\n";
+          symbolicParam = symbolizePublisher(paramExpr->IgnoreParenCasts());
+          break;
+        // where was the rate defined?
+        case SymbolicValueType::Rate:
+          llvm::outs() << "DEBUG: attempting to symbolize rate param\n";
+          symbolicParam = symbolizeRate(paramExpr->IgnoreParenCasts());
+          break;
         case SymbolicValueType::Bool:
           llvm::errs() << "WARNING: boolean symbolization is currently unsupported\n";
           continue;

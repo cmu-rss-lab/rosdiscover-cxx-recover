@@ -116,6 +116,8 @@ public:
         return floatSymbolizer.symbolize(expr);
       case SymbolicValueType::Integer:
         return intSymbolizer.symbolize(expr);
+      case SymbolicValueType::Publisher:
+      case SymbolicValueType::Rate:
       case SymbolicValueType::NodeHandle: 
         llvm::outs() << "unable to symbolize expression (expr) Node Handle not supported: treating as unknown\n";
         expr->dump();
