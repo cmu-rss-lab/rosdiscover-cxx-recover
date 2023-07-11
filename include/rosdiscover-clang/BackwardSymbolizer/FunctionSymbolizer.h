@@ -137,7 +137,7 @@ private:
     llvm::outs() << "\n";
 
     if (apiCall->hasNodeHandle()) {
-      llvm::outs() << "DEBUG: symbolizing ROS API call with associated node handle...\n";
+      llvm::outs() << "DEBUG: symbolizing ROS API call with associated node handle...\n"; 
       return symbolizeApiCallWithNodeHandle((api_call::NodeHandleRosApiCall*) apiCall);
     } else {
       llvm::outs() << "DEBUG: symbolizing bare ROS API call\n";
@@ -333,7 +333,9 @@ private:
 
     // resolved the associated node handle
     // TODO: this can be cached for each node handle
+    llvm::outs() << "DEBUG: symbolizeApiCallWithNodeHandle getExpr\n";
     clang::Expr *atExpr = const_cast<clang::Expr*>(apiCall->getExpr());
+    llvm::outs() << "DEBUG: symbolizeApiCallWithNodeHandle getNodeHandleDecl\n";
     auto nodeHandle = symbolizeNodeHandle(apiCall->getNodeHandleDecl(), atExpr);
     llvm::outs() << "DEBUG: found symbolic node handle: ";
     nodeHandle->print(llvm::outs());
