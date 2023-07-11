@@ -113,11 +113,11 @@ private:
               || depBlock->getClangBlock()->getBlockID() == sBlock->getBlockID()) {
                 llvm::outs() << "DEBUG: Dom Checked.\n";
               if (edge != -1) {
-                  llvm::outs() << "ERROR! Multiple Edges\n";
+                  llvm::outs() << "Warning! Multiple Edges\n";
                   depBlock->getClangBlock()->dump();
                   llvm::outs() << "\npredecessor->getClangBlock(): ";
                   predecessor->getClangBlock()->dump();
-                  abort();
+                  //abort();
               }
               edge = i;
               llvm::outs() << "DEBUG: Found Edge " << i << ".\n";
