@@ -166,14 +166,17 @@ public:
   virtual clang::Expr const * getNodeHandleExpr() const = 0;
 
   clang::ValueDecl const * getNodeHandleDecl() const {
+    llvm::outs() << "DEBUG: getNodeHandleDecl getNodeHandleExpr\n";
     auto const *nodeHandleExpr = getNodeHandleExpr();
 
     // node handle is provided by a parameter or local variable
     if (auto const *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(nodeHandleExpr)) {
+      llvm::outs() << "DEBUG: getNodeHandleDecl declRefExpr->getDecl()\n";
       return declRefExpr->getDecl();
 
     // node handle is provided by a CXX field
     } else if (auto const *memberExpr = clang::dyn_cast<clang::MemberExpr>(nodeHandleExpr)) {
+      llvm::outs() << "DEBUG: getNodeHandleDecl declRefExpr->getMemberDecl()\n";
       return memberExpr->getMemberDecl();
 
     } else {
@@ -199,6 +202,7 @@ public:
   }
 
   clang::Expr const * getNodeHandleExpr() const override {
+    llvm::outs() << "DEBUG: NodeHandleRosApiCall::getNodeHandleExpr\n";
     return clang::dyn_cast<clang::MemberExpr>(getCallExpr()->getCallee())
       ->getBase()
       ->IgnoreImpCasts();
