@@ -746,10 +746,23 @@ private:
           function, function->getBody(), &astContext, clang::CFG::BuildOptions());
     clang::ControlDependencyCalculator cdc(sourceCFG.get());
     stmt->dump();
-    llvm::outs() << "getControlDependencies: ";
+    llvm::outs() << "getControlDependencies\n";
+    
     std::unique_ptr<clang::ParentMap> PM = std::make_unique<clang::ParentMap>(function->getBody());
+    if (PM == nullptr) {
+      llvm::outs() << "[Warning] getControlDependenciesObjects: failed building ParentMap!\n";
+      return valueBuilder.unknown();
+    }
     auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
+    if (CM == nullptr) {
+      llvm::outs() << "[Warning] getControlDependenciesObjects: failed building CFG";
+      return valueBuilder.unknown();
+    }
     auto stmt_block = CM->getBlock(stmt); 
+    if (stmt_block == nullptr) {
+      llvm::outs() << "[Debug] getControlDependenciesObjects: Statement not in CFG (probably in initializer)";
+      return std::make_unique<BoolLiteral>(true);
+    }
     stmt_block->dump();
     auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
     
