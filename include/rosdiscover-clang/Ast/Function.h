@@ -187,6 +187,92 @@ private:
   std::unique_ptr<SymbolicExpr> pathCondition;
 };
 
+class SymbolicCallback : public virtual SymbolicStmt {
+public:
+  SymbolicCallback(
+    SymbolicFunction *callee,
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
+    std::unique_ptr<SymbolicExpr> pathCondition = std::make_unique<BoolLiteral>(true)
+  ) : callee(callee), args(std::move(args)), pathCondition(std::move(pathCondition)) {
+    assert(this->pathCondition != nullptr);
+  }
+  ~SymbolicCallback(){}
+
+  static std::unique_ptr<SymbolicCallback> create(
+    SymbolicFunction *function,
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args,
+    std::unique_ptr<SymbolicExpr> pathCondition
+  ) {
+    return std::make_unique<SymbolicCallback>(function, args, std::move(pathCondition));
+  }
+
+  static std::unique_ptr<SymbolicCallback> create(
+    SymbolicFunction *function
+  ) {
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> emptyArgs;
+    return create(function, emptyArgs, std::make_unique<BoolLiteral>(true));
+  }
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(callback " << callee->getName();
+    for (auto const &entry : args) {
+      os << " [" << entry.first << ": ";
+      entry.second->print(os);
+      os << "]";
+    }
+    os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    nlohmann::json argsJson = nlohmann::json::object();
+    for (auto const &entry : args) {
+      argsJson[entry.first] = entry.second->toJson();
+    }
+    return {
+      {"kind", "callback"},
+      {"callee", callee->getName()},
+      {"arguments", argsJson},
+      {"path_condition", pathCondition->toJson()},
+    };
+  }
+
+  virtual std::string const getCalleeName() const {
+    return callee->getName();
+  }
+
+private:
+  SymbolicFunction *callee;
+  std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> args;
+  std::unique_ptr<SymbolicExpr> pathCondition;
+};
+
+class UnknownSymbolicCallback : public SymbolicCallback {
+public:
+  UnknownSymbolicCallback(std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args) : SymbolicCallback(nullptr, args) {}
+  ~UnknownSymbolicCallback(){}
+  
+  static std::unique_ptr<UnknownSymbolicCallback> create() {
+    std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> emptyArgs;
+    return std::make_unique<UnknownSymbolicCallback>(emptyArgs);
+  }
+
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "UNKNOWN";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "unknown"}
+    };
+  }
+
+  std::string const getCalleeName() const override {
+    return "unknown";
+  }
+};
+
+
 class UnknownSymbolicFunctionCall : public SymbolicFunctionCall {
 public:
   UnknownSymbolicFunctionCall(std::unordered_map<std::string, std::unique_ptr<SymbolicValue>> &args) : SymbolicFunctionCall(nullptr, args) {}

@@ -74,7 +74,7 @@ private:
 
 class Subscriber : public NamedSymbolicRosApiCall {
 public:
-  Subscriber(std::unique_ptr<SymbolicString> name, std::string const &format, std::unique_ptr<SymbolicFunctionCall> callback)
+  Subscriber(std::unique_ptr<SymbolicString> name, std::string const &format, std::unique_ptr<SymbolicCallback> callback)
   : NamedSymbolicRosApiCall(std::move(name)), format(format), callback(std::move(callback)) {}
 
   void print(llvm::raw_ostream &os) const override {
@@ -94,7 +94,7 @@ public:
 
 private:
   std::string const format;
-  std::unique_ptr<SymbolicFunctionCall> callback;
+  std::unique_ptr<SymbolicCallback> callback;
 };
 
 class RateSleep : public SymbolicRosApiCall {
@@ -200,7 +200,7 @@ public:
     std::unique_ptr<SymbolicString> name,
     std::string const &requestFormat,
     std::string const &responseFormat,
-    std::unique_ptr<SymbolicFunctionCall> callback
+    std::unique_ptr<SymbolicCallback> callback
   ) : NamedSymbolicRosApiCall(std::move(name)),
       requestFormat(requestFormat),
       responseFormat(responseFormat),
@@ -226,7 +226,7 @@ public:
 private:
   std::string const requestFormat;
   std::string const responseFormat;
-  std::unique_ptr<SymbolicFunctionCall> callback;
+  std::unique_ptr<SymbolicCallback> callback;
 };
 
 class ReadParam :

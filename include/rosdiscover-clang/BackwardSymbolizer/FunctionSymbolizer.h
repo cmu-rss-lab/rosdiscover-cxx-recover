@@ -442,9 +442,9 @@ private:
 
     llvm::outs() << "DEBUG: attempting to symbolizing AdvertiseServiceCall callback\n";
     auto* callback = apiCall->getCallback(astContext);
-    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    std::unique_ptr<SymbolicCallback> symbolicCallBack;
     if (callback == nullptr) {
-      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+      symbolicCallBack = UnknownSymbolicCallback::create();
     } else {
       symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
     }
@@ -477,9 +477,9 @@ private:
     llvm::outs() << "DEBUG [message_filters::Subscriber]: uses format: " << formatName << "\n";
 
     auto* callback = apiCall->getCallback(astContext);
-    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    std::unique_ptr<SymbolicCallback> symbolicCallBack;
     if (callback == nullptr) {
-      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+      symbolicCallBack = UnknownSymbolicCallback::create();
     } else {
       symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
     }
@@ -633,9 +633,9 @@ private:
   ) {
     llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
     auto* callback = apiCall->getCallback(astContext);
-    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    std::unique_ptr<SymbolicCallback> symbolicCallBack;
     if (callback == nullptr) {
-      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+      symbolicCallBack = UnknownSymbolicCallback::create();
     } else {
       symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
     }
@@ -651,9 +651,9 @@ private:
   ) {
     llvm::outs() << "DEBUG: symbolizing MessageFiltersRegisterCallbackCall\n";
     auto* callback = apiCall->getCallback(astContext);
-    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    std::unique_ptr<SymbolicCallback> symbolicCallBack;
     if (callback == nullptr) {
-      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+      symbolicCallBack = UnknownSymbolicCallback::create();
     } else {
       symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
     }
@@ -1147,7 +1147,7 @@ private:
     return ordered;
   }
 
-  std::unique_ptr<SymbolicFunctionCall> symbolizeCallback(RawCallbackStatement *statement) {
+  std::unique_ptr<SymbolicCallback> symbolizeCallback(RawCallbackStatement *statement) {
     llvm::outs() << "DEBUG: symbolizing callback\n";
     if (statement == nullptr) {
       llvm::outs() << "ERROR: callback statement\n";
@@ -1161,7 +1161,7 @@ private:
       llvm::outs() << "ERROR: target function definition not found\n";
     }
     llvm::outs() << "DEBUG: target function definition found\n";
-    auto result = SymbolicFunctionCall::create(function);
+    auto result = SymbolicCallback::create(function);
     llvm::outs() << "DEBUG: symbolized callback\n";
     return result;
   } // TODOOOOO: FIX ME callback 
