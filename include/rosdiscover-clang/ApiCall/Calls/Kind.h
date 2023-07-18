@@ -20,12 +20,15 @@ enum class RosApiCallKind {
   HasParamCall,
   PublishCall,
   RateSleepCall,
+  ConstSleepCall,
   RosInitCall,
   MessageFiltersSubscriberCall,
+  MessageFiltersSubscribeCall,
   MessageFiltersRegisterCallbackCall,
   ServiceClientCall,
   SetParamCall,
-  SubscribeTopicCall
+  SubscribeTopicCall,
+  CreateTimerCall
 };
 
 } // rosdiscover::api_call

@@ -21,7 +21,11 @@ public:
     auto *callExpr = getCallExpr();
     auto numArgs = callExpr->getNumArgs();
 
-    llvm::outs() << "[MessageFiltersRegisterCallbackCall] Finding Callback\n";
+    llvm::outs() << "[MessageFiltersRegisterCallbackCall] Finding Callback: \n";
+
+    callExpr->getCallee()->dump();
+
+    llvm::outs() << "\n";
 
     // if the call only has one argument, then we don't know what the callback is for now
     if (numArgs < 1) {
@@ -51,8 +55,11 @@ public:
     const clang::ast_matchers::StatementMatcher getPattern() override {
       using namespace clang::ast_matchers;
       return callExpr(
- //       callee(cxxMethodDecl(hasName("registerCallback"), ofClass(hasName("message_filters::Subscriber"))))
-          callee(cxxMethodDecl(hasName("registerCallback"), ofClass(anyOf(hasName("message_filters::Synchronizer"), hasName("message_filters::Subscriber")))))
+          callee(cxxMethodDecl(hasName("registerCallback"), ofClass(anyOf(
+            hasName("message_filters::Synchronizer"), 
+            hasName("message_filters::Subscriber"),
+            hasName("message_filters::SimpleFilter")
+          ))))
       ).bind("call");
     }
 

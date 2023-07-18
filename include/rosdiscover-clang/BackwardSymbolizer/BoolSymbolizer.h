@@ -38,6 +38,12 @@ public:
 
     if (expr->isKnownToHaveBooleanValue()) {
       bool result;
+      if (expr->isValueDependent()) {
+        llvm::outs() << "DEBUG [BoolSymbolizer]: Is value-dependent and cannot be evaluated: "; 
+        expr->dump();
+        llvm::outs() << "\n";
+        return valueBuilder.unknown();
+      }
       expr->EvaluateAsBooleanCondition(result, astContext);
       return valueBuilder.boolLiteral(result);
     }

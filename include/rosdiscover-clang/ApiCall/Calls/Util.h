@@ -84,12 +84,21 @@ std::vector<const clang::Stmt*> getTransitiveChildenByType(const clang::Stmt* pa
   
 namespace api_call {
 
+double apFloatToDouble(llvm::APFloat apfloat) {
+  bool loseInfo = true;
+  apfloat.convert(llvm::APFloatBase::IEEEdouble(), llvm::APFloatBase::rmNearestTiesToAway, &loseInfo) ;
+  return apfloat.convertToDouble();
+}
+
 clang::APValue const * evaluateNumber(
   const std::string debugTag, 
   const clang::Expr *expr,
   const clang::ASTContext &Ctx,
   bool debugPrint=true
   ) {
+  if (expr == nullptr) {
+    return nullptr;
+  }
 
   if (expr->isValueDependent()) {
     if (debugPrint) {
@@ -113,7 +122,7 @@ clang::APValue const * evaluateNumber(
   //Try evaluating the frequency as float.
   llvm::APFloat resultFloat(0.0);
   if (expr->EvaluateAsFloat(resultFloat, Ctx)) {
-    llvm::outs() << "DEBUG [" << debugTag << "]: evaluated Float: (" << resultFloat.convertToDouble() << ")\n";
+    llvm::outs() << "DEBUG [" << debugTag << "]: evaluated Float: (" << apFloatToDouble(resultFloat) << ")\n";
     return new clang::APValue(resultFloat);
   }
 
@@ -126,13 +135,86 @@ clang::APValue const * evaluateNumber(
 
   //All evaluation attempts have failed.
   if (debugPrint) {
-    llvm::outs() << "DEBUG [" << debugTag << "]: has unsupported type: "; 
+    llvm::outs() << "DEBUG [" << debugTag << "]: Cannot be evaluated: "; 
     expr->dump();
     llvm::outs() << "\n";
   }
 
   return nullptr;
 }
+
+clang::Expr const * constrInitMemberExpr(const std::string debugTag, 
+  const clang::MemberExpr *declRef) {
+    const auto *valueDecl = declRef->getMemberDecl();
+    if (valueDecl != nullptr) {
+      const auto *fieldDecl = clang::dyn_cast<clang::FieldDecl>(valueDecl);
+      if (fieldDecl != nullptr) {
+        llvm::outs() << "Debug [" << debugTag << "] evaluateNumberDeclRef: ";
+        fieldDecl->dump();
+        llvm::outs() << "\n";
+        if(fieldDecl->hasInClassInitializer()) {
+          llvm::outs() << "Debug [" << debugTag << "] hasInClassInitializer: ";
+          fieldDecl->getInClassInitializer()->dump();
+          llvm::outs() << "\n";
+          return fieldDecl->getInClassInitializer();
+        }
+
+        const auto *parent = fieldDecl->getParent();
+        llvm::outs() << "Debug [" << debugTag << "] getParent\n";
+        const auto *classDecl = clang::dyn_cast<clang::CXXRecordDecl>(parent);
+        if (classDecl != nullptr) { 
+          for (const auto *ctorDecl: classDecl->ctors()) {
+            if (ctorDecl->getDefinition() == nullptr) {
+              llvm::outs() << "Warning [" << debugTag << "] Constructor has no definition: ";
+              ctorDecl->print(llvm::outs());
+              llvm::outs() << "\n";
+              continue;
+            }
+            const auto *constructorDef = clang::dyn_cast<clang::CXXConstructorDecl>(ctorDecl->getDefinition());
+            if (constructorDef == nullptr) {
+              llvm::outs() << "Warning [" << debugTag << "] Constructor definition is not CXXConstructorDecl: ";
+              ctorDecl->print(llvm::outs());
+              llvm::outs() << "\n";
+              continue;
+            }
+
+            llvm::outs() << "Debug [" << debugTag << "] found constructor: ";
+            constructorDef->print(llvm::outs());
+            llvm::outs() << "\n";
+            for (const auto *init : constructorDef->inits()) {
+              if (init == nullptr || init->getMember() == nullptr) {
+                llvm::outs() << "Warning [" << debugTag << "] init incomplete";
+                continue;
+              }
+              llvm::outs() << "Debug [" << debugTag << "] found init: ";
+              init->getMember()->dump();
+              llvm::outs() << "\n";
+              if (init->getInit() == nullptr) {
+                llvm::outs() << "Init empty\n";
+                continue; //empty init
+              }
+              init->getInit()->dump();
+              llvm::outs() << "\n";
+                
+              if (init->getMember()->getID() == fieldDecl->getID()) {
+                return init->getInit(); //TODO: Return all of them
+              }
+            }
+          }
+        }
+      } 
+    }
+
+    return nullptr;
+  }
+
+clang::APValue const * evaluateNumberMemberExpr(const std::string debugTag, 
+  const clang::MemberExpr *declRef,
+  const clang::ASTContext &Ctx,
+  bool debugPrint=true) {
+    return evaluateNumber(debugTag, constrInitMemberExpr(debugTag, declRef), Ctx);
+  }
+
 
 const clang::ValueDecl *getCallerDecl(const std::string debugTag, const clang::CXXMemberCallExpr * memberCallExpr) {
   const auto *caller = memberCallExpr->getImplicitObjectArgument()->IgnoreImpCasts();

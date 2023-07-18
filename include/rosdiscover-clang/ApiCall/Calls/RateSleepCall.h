@@ -66,7 +66,18 @@ public:
     //Get the frequency argument of the rate constructor
     const auto *frequencyArg = rateConstructor->getArg(0)->IgnoreImpCasts();
     llvm::outs() << "DEBUG [RateSleepCall]: Rate found (" << frequencyArg->getStmtClassName() << ")\n";
-    return evaluateNumber("RateSleepCall", frequencyArg, ctx);
+
+    const auto *rateResult = evaluateNumber("RateSleepCall", frequencyArg, ctx);
+    if (rateResult != nullptr)
+      return rateResult;
+
+    const auto *frequencyArgMemberExpr = clang::dyn_cast<clang::MemberExpr>(frequencyArg);
+    if (frequencyArgMemberExpr != nullptr) {
+      llvm::outs() << "Debug [RateSleepCall]: evaluateNumberMemberExpr \n";
+      return evaluateNumberMemberExpr("RateSleepCall", frequencyArgMemberExpr, ctx);     
+    }
+
+    return nullptr;
   }
 
   class Finder : public RosApiCall::Finder {

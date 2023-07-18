@@ -18,6 +18,13 @@ public:
   FloatSymbolizer(clang::ASTContext &astContext)
   : valueBuilder(), astContext(astContext) {}
 
+
+  double apFloatToDouble(llvm::APFloat apfloat) const {
+    bool loseInfo = true;
+    apfloat.convert(llvm::APFloatBase::IEEEdouble(), llvm::APFloatBase::rmNearestTiesToAway, &loseInfo) ;
+    return apfloat.convertToDouble();
+  }
+
   std::unique_ptr<SymbolicFloat> symbolize(const clang::Expr *expr) {
 
     if (expr == nullptr) {
@@ -38,7 +45,7 @@ public:
     //Try evaluating the frequency as float.
     llvm::APFloat resultFloat(0.0);
     if (expr->EvaluateAsFloat(resultFloat, astContext)) {
-      llvm::outs() << "DEBUG [FloatSymbolizer]: evaluated Float: (" << resultFloat.convertToDouble() << ")\n";
+      llvm::outs() << "DEBUG [FloatSymbolizer]: evaluated Float: (" << apFloatToDouble(resultFloat) << ")\n";
       return valueBuilder.floatingLiteral(resultFloat.convertToDouble());
     }
 
@@ -54,7 +61,7 @@ public:
 
 
     if (literal->isFloat()) {
-      return valueBuilder.floatingLiteral(literal->getFloat().convertToDouble());
+      return valueBuilder.floatingLiteral(apFloatToDouble(literal->getFloat()));
     } else if (literal->isInt()) {
       return valueBuilder.floatingLiteral(literal->getInt().getSExtValue());
     } else {
@@ -67,7 +74,7 @@ private:
   clang::ASTContext &astContext;
 
   std::unique_ptr<SymbolicFloat> symbolize(const clang::FloatingLiteral *literal) {
-    return valueBuilder.floatingLiteral(literal->getValue().convertToDouble());
+    return valueBuilder.floatingLiteral(apFloatToDouble(literal->getValue()));
   }
 
   std::unique_ptr<SymbolicFloat> symbolize(const clang::IntegerLiteral *literal) {

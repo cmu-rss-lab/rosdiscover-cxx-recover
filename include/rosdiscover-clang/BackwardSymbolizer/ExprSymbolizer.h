@@ -87,6 +87,9 @@ public:
     if (auto *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
       initial = symbolizeConstant(varDecl->getInit());
     }
+    if (initial->isUnknown()) {
+      initial = symbolizeConstant(api_call::constrInitMemberExpr("ExprSymbolizer", memberExpr));
+    }
 
     return std::make_unique<SymbolicMemberVariableReference>(
       true, 

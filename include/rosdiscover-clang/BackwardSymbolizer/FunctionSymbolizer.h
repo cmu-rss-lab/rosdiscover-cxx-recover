@@ -67,7 +67,7 @@ public:
         astContext,
         symContext,
         symFunction,
-        function,
+        function->getDefinition(),
         apiCalls,
         functionCalls,
         symbolicArgNames,
@@ -137,7 +137,7 @@ private:
     llvm::outs() << "\n";
 
     if (apiCall->hasNodeHandle()) {
-      llvm::outs() << "DEBUG: symbolizing ROS API call with associated node handle...\n";
+      llvm::outs() << "DEBUG: symbolizing ROS API call with associated node handle...\n"; 
       return symbolizeApiCallWithNodeHandle((api_call::NodeHandleRosApiCall*) apiCall);
     } else {
       llvm::outs() << "DEBUG: symbolizing bare ROS API call\n";
@@ -333,7 +333,9 @@ private:
 
     // resolved the associated node handle
     // TODO: this can be cached for each node handle
+    llvm::outs() << "DEBUG: symbolizeApiCallWithNodeHandle getExpr\n";
     clang::Expr *atExpr = const_cast<clang::Expr*>(apiCall->getExpr());
+    llvm::outs() << "DEBUG: symbolizeApiCallWithNodeHandle getNodeHandleDecl\n";
     auto nodeHandle = symbolizeNodeHandle(apiCall->getNodeHandleDecl(), atExpr);
     llvm::outs() << "DEBUG: found symbolic node handle: ";
     nodeHandle->print(llvm::outs());
@@ -361,6 +363,8 @@ private:
         return symbolizeApiCall(std::move(nodeHandle), (SetParamCall*) apiCall);
       case RosApiCallKind::SubscribeTopicCall:
         return symbolizeApiCall(std::move(nodeHandle), (SubscribeTopicCall*) apiCall);
+      case RosApiCallKind::CreateTimerCall:
+        return symbolizeApiCall(std::move(nodeHandle), (CreateTimerCall*) apiCall);
       case RosApiCallKind::MessageFiltersSubscriberCall:
         return symbolizeApiCall(std::move(nodeHandle), (MessageFiltersSubscriberCall*) apiCall);
       default:
@@ -398,7 +402,9 @@ private:
       case RosApiCallKind::PublishCall:
         return symbolizeApiCall((PublishCall*) apiCall);
       case RosApiCallKind::RateSleepCall:
-        return symbolizeApiCall((RateSleepCall*) apiCall);
+        return symbolizeApiCall((RateSleepCall*) apiCall);        
+      case RosApiCallKind::ConstSleepCall:
+        return symbolizeApiCall((ConstSleepCall*) apiCall);
       case RosApiCallKind::MessageFiltersRegisterCallbackCall:
         return symbolizeApiCall((MessageFiltersRegisterCallbackCall*) apiCall);
       default:
@@ -435,10 +441,21 @@ private:
     auto requestResponseFormatNames = apiCall->getRequestResponseFormatNames();
     auto requestFormatName = std::get<0>(requestResponseFormatNames);
     auto responseFormatName = std::get<1>(requestResponseFormatNames);
+
+    llvm::outs() << "DEBUG: attempting to symbolizing AdvertiseServiceCall callback\n";
+    auto* callback = apiCall->getCallback(astContext);
+    std::unique_ptr<SymbolicCallback> symbolicCallBack;
+    if (callback == nullptr) {
+      symbolicCallBack = UnknownSymbolicCallback::create();
+    } else {
+      symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
+    }
+
     return std::make_unique<ServiceProvider>(
       std::move(name),
       requestFormatName,
-      responseFormatName
+      responseFormatName,
+      std::move(symbolicCallBack)
     );
   }
 
@@ -462,9 +479,9 @@ private:
     llvm::outs() << "DEBUG [message_filters::Subscriber]: uses format: " << formatName << "\n";
 
     auto* callback = apiCall->getCallback(astContext);
-    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    std::unique_ptr<SymbolicCallback> symbolicCallBack;
     if (callback == nullptr) {
-      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+      symbolicCallBack = UnknownSymbolicCallback::create();
     } else {
       symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
     }
@@ -618,9 +635,9 @@ private:
   ) {
     llvm::outs() << "DEBUG: symbolizing SubscribeTopicCall\n";
     auto* callback = apiCall->getCallback(astContext);
-    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    std::unique_ptr<SymbolicCallback> symbolicCallBack;
     if (callback == nullptr) {
-      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+      symbolicCallBack = UnknownSymbolicCallback::create();
     } else {
       symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
     }
@@ -631,14 +648,33 @@ private:
     );
   }
 
+  
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::CreateTimerCall *apiCall
+  ) {
+    llvm::outs() << "DEBUG: symbolizing CreateTimerCall\n";
+    auto* callback = apiCall->getCallback(astContext);
+    std::unique_ptr<SymbolicCallback> symbolicCallBack;
+    if (callback == nullptr) {
+      symbolicCallBack = UnknownSymbolicCallback::create();
+    } else {
+      symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
+    }
+    return std::make_unique<SymbolicCreateTimerCall>(
+      std::move(symbolicCallBack),
+      floatSymbolizer.symbolize(apiCall->getRate(astContext))
+    );
+  }
+
   std::unique_ptr<SymbolicStmt> symbolizeApiCall(
     api_call::MessageFiltersRegisterCallbackCall *apiCall
   ) {
     llvm::outs() << "DEBUG: symbolizing MessageFiltersRegisterCallbackCall\n";
     auto* callback = apiCall->getCallback(astContext);
-    std::unique_ptr<SymbolicFunctionCall> symbolicCallBack;
+    std::unique_ptr<SymbolicCallback> symbolicCallBack;
     if (callback == nullptr) {
-      symbolicCallBack = UnknownSymbolicFunctionCall::create();
+      symbolicCallBack = UnknownSymbolicCallback::create();
     } else {
       symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
     }
@@ -655,6 +691,15 @@ private:
     llvm::outs() << "DEBUG: symbolizing RateSleepCall\n";
     return std::make_unique<RateSleep>(
         floatSymbolizer.symbolize(apiCall->getRate(astContext))
+    );    
+  }
+
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    api_call::ConstSleepCall *apiCall
+  ) {
+    llvm::outs() << "DEBUG: symbolizing ConstSleepCall\n";
+    return std::make_unique<ConstSleep>(
+        floatSymbolizer.symbolize(apiCall->getDuration(astContext))
     );    
   }
 
@@ -722,10 +767,23 @@ private:
           function, function->getBody(), &astContext, clang::CFG::BuildOptions());
     clang::ControlDependencyCalculator cdc(sourceCFG.get());
     stmt->dump();
-    llvm::outs() << "getControlDependencies: ";
+    llvm::outs() << "getControlDependencies\n";
+    
     std::unique_ptr<clang::ParentMap> PM = std::make_unique<clang::ParentMap>(function->getBody());
+    if (PM == nullptr) {
+      llvm::outs() << "[Warning] getControlDependenciesObjects: failed building ParentMap!\n";
+      return valueBuilder.unknown();
+    }
     auto CM = std::unique_ptr<clang::CFGStmtMap>(clang::CFGStmtMap::Build(sourceCFG.get(), PM.get()));
+    if (CM == nullptr) {
+      llvm::outs() << "[Warning] getControlDependenciesObjects: failed building CFG";
+      return valueBuilder.unknown();
+    }
     auto stmt_block = CM->getBlock(stmt); 
+    if (stmt_block == nullptr) {
+      llvm::outs() << "[Debug] getControlDependenciesObjects: Statement not in CFG (probably in initializer)";
+      return std::make_unique<BoolLiteral>(true);
+    }
     stmt_block->dump();
     auto deps = cdc.getControlDependencies(const_cast<clang::CFGBlock *>(stmt_block));
     
@@ -1120,7 +1178,7 @@ private:
     return ordered;
   }
 
-  std::unique_ptr<SymbolicFunctionCall> symbolizeCallback(RawCallbackStatement *statement) {
+  std::unique_ptr<SymbolicCallback> symbolizeCallback(RawCallbackStatement *statement) {
     llvm::outs() << "DEBUG: symbolizing callback\n";
     if (statement == nullptr) {
       llvm::outs() << "ERROR: callback statement\n";
@@ -1134,10 +1192,10 @@ private:
       llvm::outs() << "ERROR: target function definition not found\n";
     }
     llvm::outs() << "DEBUG: target function definition found\n";
-    auto result = SymbolicFunctionCall::create(function);
+    auto result = SymbolicCallback::create(function);
     llvm::outs() << "DEBUG: symbolized callback\n";
     return result;
-  }
+  } // TODOOOOO: FIX ME callback 
 
   std::unique_ptr<SymbolicStmt> symbolizeStatement(RawStatement *statement) {
     std::unique_ptr<SymbolicStmt> symbolic;

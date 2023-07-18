@@ -298,7 +298,7 @@ private:
         astContext,
         symContext,
         *symFunction,
-        function,
+        function->getDefinition() == nullptr ? function : function->getDefinition(),
         apiCalls,
         functionCalls,
         callbacks

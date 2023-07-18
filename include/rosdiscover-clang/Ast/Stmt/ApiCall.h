@@ -74,7 +74,7 @@ private:
 
 class Subscriber : public NamedSymbolicRosApiCall {
 public:
-  Subscriber(std::unique_ptr<SymbolicString> name, std::string const &format, std::unique_ptr<SymbolicFunctionCall> callback)
+  Subscriber(std::unique_ptr<SymbolicString> name, std::string const &format, std::unique_ptr<SymbolicCallback> callback)
   : NamedSymbolicRosApiCall(std::move(name)), format(format), callback(std::move(callback)) {}
 
   void print(llvm::raw_ostream &os) const override {
@@ -94,7 +94,37 @@ public:
 
 private:
   std::string const format;
-  std::unique_ptr<SymbolicFunctionCall> callback;
+  std::unique_ptr<SymbolicCallback> callback;
+};
+
+
+class SymbolicCreateTimerCall : public SymbolicRosApiCall {
+public:
+  SymbolicCreateTimerCall(
+      std::unique_ptr<SymbolicCallback> callback,
+      std::unique_ptr<SymbolicFloat> rate
+      ) : SymbolicRosApiCall(), callback(std::move(callback)), rate(std::move(rate)) {
+        assert(this->rate != nullptr);
+  }
+
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(createtimer ";
+    rate->print(os);
+    os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "createtimer"},
+      {"rate", rate->toJson()},
+      {"callback-name", (callback == nullptr) ? "unknown" : callback->getCalleeName()}
+    };
+  }
+
+private:
+  std::unique_ptr<SymbolicCallback> callback;
+  std::unique_ptr<SymbolicFloat> rate;    
 };
 
 class RateSleep : public SymbolicRosApiCall {
@@ -119,6 +149,30 @@ public:
 private:
   std::unique_ptr<SymbolicFloat> rate;
 };
+
+class ConstSleep : public SymbolicRosApiCall {
+public:
+  ConstSleep(std::unique_ptr<SymbolicFloat> duration) : SymbolicRosApiCall(), duration(std::move(duration)) {
+    assert(this->duration != nullptr);
+  }
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(constsleep ";
+    duration->print(os);
+    os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "constsleep"},
+      {"duration", duration->toJson()}
+    };
+  }
+
+private:
+  std::unique_ptr<SymbolicFloat> duration;
+};
+
 
 class Publish : public SymbolicRosApiCall {
 public:
@@ -175,10 +229,12 @@ public:
   ServiceProvider(
     std::unique_ptr<SymbolicString> name,
     std::string const &requestFormat,
-    std::string const &responseFormat
+    std::string const &responseFormat,
+    std::unique_ptr<SymbolicCallback> callback
   ) : NamedSymbolicRosApiCall(std::move(name)),
       requestFormat(requestFormat),
-      responseFormat(responseFormat)
+      responseFormat(responseFormat),
+      callback(std::move(callback))
   {}
 
   void print(llvm::raw_ostream &os) const override {
@@ -192,13 +248,15 @@ public:
       {"kind", "provides-service"},
       {"name", getName()->toJson()},
       {"request-format", requestFormat},
-      {"response-format", responseFormat}
+      {"response-format", responseFormat},
+      {"callback-name", (callback == nullptr) ? "unknown" : callback->getCalleeName()}
     };
   }
 
 private:
   std::string const requestFormat;
   std::string const responseFormat;
+  std::unique_ptr<SymbolicCallback> callback;
 };
 
 class ReadParam :

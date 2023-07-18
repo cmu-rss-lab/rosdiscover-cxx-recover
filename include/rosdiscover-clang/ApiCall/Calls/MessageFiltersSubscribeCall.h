@@ -6,46 +6,52 @@
 namespace rosdiscover {
 namespace api_call {
 
-class MessageFiltersSubscriberCall : public RosApiCallWithNodeHandle, public NamedRosApiCall {
+class MessageFiltersSubscribeCall : public RosApiCallWithNodeHandle, public NamedRosApiCall {
 public:
   using RosApiCallWithNodeHandle::RosApiCallWithNodeHandle;
 
-  MessageFiltersSubscriberCall(clang::CXXConstructExpr const *expr) :
+  MessageFiltersSubscribeCall(clang::CXXConstructExpr const *expr) :
     RosApiCallWithNodeHandle(expr)
   {}
 
-  clang::CXXConstructExpr const * getConstructExpr() const {
-    return static_cast<rosdiscover::ConstructExpr const *>(getCallOrConstructExpr())->getConstructExpr();
-  }
-
-  clang::CXXConstructorDecl const * getConstructorDecl() const {
-    return getConstructExpr()->getConstructor();
+  clang::CallExpr const * getCallExpr() const {
+    return static_cast<rosdiscover::CallExpr const *>(getCallOrConstructExpr())->getCallExpr();
   }
   
   clang::CXXRecordDecl const * getRecordDecl() const {
-    return getConstructorDecl()->getParent();
+    auto const *callee = getCallExpr()->getCallee();
+    
+    if (auto const *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(callee)) {
+      llvm::outs() << "Warning: Finding parent for ";
+      declRefExpr->getDecl();
+      llvm::outs() << "\n";
+    }
+    llvm::outs() << "Warning: MessageFiltersSubscribeCall cannot find getRecordDecl for ";
+    callee->dump();
+    llvm::outs() << "\n";
+    return nullptr;
   }
 
   RosApiCallKind const getKind() const override {
-    return RosApiCallKind::MessageFiltersSubscriberCall;
+    return RosApiCallKind::MessageFiltersSubscribeCall;
   }
 
   clang::Expr const * getNameExpr() const override {
-    llvm::outs() << "DEBUG: MessageFiltersSubscriberCall::getNameExpr\n";
-    if (getConstructExpr()->getNumArgs() < 2) {
-      llvm::outs() << "Warning: MessageFiltersSubscriberCall cannot getNameExpr\n";
+    llvm::outs() << "DEBUG: MessageFiltersSubscribeCall::getNameExpr\n";
+    if (getCallExpr()->getNumArgs() < 2) {
+      llvm::outs() << "Warning: MessageFiltersSubscribeCall cannot getNameExpr\n";
       return nullptr;
     }
-    return getConstructExpr()->getArg(1);
+    return getCallExpr()->getArg(1);
   }
 
   clang::Expr const * getNodeHandleExpr() const override {
-    llvm::outs() << "DEBUG: MessageFiltersSubscriberCall::getNodeHandleExpr\n";
-    if (getConstructExpr()->getNumArgs() < 1) {
-      llvm::outs() << "Warning: MessageFiltersSubscriberCall cannot getNodeHandleExpr\n";
+    llvm::outs() << "DEBUG: MessageFiltersSubscribeCall::getNodeHandleExpr\n";
+    if (getCallExpr()->getNumArgs() < 1) {
+      llvm::outs() << "Warning: MessageFiltersSubscribeCall cannot getNodeHandleExpr\n";
       return nullptr;
     }
-    return getConstructExpr()->getArg(0);
+    return getCallExpr()->getArg(0);
   }
 
   std::string getFormatName() const {
@@ -58,14 +64,18 @@ public:
 
     const clang::ast_matchers::StatementMatcher getPattern() override {
       using namespace clang::ast_matchers;
-      return cxxConstructExpr(hasArgument(0, expr()),
-        hasDeclaration(hasDeclContext(namedDecl(hasName("message_filters::Subscriber"))))
+      return callExpr(
+        callee(cxxMethodDecl(hasName("subscribe"), ofClass(anyOf(
+            hasName("message_filters::Synchronizer"), 
+            hasName("message_filters::Subscriber"),
+            hasName("message_filters::SimpleFilter")
+          ))))
       ).bind("call");
     }
 
   protected:
     RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
-      return new MessageFiltersSubscriberCall(result.Nodes.getNodeAs<clang::CXXConstructExpr>("call"));
+      return new MessageFiltersSubscribeCall(result.Nodes.getNodeAs<clang::CXXConstructExpr>("call"));
     }
   };
 
