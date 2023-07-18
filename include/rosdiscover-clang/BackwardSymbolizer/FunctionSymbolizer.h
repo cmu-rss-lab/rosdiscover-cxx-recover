@@ -363,6 +363,8 @@ private:
         return symbolizeApiCall(std::move(nodeHandle), (SetParamCall*) apiCall);
       case RosApiCallKind::SubscribeTopicCall:
         return symbolizeApiCall(std::move(nodeHandle), (SubscribeTopicCall*) apiCall);
+      case RosApiCallKind::CreateTimerCall:
+        return symbolizeApiCall(std::move(nodeHandle), (CreateTimerCall*) apiCall);
       case RosApiCallKind::MessageFiltersSubscriberCall:
         return symbolizeApiCall(std::move(nodeHandle), (MessageFiltersSubscriberCall*) apiCall);
       default:
@@ -400,7 +402,7 @@ private:
       case RosApiCallKind::PublishCall:
         return symbolizeApiCall((PublishCall*) apiCall);
       case RosApiCallKind::RateSleepCall:
-        return symbolizeApiCall((RateSleepCall*) apiCall);
+        return symbolizeApiCall((RateSleepCall*) apiCall);        
       case RosApiCallKind::ConstSleepCall:
         return symbolizeApiCall((ConstSleepCall*) apiCall);
       case RosApiCallKind::MessageFiltersRegisterCallbackCall:
@@ -643,6 +645,25 @@ private:
       symbolizeNodeHandleApiCallName(std::move(nodeHandle), apiCall),
       apiCall->getFormatName(),
       std::move(symbolicCallBack)
+    );
+  }
+
+  
+  std::unique_ptr<SymbolicStmt> symbolizeApiCall(
+    std::unique_ptr<SymbolicNodeHandle> nodeHandle,
+    api_call::CreateTimerCall *apiCall
+  ) {
+    llvm::outs() << "DEBUG: symbolizing CreateTimerCall\n";
+    auto* callback = apiCall->getCallback(astContext);
+    std::unique_ptr<SymbolicCallback> symbolicCallBack;
+    if (callback == nullptr) {
+      symbolicCallBack = UnknownSymbolicCallback::create();
+    } else {
+      symbolicCallBack = symbolizeCallback(new RawCallbackStatement(callback));
+    }
+    return std::make_unique<SymbolicCreateTimerCall>(
+      std::move(symbolicCallBack),
+      floatSymbolizer.symbolize(apiCall->getRate(astContext))
     );
   }
 

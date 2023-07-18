@@ -97,6 +97,36 @@ private:
   std::unique_ptr<SymbolicCallback> callback;
 };
 
+
+class SymbolicCreateTimerCall : public SymbolicRosApiCall {
+public:
+  SymbolicCreateTimerCall(
+      std::unique_ptr<SymbolicCallback> callback,
+      std::unique_ptr<SymbolicFloat> rate
+      ) : SymbolicRosApiCall(), callback(std::move(callback)), rate(std::move(rate)) {
+        assert(this->rate != nullptr);
+  }
+
+
+  void print(llvm::raw_ostream &os) const override {
+    os << "(createtimer ";
+    rate->print(os);
+    os << ")";
+  }
+
+  nlohmann::json toJson() const override {
+    return {
+      {"kind", "createtimer"},
+      {"rate", rate->toJson()},
+      {"callback-name", (callback == nullptr) ? "unknown" : callback->getCalleeName()}
+    };
+  }
+
+private:
+  std::unique_ptr<SymbolicCallback> callback;
+  std::unique_ptr<SymbolicFloat> rate;    
+};
+
 class RateSleep : public SymbolicRosApiCall {
 public:
   RateSleep(std::unique_ptr<SymbolicFloat> rate) : SymbolicRosApiCall(), rate(std::move(rate)) {

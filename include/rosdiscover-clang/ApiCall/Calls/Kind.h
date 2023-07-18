@@ -27,7 +27,8 @@ enum class RosApiCallKind {
   MessageFiltersRegisterCallbackCall,
   ServiceClientCall,
   SetParamCall,
-  SubscribeTopicCall
+  SubscribeTopicCall,
+  CreateTimerCall
 };
 
 } // rosdiscover::api_call
