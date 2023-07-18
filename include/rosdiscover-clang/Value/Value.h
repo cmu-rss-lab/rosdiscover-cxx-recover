@@ -51,15 +51,21 @@ public:
       return SymbolicValueType::Float;
     } else if (typeName == "ros::NodeHandle"
             || typeName == "ros::NodeHandle &"
-            || typeName == "ros::NodeHandle *") {
+            || typeName == "const ros::NodeHandle &"
+            || typeName == "ros::NodeHandle *"
+            || typeName == "const ros::NodeHandle *") {
       return SymbolicValueType::NodeHandle;
-    } else if (typeName == "ros::Publisher" 
+    } else if (typeName == "ros::Publisher"
             || typeName == "ros::Publisher &" 
-            || typeName == "ros::Publisher *")  {
+            || typeName == "const ros::Publisher &"
+            || typeName == "ros::Publisher *"
+            || typeName == "const ros::Publisher *")  {
       return SymbolicValueType::Publisher;
     } else if (typeName == "ros::Rate" 
             || typeName == "ros::Rate &" 
-            || typeName == "ros::Rate *")  {
+            || typeName == "const ros::Rate &"
+            || typeName == "ros::Rate *"
+            || typeName == "const ros::Rate *")  {
       return SymbolicValueType::Rate;
     } else {
       return SymbolicValueType::Unsupported;

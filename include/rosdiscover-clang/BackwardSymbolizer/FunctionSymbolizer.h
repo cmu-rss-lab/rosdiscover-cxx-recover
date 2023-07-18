@@ -145,6 +145,288 @@ private:
     }
   }
 
+  std::unique_ptr<SymbolicPublisher> symbolizePublisher(clang::ParmVarDecl const *decl) {
+    auto argName = decl->getNameAsString();
+    llvm::outs() << "DEBUG: symbolizing publisher ParmVarDecl [name: " << argName << "]: ";
+    decl->dumpColor();
+    llvm::outs() << "\n";
+
+    if (symbolicArgNames.find(argName) != symbolicArgNames.end()) {
+      return valueBuilder.arg(argName);
+    }
+    return valueBuilder.unknownPublisher();
+  }
+
+  std::unique_ptr<SymbolicPublisher> symbolizePublisher(
+    clang::MemberExpr *expr
+  ) {
+    llvm::outs() << "symbolizing publisher member Expr: ";
+    expr->dumpColor();
+    llvm::outs() << "\n";
+    return valueBuilder.publisher(expr->getMemberDecl()->getNameAsString());
+  }
+
+  std::unique_ptr<SymbolicPublisher> symbolizePublisher(
+    clang::Expr *expr
+  ) {
+    llvm::outs() << "symbolizing publisher: ";
+    expr->dumpColor();
+    llvm::outs() << "\n";
+
+    if (auto *memberExpr = clang::dyn_cast<clang::MemberExpr>(expr)) {
+      return symbolizePublisher(memberExpr);
+    }
+    if (auto *bindTempExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(expr)) {
+      return symbolizePublisher(bindTempExpr->getSubExpr());
+    }
+    if (auto *cleanupsExpr = clang::dyn_cast<clang::ExprWithCleanups>(expr)) {
+      return symbolizePublisher(cleanupsExpr->getSubExpr());
+    }
+    if (auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(expr)) {
+      return symbolizePublisher(constructExpr);
+    }
+    if (auto *unaryOp = clang::dyn_cast<clang::UnaryOperator>(expr)) {
+      if (clang::UnaryOperator::getOpcodeStr(unaryOp->getOpcode()) == "&") {
+        return symbolizePublisher(unaryOp->getSubExpr());
+      }
+    }
+
+    if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(expr)) {
+      llvm::outs() << "DEBUG: attempting to symbolize publisher DeclRefExpr\n";
+      return symbolizePublisher(declRefExpr->getDecl(), declRefExpr);
+    }
+
+    llvm::outs() << "WARNING: unable to symbolize Publisher expression: ";
+    expr->dumpColor();
+    llvm::outs() << "\n";
+    return valueBuilder.unknownPublisher();
+  }
+
+  std::unique_ptr<SymbolicPublisher> symbolizePublisher(
+    clang::VarDecl const *decl,
+    clang::Expr *atExpr
+  ) {
+    llvm::outs() << "symbolizing Publisher in var decl: ";
+    decl->dumpColor();
+    llvm::outs() << "\n";
+    auto *def = FindDefVisitor::find(astContext, decl, atExpr);
+    return symbolizePublisher(def);
+  }
+
+  std::unique_ptr<SymbolicPublisher> symbolizePublisher(clang::FieldDecl const *decl) {
+    llvm::outs() << "symbolizing Publisher in CXX record field: ";
+    decl->dumpColor();
+    llvm::outs() << "\n";
+
+    auto const *recordDecl = clang::dyn_cast<clang::CXXRecordDecl>(decl->getParent());
+    if (recordDecl == nullptr) {
+      llvm::errs() << "failed to retrieve associated CXX record\n";
+      abort();
+    }
+
+    // for now, we assume that the Publisher is initialized in the constructor's
+    // initializer list
+    auto symbolic = std::unique_ptr<SymbolicPublisher>();
+
+    for (auto const *constructorDecl : recordDecl->ctors()) {
+      if (constructorDecl->isCopyOrMoveConstructor())
+        continue;
+
+      auto const *constructorDef = clang::dyn_cast<clang::CXXConstructorDecl>(
+        constructorDecl->getDefinition()
+      );
+
+      if (constructorDef == nullptr) {
+        llvm::errs() << "WARNING: unable to retrieve definition for constructor: ";
+        constructorDef->dumpColor();
+        llvm::errs() << "\n";
+        continue;
+      }
+
+      for (auto const *initDecl : constructorDef->inits()) {
+        if (auto const *initMemberDecl = initDecl->getMember()) {
+          if (initMemberDecl != decl)
+            continue;
+
+          // FIXME if this doesn't call the NodeHandle constructor, skip to unknown
+          auto *nameExpr = initDecl->getInit()->IgnoreParenCasts();
+          auto newSymbolic = symbolizePublisher(nameExpr);
+
+          // FIXME check for ambiguous definition!
+          // if (symbolic.get() != nullptr && !symbolic.equals(newSymbolic)) {
+          //   llvm::outs() << "WARNING: node handle has ambiguous definition; treating as unknown\n";
+          //   return SymbolicNodeHandle::unknown();
+          // }
+
+          symbolic = std::move(newSymbolic);
+        }
+      }
+    }
+
+    // FIXME verbose?
+    if (symbolic == nullptr) {
+      return valueBuilder.unknownPublisher();
+    } else {
+      return symbolic;
+    }
+  }
+
+
+  std::unique_ptr<SymbolicRate> symbolizeRate(
+    clang::Expr *expr
+  ) {
+    llvm::outs() << "symbolizing rate expr: ";
+    expr->dumpColor();
+    llvm::outs() << "\n";
+
+    if (auto *bindTempExpr = clang::dyn_cast<clang::CXXBindTemporaryExpr>(expr)) {
+      return symbolizeRate(bindTempExpr->getSubExpr());
+    }
+    if (auto *cleanupsExpr = clang::dyn_cast<clang::ExprWithCleanups>(expr)) {
+      return symbolizeRate(cleanupsExpr->getSubExpr());
+    }
+    if (auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(expr)) {
+      return symbolizeRate(constructExpr);
+    }
+    if (auto *unaryOp = clang::dyn_cast<clang::UnaryOperator>(expr)) {
+      if (clang::UnaryOperator::getOpcodeStr(unaryOp->getOpcode()) == "&") {
+        return symbolizeRate(unaryOp->getSubExpr());
+      }
+    }
+
+    if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(expr)) {
+      llvm::outs() << "DEBUG: attempting to symbolize rare DeclRefExpr\n";
+      return symbolizeRate(declRefExpr->getDecl(), declRefExpr);
+    }
+
+    llvm::outs() << "WARNING: unable to symbolize rate expression: ";
+    expr->dumpColor();
+    llvm::outs() << "\n";
+    return valueBuilder.unknownRate();
+  }
+
+  std::unique_ptr<SymbolicRate> symbolizeRate(
+    clang::VarDecl const *decl,
+    clang::Expr *atExpr
+  ) {
+    llvm::outs() << "symbolizing rate in var decl: ";
+    decl->dumpColor();
+    llvm::outs() << "\n";
+    auto *def = FindDefVisitor::find(astContext, decl, atExpr);
+    return symbolizeRate(def);
+  }
+
+  std::unique_ptr<SymbolicRate> symbolizeRate(clang::FieldDecl const *decl) {
+    llvm::outs() << "symbolizing rate in CXX record field: ";
+    decl->dumpColor();
+    llvm::outs() << "\n";
+
+    auto const *recordDecl = clang::dyn_cast<clang::CXXRecordDecl>(decl->getParent());
+    if (recordDecl == nullptr) {
+      llvm::errs() << "failed to retrieve associated CXX record\n";
+      abort();
+    }
+
+    // for now, we assume that the rate is initialized in the constructor's
+    // initializer list
+    auto symbolic = std::unique_ptr<SymbolicRate>();
+
+    for (auto const *constructorDecl : recordDecl->ctors()) {
+      if (constructorDecl->isCopyOrMoveConstructor())
+        continue;
+
+      auto const *constructorDef = clang::dyn_cast<clang::CXXConstructorDecl>(
+        constructorDecl->getDefinition()
+      );
+
+      if (constructorDef == nullptr) {
+        llvm::errs() << "WARNING: unable to retrieve definition for constructor: ";
+        constructorDef->dumpColor();
+        llvm::errs() << "\n";
+        continue;
+      }
+
+      for (auto const *initDecl : constructorDef->inits()) {
+        if (auto const *initMemberDecl = initDecl->getMember()) {
+          if (initMemberDecl != decl)
+            continue;
+
+          // FIXME if this doesn't call the NodeHandle constructor, skip to unknown
+          auto *nameExpr = initDecl->getInit()->IgnoreParenCasts();
+          auto newSymbolic = symbolizeRate(nameExpr);
+
+          // FIXME check for ambiguous definition!
+          // if (symbolic.get() != nullptr && !symbolic.equals(newSymbolic)) {
+          //   llvm::outs() << "WARNING: node handle has ambiguous definition; treating as unknown\n";
+          //   return SymbolicNodeHandle::unknown();
+          // }
+
+          symbolic = std::move(newSymbolic);
+        }
+      }
+    }
+
+    // FIXME verbose?
+    if (symbolic == nullptr) {
+      return valueBuilder.unknownRate();
+    } else {
+      return symbolic;
+    }
+  }
+
+  std::unique_ptr<SymbolicRate> symbolizeRate(
+    clang::ValueDecl const *decl,
+    clang::Expr *atExpr
+  ) {
+    if (auto const *fieldDecl = clang::dyn_cast<clang::FieldDecl>(decl)) {
+      return symbolizeRate(fieldDecl);
+    } else if (auto const *parmVarDecl = clang::dyn_cast<clang::ParmVarDecl>(decl)) {
+      return symbolizeRate(parmVarDecl);
+    } else if (auto const *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
+      return symbolizeRate(varDecl, atExpr);
+    } else {
+      llvm::errs() << "ERROR: failed to symbolize rate: ";
+      decl->dumpColor();
+      llvm::errs() << "\n";
+      abort();
+    }
+  }
+
+  
+
+  std::unique_ptr<SymbolicRate> symbolizeRate(clang::ParmVarDecl const *decl) {
+    auto argName = decl->getNameAsString();
+    llvm::outs() << "DEBUG: symbolizing rate ParmVarDecl [name: " << argName << "]: ";
+    decl->dumpColor();
+    llvm::outs() << "\n";
+
+    if (symbolicArgNames.find(argName) != symbolicArgNames.end()) {
+      return valueBuilder.arg(argName);
+    }
+    return valueBuilder.unknownRate();
+  }
+
+
+  
+
+  std::unique_ptr<SymbolicPublisher> symbolizePublisher(
+    clang::ValueDecl const *decl,
+    clang::Expr *atExpr
+  ) {
+    if (auto const *fieldDecl = clang::dyn_cast<clang::FieldDecl>(decl)) {
+      return symbolizePublisher(fieldDecl);
+    } else if (auto const *parmVarDecl = clang::dyn_cast<clang::ParmVarDecl>(decl)) {
+      return symbolizePublisher(parmVarDecl);
+    } else if (auto const *varDecl = clang::dyn_cast<clang::VarDecl>(decl)) {
+      return symbolizePublisher(varDecl, atExpr);
+    } else {
+      llvm::errs() << "ERROR: failed to symbolize publisher: ";
+      decl->dumpColor();
+      llvm::errs() << "\n";
+      abort();
+    }
+  }
+
   std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(
     clang::ValueDecl const *decl,
     clang::Expr *atExpr

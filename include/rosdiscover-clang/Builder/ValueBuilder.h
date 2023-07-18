@@ -37,6 +37,18 @@ public:
     return std::make_unique<SymbolicUnknown>();
   }
 
+  std::unique_ptr<SymbolicRateImpl> unknownRate() const {
+    return std::make_unique<SymbolicRateImpl>(unknown());
+  }
+
+  std::unique_ptr<SymbolicPublisherImpl> publisher(std::string qualifiedName) const {
+    return std::make_unique<SymbolicPublisherImpl>(stringLiteral(qualifiedName));
+  }
+  
+  std::unique_ptr<SymbolicPublisherImpl> unknownPublisher() const {
+    return std::make_unique<SymbolicPublisherImpl>(unknown());
+  }
+
   std::unique_ptr<SymbolicNodeHandle> unknownNodeHandle() const {
     return std::make_unique<SymbolicNodeHandleImpl>(unknown());
   }
