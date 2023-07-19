@@ -152,7 +152,7 @@ private:
 
 class ConstSleep : public SymbolicRosApiCall {
 public:
-  ConstSleep(std::unique_ptr<SymbolicFloat> duration) : SymbolicRosApiCall(), duration(std::move(duration)) {
+  ConstSleep(std::unique_ptr<SymbolicFloat> duration, int rate) : SymbolicRosApiCall(), duration(std::move(duration)), rate(rate) {
     assert(this->duration != nullptr);
   }
 
@@ -165,12 +165,14 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "constsleep"},
-      {"duration", duration->toJson()}
+      {"duration", duration->toJson()},
+      {"rate", rate}
     };
   }
 
 private:
   std::unique_ptr<SymbolicFloat> duration;
+  int rate;
 };
 
 

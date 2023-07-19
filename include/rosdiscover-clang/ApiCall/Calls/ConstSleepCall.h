@@ -21,11 +21,27 @@ public:
   }
 
   virtual clang::APValue const * getDuration(const clang::ASTContext &ctx) const = 0;
+
+  virtual int getRate(const clang::ASTContext &ctx) const = 0;
 }; //ConstSleepCall
 
 class USleepCall : public ConstSleepCall {
 public:
   using ConstSleepCall::ConstSleepCall;
+
+  virtual int getRate(const clang::ASTContext &ctx) const {
+    const auto *callExpr = clang::dyn_cast<clang::CallExpr>(getCallExpr());
+    if (callExpr->getDirectCallee()->getNameAsString() == "sleep") {
+      return 1000;
+    } else if (callExpr->getDirectCallee()->getNameAsString() == "usleep") { 
+      return 1000000;
+    } else {
+      llvm::outs() << "ERROR [USleepCall]: Sleep call is " << callExpr->getDirectCallee()->getNameAsString();
+      callExpr->getDirectCallee()->dump();
+      llvm::outs() << "\n";
+      return -1;   
+    }
+  }
 
   virtual clang::APValue const * getDuration(const clang::ASTContext &ctx) const {
     llvm::outs() << "DEBUG [USleepCall]: Getting Sleep Time for: ";
@@ -69,6 +85,46 @@ public:
 class ThreadSleepCall : public ConstSleepCall {
 public:
   using ConstSleepCall::ConstSleepCall;
+
+
+  virtual int getRate(const clang::ASTContext &ctx) const {
+    llvm::outs() << "DEBUG [ThreadSleepCall]: Getting Sleep Time for: ";
+    getCallExpr()->dump();
+    llvm::outs() << "\n";
+    
+    //Check input
+    const auto *callExpr = clang::dyn_cast<clang::CallExpr>(getCallExpr());
+    if (callExpr == nullptr) {
+      llvm::outs() << "ERROR [ThreadSleepCall]: Sleep call is not a CallExpr: ";
+      getCallExpr()->dump();
+      llvm::outs() << "\n";
+      return -1;
+    }
+    
+    //Get arg
+    const auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(callExpr->getArg(0)->IgnoreCasts());
+    if (constructExpr == nullptr) {
+      llvm::outs() << "ERROR [ThreadSleepCall]: Sleep call arg is not a CXXConstructExpr: ";
+      callExpr->getArg(0)->dump();
+      llvm::outs() << "\n";
+      return -1;
+    }
+
+    auto unit = constructExpr->getType().getAsString();
+    if (unit == "std::chrono::milliseconds") {
+      return 1000;
+    } else if (unit == "std::chrono::nanoseconds") {
+      return 1000000;
+    } else if (unit == "std::chrono::seconds") {
+      return 1;
+    } else {
+      llvm::outs() << "ERROR [ThreadSleepCall]: Sleep constructor is " << unit;
+      constructExpr->getConstructor()->dump();
+      llvm::outs() << "\n";
+      return -1;
+    }
+
+  }
 
   virtual clang::APValue const * getDuration(const clang::ASTContext &ctx) const {
     llvm::outs() << "DEBUG [ThreadSleepCall]: Getting Sleep Time for: ";
