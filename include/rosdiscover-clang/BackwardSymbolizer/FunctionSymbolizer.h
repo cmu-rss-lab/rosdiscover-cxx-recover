@@ -26,6 +26,8 @@
 #include "../Value/String.h"
 #include "../Value/Value.h"
 #include "../Cfg/ControlDependenceGraph.h"
+
+#include "RateSymbolizer.h"
 #include "StringSymbolizer.h"
 #include "IntSymbolizer.h"
 #include "BoolSymbolizer.h"
@@ -209,8 +211,9 @@ private:
     llvm::outs() << "symbolizing Publisher in var decl: ";
     decl->dumpColor();
     llvm::outs() << "\n";
-    auto *def = FindDefVisitor::find(astContext, decl, atExpr);
-    return symbolizePublisher(def);
+    //auto *def = FindDefVisitor::find(astContext, decl, atExpr);
+    //return symbolizePublisher(def);
+    return valueBuilder.publisher(decl->getNameAsString());
   }
 
   std::unique_ptr<SymbolicPublisher> symbolizePublisher(clang::FieldDecl const *decl) {
@@ -218,6 +221,8 @@ private:
     decl->dumpColor();
     llvm::outs() << "\n";
 
+    return valueBuilder.publisher(decl->getNameAsString());
+/*
     auto const *recordDecl = clang::dyn_cast<clang::CXXRecordDecl>(decl->getParent());
     if (recordDecl == nullptr) {
       llvm::errs() << "failed to retrieve associated CXX record\n";
@@ -268,7 +273,7 @@ private:
       return valueBuilder.unknownPublisher();
     } else {
       return symbolic;
-    }
+    }*/
   }
 
 
@@ -286,7 +291,8 @@ private:
       return symbolizeRate(cleanupsExpr->getSubExpr());
     }
     if (auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(expr)) {
-      return symbolizeRate(constructExpr);
+      auto rate = RateSymbolizer::symbolizeRate(constructExpr, astContext);
+      return std::make_unique<SymbolicRateImpl>(valueBuilder.stringLiteral("CXXConstructExpr"), floatSymbolizer.symbolize(rate));
     }
     if (auto *unaryOp = clang::dyn_cast<clang::UnaryOperator>(expr)) {
       if (clang::UnaryOperator::getOpcodeStr(unaryOp->getOpcode()) == "&") {
@@ -981,7 +987,8 @@ private:
   ) {
     llvm::outs() << "DEBUG: symbolizing ConstSleepCall\n";
     return std::make_unique<ConstSleep>(
-        floatSymbolizer.symbolize(apiCall->getDuration(astContext))
+        floatSymbolizer.symbolize(apiCall->getDuration(astContext)),
+        apiCall->getRate(astContext)
     );    
   }
 

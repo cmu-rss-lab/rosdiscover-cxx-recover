@@ -317,22 +317,29 @@ class SymbolicRateImpl :
   public virtual SymbolicRate
 {
 public:
-  SymbolicRateImpl(std::unique_ptr<SymbolicString> name)
-    : name(std::move(name)) { 
-      assert(this->name != nullptr); 
+  SymbolicRateImpl(std::unique_ptr<SymbolicString> name, std::unique_ptr<SymbolicValue> value)
+    : name(std::move(name)),
+      value(std::move(value)) { 
+      assert(this->name != nullptr);
+      assert(this->value != nullptr);  
   }
   SymbolicRateImpl(SymbolicRateImpl &&other)
-    : name(std::move(other.name)) { 
+    : name(std::move(other.name)),
+      value(std::move(other.value)) { 
     assert(this->name != nullptr); 
+    assert(this->value != nullptr);  
   }
   ~SymbolicRateImpl(){}
 
   static std::unique_ptr<SymbolicRateImpl> unknown() {
-    return std::make_unique<SymbolicRateImpl>(std::make_unique<SymbolicUnknown>());
+    return std::make_unique<SymbolicRateImpl>(std::make_unique<SymbolicUnknown>(), std::make_unique<SymbolicUnknown>());
   }
 
   bool isUnknown() const override {
     return name->isUnknown();
+  }
+  bool valueIsUnknown() const {
+    return value->isUnknown();
   }
 
   void print(llvm::raw_ostream &os) const override {
@@ -348,12 +355,14 @@ public:
   nlohmann::json toJson() const override {
     return {
       {"kind", "rate"},
-      {"name", name->toJson()}
+      {"name", name->toJson()},
+      {"value", value->toJson()}
     };
   }
 
 private:
   std::unique_ptr<SymbolicString> name;
+  std::unique_ptr<SymbolicValue> value;
 };
 
 } // rosdiscover

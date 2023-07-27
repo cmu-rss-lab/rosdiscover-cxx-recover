@@ -38,7 +38,7 @@ public:
   }
 
   std::unique_ptr<SymbolicRateImpl> unknownRate() const {
-    return std::make_unique<SymbolicRateImpl>(unknown());
+    return std::make_unique<SymbolicRateImpl>(unknown(), unknown());
   }
 
   std::unique_ptr<SymbolicPublisherImpl> publisher(std::string qualifiedName) const {
