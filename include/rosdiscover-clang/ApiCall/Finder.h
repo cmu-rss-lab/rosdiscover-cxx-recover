@@ -55,8 +55,12 @@ private:
     addFinder(new HasParamCall::Finder(calls));
     addFinder(new PublishCall::Finder(calls));
     addFinder(new SendTransformCall::Finder(calls));
+    addFinder(new DiagnosticUpdateCall::Finder(calls));
+    addFinder(new DiagnosedPublisherPublishCall::Finder(calls));
+    addFinder(new CameraPublisherPublishCall::Finder(calls));  
     addFinder(new RateSleepCall::Finder(calls));
     addFinder(new CreateTimerCall::Finder(calls));
+    addFinder(new DurationSleepCall::Finder(calls));
     addFinder(new USleepCall::Finder(calls));
     addFinder(new ThreadSleepCall::Finder(calls));
     addFinder(new RosInitCall::Finder(calls));

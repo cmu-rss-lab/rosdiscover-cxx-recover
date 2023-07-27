@@ -25,6 +25,51 @@ public:
   virtual int getRate(const clang::ASTContext &ctx) const = 0;
 }; //ConstSleepCall
 
+
+class DurationSleepCall : public ConstSleepCall {
+public:
+  using ConstSleepCall::ConstSleepCall;
+
+  virtual int getRate(const clang::ASTContext &ctx) const {
+    return 1;
+  }
+
+  virtual clang::APValue const * getDuration(const clang::ASTContext &ctx) const {
+    const auto *callExpr = clang::dyn_cast<clang::CXXMemberCallExpr>(getCallExpr()->IgnoreImpCasts());
+    if (callExpr == nullptr) {
+      llvm::outs() << "ERROR [DurationSleepCall]: Not a CXXMemberCallExpr: ";
+      getCallExpr()->dump();
+      llvm::outs() << "\n";
+      return nullptr;
+    }
+    auto const* arg = callExpr->getImplicitObjectArgument()->IgnoreImpCasts();
+    llvm::outs() << "DEBUG [DurationSleepCall]: Getting Duration for: ";
+    arg->dump();
+    llvm::outs() << "\n";
+    
+
+    return RateSymbolizer::symbolizeRate(arg, ctx);
+  }
+
+  class Finder : public RosApiCall::Finder {
+  public:
+    Finder(std::vector<RosApiCall*> &found) : RosApiCall::Finder(found) {}
+
+    const clang::ast_matchers::StatementMatcher getPattern() override {
+      using namespace clang::ast_matchers;
+      return callExpr(
+        callee(cxxMethodDecl(hasName("sleep"), ofClass(hasName("ros::Duration"))))
+      ).bind("call");
+    }
+
+  protected:
+    RosApiCall* build(clang::ast_matchers::MatchFinder::MatchResult const &result) override {
+      auto *call = result.Nodes.getNodeAs<clang::CallExpr>("call");
+      return new DurationSleepCall(call);
+    }
+  };
+}; //DurationSleep
+
 class USleepCall : public ConstSleepCall {
 public:
   using ConstSleepCall::ConstSleepCall;
@@ -32,7 +77,7 @@ public:
   virtual int getRate(const clang::ASTContext &ctx) const {
     const auto *callExpr = clang::dyn_cast<clang::CallExpr>(getCallExpr());
     if (callExpr->getDirectCallee()->getNameAsString() == "sleep") {
-      return 1000;
+      return 1;
     } else if (callExpr->getDirectCallee()->getNameAsString() == "usleep") { 
       return 1000000;
     } else {
