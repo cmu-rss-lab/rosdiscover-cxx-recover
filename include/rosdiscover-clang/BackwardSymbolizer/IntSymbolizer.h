@@ -48,7 +48,7 @@ public:
   
   std::unique_ptr<SymbolicInteger> symbolize(const clang::APValue *literal) {
     if (literal == nullptr) {
-      llvm::outs() << "unable to symbolize value: treating as unknown\n";
+      llvm::outs() << "unable to symbolize value (int): treating as unknown\n";
       return valueBuilder.unknown();
     }
 
@@ -60,7 +60,7 @@ private:
 
   std::unique_ptr<SymbolicInteger> symbolize(const clang::IntegerLiteral *literal) {
     if (literal == nullptr) {
-      llvm::outs() << "unable to symbolize value: treating as unknown\n";
+      llvm::outs() << "unable to symbolize value (int): treating as unknown\n";
       return valueBuilder.unknown();
     }
 

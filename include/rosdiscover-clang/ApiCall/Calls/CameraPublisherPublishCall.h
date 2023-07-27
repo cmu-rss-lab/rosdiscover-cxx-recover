@@ -13,10 +13,6 @@ class CameraPublisherPublishCall : public PublishCall {
 public:
   using PublishCall::PublishCall;
 
-  virtual const std::string getPublisherName(clang::ASTContext &astContext) const override {
-    return "diagnosed_publisher";
-  }
-
   class Finder : public RosApiCall::Finder {
   public:
     Finder(std::vector<RosApiCall*> &found) : RosApiCall::Finder(found) {}

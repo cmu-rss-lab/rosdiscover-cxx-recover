@@ -72,9 +72,13 @@ public:
       return nullptr;
     }
 
-    //auto rateConstructor = (getTransitiveCXXBindTemporaryExprChildenByType(expr->IgnoreCasts()));
+    llvm::outs() << "Debug [RateSymbolizer]: Attempt symbolizeRate: \n";
+    expr->dump();
+    llvm::outs() << "\n";
 
+    //auto rateConstructor = (getTransitiveCXXBindTemporaryExprChildenByType(expr->IgnoreCasts()));
     if (const auto *constructExpr = clang::dyn_cast<clang::CXXConstructExpr>(expr)) {
+      llvm::outs() << "Debug [RateSymbolizer]: Attempt to find Constructor ";
       auto result = symbolizeRateConstructor(constructExpr, ctx);
       if (result != nullptr) {
         llvm::outs() << "Debug [RateSymbolizer]: Found Constructor ";

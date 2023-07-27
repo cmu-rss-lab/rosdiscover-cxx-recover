@@ -55,7 +55,7 @@ public:
   
   std::unique_ptr<SymbolicFloat> symbolize(const clang::APValue *literal) {
     if (literal == nullptr) {
-      llvm::outs() << "unable to symbolize value: treating as unknown\n";
+      llvm::outs() << "unable to symbolize value (str): treating as unknown\n";
       return valueBuilder.unknown();
     }
 
@@ -65,7 +65,7 @@ public:
     } else if (literal->isInt()) {
       return valueBuilder.floatingLiteral(literal->getInt().getSExtValue());
     } else {
-      llvm::outs() << "unable to symbolize value: treating as unknown\n";
+      llvm::outs() << "unable to symbolize value (str): treating as unknown\n";
       return valueBuilder.unknown();
     }
   }

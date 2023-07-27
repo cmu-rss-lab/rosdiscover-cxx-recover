@@ -7,6 +7,7 @@
 
 #include "./Util.h"
 #include "../RosApiCall.h"
+#include "../../BackwardSymbolizer/RateSymbolizer.h"
 
 namespace rosdiscover {
 namespace api_call {
@@ -47,8 +48,7 @@ public:
     arg->dump();
     llvm::outs() << "\n";
     
-
-    return RateSymbolizer::symbolizeRate(arg, ctx);
+    return RateSymbolizer::symbolizeRate(arg->IgnoreCasts(), ctx);
   }
 
   class Finder : public RosApiCall::Finder {
