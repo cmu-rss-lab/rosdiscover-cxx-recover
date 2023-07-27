@@ -170,6 +170,9 @@ public:
     if (funcDecl->getQualifiedNameAsString() == "ros::ok") {
       return std::make_unique<BoolLiteral>(true);
     }
+    if (funcDecl->getQualifiedNameAsString() == "boost::this_thread::interruption_requested") {
+      return std::make_unique<BoolLiteral>(true);
+    }
     llvm::outs() << "unable to symbolize expression (expr) due to unknown call name: treating as unknown\n";
     callExpr->dump();
     return valueBuilder.unknown();
