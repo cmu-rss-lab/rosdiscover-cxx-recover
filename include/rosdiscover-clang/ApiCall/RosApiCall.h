@@ -183,7 +183,7 @@ public:
       llvm::errs() << "unable to fetch decl for node handle expr: ";
       nodeHandleExpr->dumpColor();
       llvm::errs() << "\n";
-      abort();
+      return nullptr;
     }
   }
 }; // RosApiCallWithNodeHandle
