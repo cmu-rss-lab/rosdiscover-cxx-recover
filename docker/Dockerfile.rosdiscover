@@ -18,3 +18,6 @@ RUN mkdir build \
 # ideally, we should perform this step via CMake
 RUN mkdir -p /opt/rosdiscover/lib \
  && cp -r /opt/llvm11/lib/clang /opt/rosdiscover/lib/clang
+
+COPY docker/omp.h  /opt/rosdiscover/lib/clang/11.1.0/include 
+#Not finding the omp.h resulted in RecoveryExpr in some autoware nodes, this hot fix makes it available.
