@@ -437,6 +437,11 @@ private:
     clang::ValueDecl const *decl,
     clang::Expr *atExpr
   ) {
+    if (decl == nullptr) {
+      llvm::outs() << "ERROR: VarDecl is null. Treat as unknown.\n";
+      return valueBuilder.unknownNodeHandle(); 
+    }
+
     if (auto const *fieldDecl = clang::dyn_cast<clang::FieldDecl>(decl)) {
       return symbolizeNodeHandle(fieldDecl);
     } else if (auto const *parmVarDecl = clang::dyn_cast<clang::ParmVarDecl>(decl)) {
@@ -537,6 +542,11 @@ private:
     clang::VarDecl const *decl,
     clang::Expr *atExpr
   ) {
+    if (decl == nullptr) {
+      llvm::outs() << "ERROR: VarDecl is null. Treat as unknown.\n";
+      return valueBuilder.unknownNodeHandle(); 
+    }
+
     llvm::outs() << "symbolizing node handle in var decl: ";
     decl->dumpColor();
     llvm::outs() << "\n";
@@ -545,6 +555,11 @@ private:
   }
 
   std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(clang::FieldDecl const *decl) {
+    if (decl == nullptr) {
+      llvm::outs() << "ERROR: FieldDecl is null. Treat as unknown.\n";
+      return valueBuilder.unknownNodeHandle(); 
+    }
+
     llvm::outs() << "symbolizing node handle in CXX record field: ";
     decl->dumpColor();
     llvm::outs() << "\n";
@@ -603,6 +618,11 @@ private:
   }
 
   std::unique_ptr<SymbolicNodeHandle> symbolizeNodeHandle(clang::ParmVarDecl const *decl) {
+    if (decl == nullptr) {
+      llvm::outs() << "ERROR: ParmVarDecl is null. Treat as unknown.\n";
+      return valueBuilder.unknownNodeHandle(); 
+    }
+
     auto argName = decl->getNameAsString();
     llvm::outs() << "DEBUG: symbolizing node handle ParmVarDecl [name: " << argName << "]: ";
     decl->dumpColor();
@@ -1398,7 +1418,7 @@ private:
         llvm::outs() << "\n IfStmt: ";
         ifStmt->dump();
         llvm::outs() << "\n";
-        abort();
+        //abort();
       }
       raw = ifMap[ifID];
     }
