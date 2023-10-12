@@ -8,7 +8,7 @@ llvm_map_components_to_libnames(ROSDISCOVER_LLVM_LIBS
 
 set_target_properties(rosdiscover-cxx-extract
   PROPERTIES
-    CXX_STANDARD 14
+    CXX_STANDARD 17
     CMAKE_CXX_STANDARD_REQUIRED ON
     LINK_SEARCH_START_STATIC ON
     LINK_SEARCH_END_STATIC ON
