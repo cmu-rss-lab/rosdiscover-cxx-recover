@@ -64,18 +64,20 @@ public:
     for (auto it = symFunction.params_begin(); it != symFunction.params_end(); it++) {
       symbolicArgNames.emplace(it->second.getName());
     }
+    llvm::outs() << "[DEBUG] Running FunctionSymbolizer on "<< apiCalls.size() <<" apiCalls, "<< functionCalls.size() <<" functionCalls, and "<< callbacks.size()<<" callbacks.\n";
 
     FunctionSymbolizer(
         astContext,
         symContext,
         symFunction,
-        function->getDefinition(),
+        function->getDefinition() != nullptr ? function->getDefinition() : function,
         apiCalls,
         functionCalls,
         symbolicArgNames,
         callbacks
         // declToArgName
     ).run();
+    llvm::outs() << "FunctionSymbolizer run finised\n";
   }
 
 private:
@@ -708,7 +710,8 @@ private:
       case RosApiCallKind::RosInitCall:
         return symbolizeApiCall((RosInitCall*) apiCall);
       case RosApiCallKind::PublishCall:
-        return symbolizeApiCall((PublishCall*) apiCall);
+        llvm::errs() << "TIMEOUT DEBUG symbolizeApiCall PUBLISHCALL: ";
+        return symbolizeApiCall((api_call::PublishCall*) apiCall);
       case RosApiCallKind::RateSleepCall:
         return symbolizeApiCall((RateSleepCall*) apiCall);        
       case RosApiCallKind::ConstSleepCall:
@@ -1071,7 +1074,8 @@ private:
     return expr->getConstructor()->getCanonicalDecl();
   }
 
-  std::unique_ptr<SymbolicExpr> getControlDependenciesObjects(const clang::Stmt* stmt) {
+  
+  std::unique_ptr<SymbolicExpr> getControlDependenciesObjects(const clang::Stmt* stmt) {    
     const std::unique_ptr<clang::CFG> sourceCFG = clang::CFG::buildCFG(
           function, function->getBody(), &astContext, clang::CFG::BuildOptions());
     clang::ControlDependencyCalculator cdc(sourceCFG.get());
@@ -1361,13 +1365,14 @@ private:
     
     llvm::outs() << "Symbolized Assignment: ";
     symbolicAssignment->print(llvm::outs());
+    llvm::outs() << "\n";
     return symbolicAssignment;
   }  
   
   /* 
   Recursively adds the given statement to the control flow nodes of its parents and returns the highest level control flow parent.
   */
-  RawStatement* constructParentControlFlow(clang::DynTypedNode node, RawStatement* raw) {
+  RawStatement* constructParentControlFlow(clang::DynTypedNode node, RawStatement* raw, bool add) {
 
     // Stop the recursion if the function level has been reached.
     clang::FunctionDecl const *functionDecl = node.get<clang::FunctionDecl>();
@@ -1385,10 +1390,16 @@ private:
         std::unique_ptr<RawWhileStatement> rs = std::unique_ptr<RawWhileStatement>(new RawWhileStatement(const_cast<clang::WhileStmt*>(whileStmt)));
         whileMap.emplace(whileID, new RawWhileStatement(const_cast<clang::WhileStmt*>(whileStmt)));
       }
+      if (whileMap.at(whileID)->getBody()->contains(raw)) {
+          llvm::outs() << "ERROR: RAW IS DUPLICATE";
+          add = false;
+      }
 
       //Add to Body
-      whileMap.at(whileID)->getBody()->append(raw);
+      if (add)
+        whileMap.at(whileID)->getBody()->append(raw);
       raw = whileMap[whileID]; // continue recursion with the parents of the while statement.
+      add = true;
     }
 
     clang::IfStmt const *ifStmt = node.get<clang::IfStmt>();
@@ -1396,7 +1407,7 @@ private:
       llvm::outs() << "DEBUG FOUND IF!!!!";
 
       //construct RawIf if not already built
-      long ifID = ifStmt->getID(astContext);
+      long ifID = ifStmt->getID(astContext); 
       if (!ifMap.count(ifID)) {
         ifMap.emplace(ifID, new RawIfStatement(const_cast<clang::IfStmt*>(ifStmt)));
       }
@@ -1404,12 +1415,31 @@ private:
       //Add to if or else branch
       if (ifStmt->getThen() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getThen(), raw->getUnderlyingStmt())) { 
         llvm::outs() << "Debug: Add to then";
-        ifMap.at(ifID)->getTrueBody()->append(raw);
-        raw = ifMap[ifID];
+        if (ifMap.at(ifID)->getTrueBody()->contains(raw)) {
+          llvm::outs() << "ERROR: RAW IS DUPLICATE";
+          add = false;
+        }
+        if (add) {
+          ifMap.at(ifID)->getTrueBody()->append(raw);
+          if (!ifMap.at(ifID)->getTrueBody()->contains(raw)) {
+            llvm::outs() << "ERROR: RAW IS INCONSITSTNT";
+            abort();
+          }
+        }
       } else if (ifStmt->getElse() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getElse(), raw->getUnderlyingStmt())) { 
         llvm::outs() << "Debug: Add to else";
-        ifMap.at(ifID)->getFalseBody()->append(raw);
-        raw = ifMap[ifID];
+        if (ifMap.at(ifID)->getFalseBody()->contains(raw)) {
+          llvm::outs() << "ERROR: RAW IS DUPLICATE";
+          add = false;
+        }
+        if (add) {
+          ifMap.at(ifID)->getFalseBody()->append(raw);
+          if (!ifMap.at(ifID)->getFalseBody()->contains(raw)) {
+            llvm::outs() << "ERROR: RAW IS INCONSITSTNT";
+            abort();
+          }
+        }
+        
       } else if (ifStmt->getCond() == raw->getUnderlyingStmt() || stmtContainsStmt(ifStmt->getCond(), raw->getUnderlyingStmt())) { 
         llvm::outs() << "Debug: In condition, treat as outside of if";
       } else {
@@ -1418,13 +1448,15 @@ private:
         llvm::outs() << "\n IfStmt: ";
         ifStmt->dump();
         llvm::outs() << "\n";
-        //abort();
+        abort();
       }
       raw = ifMap[ifID];
+      add = true;
     }
     RawStatement* result = raw;
     for (clang::DynTypedNode const parent : astContext.getParents(node)) {
-      result = constructParentControlFlow(parent, raw);
+      result = constructParentControlFlow(parent, raw, true);
+      return result;
     }
 
     return result;
@@ -1432,7 +1464,7 @@ private:
 
   RawStatement* constructParentControlFlow(RawStatement* raw) {
     auto node = clang::DynTypedNode::create(*(raw->getUnderlyingStmt()));
-    return constructParentControlFlow(node, raw);
+    return constructParentControlFlow(node, raw, true);
   }
 
   std::vector<RawStatement*> computeStatementOrder() {
@@ -1532,8 +1564,10 @@ private:
         break;
     }
     if (symbolic == nullptr) {
+      llvm::outs() << "ERROR: Could not symbolize statement of kind "<< statement->getKindAsString() << ".\n";
       return nullptr;
     }
+    llvm::outs() << "DEBUG: AnnotatedSymbolicStmt::create \n";
     return AnnotatedSymbolicStmt::create(
       astContext,
       std::move(symbolic),
@@ -1542,10 +1576,15 @@ private:
   }
 
   void run() {
+    if (function == nullptr) {
+      llvm::outs() << "ERROR! Function is NULL!\n";
+      return;
+    }
     // TODO this should operate on a reference instead!
     auto compound = std::make_unique<SymbolicCompound>();
-
+    llvm::outs() << "[DEBUG] run symbolizeStatement on "<< computeStatementOrder().size()<< "statements.\n";
     for (auto &rawStmt : computeStatementOrder()) {
+      llvm::outs() << "[DEBUG] symbolizeStatement " <<  rawStmt->getKindAsString() << "\n";
       auto stmt = symbolizeStatement(rawStmt);
       if (stmt != nullptr) {
         compound->append(std::move(stmt));
@@ -1559,6 +1598,8 @@ private:
     llvm::outs() << "Symbolized Function\n";
 
     symContext.define(function, std::move(compound));
+
+    llvm::outs() << "Defined Function\n";
   }
 };
 

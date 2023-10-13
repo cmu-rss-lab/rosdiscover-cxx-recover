@@ -24,6 +24,30 @@ public:
   virtual ~RawStatement(){}
   virtual clang::Stmt* getUnderlyingStmt() = 0;
   virtual RawStatementKind getKind() = 0;
+  virtual bool contains(RawStatement* stmt) {
+      return stmt == this;    
+  }
+  std::string getKindAsString() {
+    switch (getKind()){
+      case RawStatementKind::RosApiCall: 
+        return "RosApiCall";
+      case RawStatementKind::FunctionCall: 
+        return "FunctionCall";
+      case RawStatementKind::Assignment: 
+        return "Assignment";
+      case RawStatementKind::Callback: 
+        return "Callback";
+      case RawStatementKind::If:
+        return "If";
+      case RawStatementKind::While:
+        return "While";
+      case RawStatementKind::Compound: 
+        return "Compound";
+      default:
+        return "UnknownKind";
+    }
+
+  }
 };
 
 class RawCompound : public RawStatement {
@@ -34,6 +58,18 @@ public:
   RawCompound(RawCompound&& other)
   : underlyingStmt(other.underlyingStmt), statements(other.statements)
   {}
+
+  bool contains(RawStatement* statement) override {
+    if (statement == this) 
+      return true;
+
+    for(auto stmt: statements) {
+      if (stmt->contains(statement)) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   void append(RawStatement* statement) {
     statements.push_back(statement);
@@ -62,11 +98,17 @@ public:
   RawIfStatement(clang::IfStmt *ifStmt) : 
     ifStmt(ifStmt), 
     trueBody(new RawCompound(ifStmt->getThen())), 
-    falseBody(new RawCompound(ifStmt->getThen())) {}
+    falseBody(new RawCompound(ifStmt->getElse())) {}
   ~RawIfStatement(){}
 
   clang::Stmt* getUnderlyingStmt() override {
     return ifStmt;
+  }
+
+  bool contains(RawStatement* statement) override {
+    return statement == this || 
+           getTrueBody()->contains(statement) ||
+           getFalseBody()->contains(statement)  ;
   }
 
   clang::IfStmt* getIfStmt() {
@@ -97,6 +139,11 @@ public:
     whileStmt(whileStmt), 
     body(new RawCompound(whileStmt->getBody())) {}
   ~RawWhileStatement(){}
+
+  bool contains(RawStatement* statement) override {
+    return statement == this || 
+           getBody()->contains(statement);
+  }
 
   clang::Stmt* getUnderlyingStmt() override {
     return whileStmt;

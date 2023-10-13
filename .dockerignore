@@ -5,3 +5,4 @@
 !extern/
 !**/.cpp
 !**/.h
+!docker/

@@ -30,7 +30,7 @@ public:
       controlDependencyGraphNodes.push_back(depsCfgBlock);
     }
     llvm::outs() << "#### buildGraph ####\n";
-    graph->buildGraph(true, clangBlockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, astContext, exprSymbolizer);
+    graph->buildGraph(true, clangBlockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, astContext, exprSymbolizer, 1000);
     llvm::outs() << "#### graph built ####\n";
     return graph;
   }
@@ -56,7 +56,8 @@ private:
     std::vector<const clang::CFGBlock*> &analyzed,
     std::vector<CFGBlock*> &controlDependencyGraphNodes,
     clang::ASTContext &astContext,
-    ExprSymbolizer &exprSymbolizer
+    ExprSymbolizer &exprSymbolizer,
+    int maxDepth
   ) {
     std::vector<CFGBlock*> predecessors;
     if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
@@ -68,20 +69,23 @@ private:
     block->dump();
     llvm::outs() << "\n";
 
-    // Recursively build the graph for the block's predecessors
-    for (const clang::CFGBlock::AdjacentBlock predecessorBlock: block->preds()) {
-      auto indirectPredecessors = buildGraph(
-        false,
-        predecessorBlock.getReachableBlock(),
-        deps,
-        postdominatorAnalysis,
-        dominatorAnalysis,
-        analyzed,
-        controlDependencyGraphNodes,
-        astContext,
-        exprSymbolizer
-      );
-      predecessors.insert(predecessors.end(), indirectPredecessors.begin(), indirectPredecessors.end()); //merge results
+    if(maxDepth < 0) {
+      // Recursively build the graph for the block's predecessors
+      for (const clang::CFGBlock::AdjacentBlock predecessorBlock: block->preds()) {
+        auto indirectPredecessors = buildGraph(
+          false,
+          predecessorBlock.getReachableBlock(),
+          deps,
+          postdominatorAnalysis,
+          dominatorAnalysis,
+          analyzed,
+          controlDependencyGraphNodes,
+          astContext,
+          exprSymbolizer,
+          maxDepth-1
+        );
+        predecessors.insert(predecessors.end(), indirectPredecessors.begin(), indirectPredecessors.end()); //merge results
+      }
     }
 
     // Create a node for control dependencies and the first block
@@ -144,7 +148,7 @@ private:
           }
 
           if (predecessor->createEdge(depBlock, type)) {
-            llvm::outs() << "DEBUG: Created edge between " << predecessor->getConditionStr(astContext, exprSymbolizer) << " and " << depBlock->getConditionStr(astContext, exprSymbolizer) << " of type " << CFGEdge::getEdgeTypeName(type) << "\n";
+            llvm::outs() << "DEBUG: Created edge\n";// between " << predecessor->getConditionStr(astContext, exprSymbolizer) << " and " << depBlock->getConditionStr(astContext, exprSymbolizer) << " of type " << CFGEdge::getEdgeTypeName(type) << "\n";
           }
         }
         llvm::outs() << "DEBUG: Graph Built\n";
