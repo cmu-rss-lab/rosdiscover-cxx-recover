@@ -30,7 +30,7 @@ public:
       controlDependencyGraphNodes.push_back(depsCfgBlock);
     }
     llvm::outs() << "#### buildGraph ####\n";
-    graph->buildGraph(true, clangBlockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, astContext, exprSymbolizer, 1000);
+    graph->buildGraph(true, clangBlockOfInterest, deps, postdominatorAnalysis, dominatorAnalysis, analyzed, controlDependencyGraphNodes, astContext, exprSymbolizer, 20);
     llvm::outs() << "#### graph built ####\n";
     return graph;
   }
@@ -45,6 +45,7 @@ public:
 
 private: 
   std::unordered_map<long, std::unique_ptr<CFGBlock>> idToBlockDict;
+  
 
   // Recursively builds a graph of control dependencies starting from the last block.
   std::vector<CFGBlock*> buildGraph(
@@ -60,7 +61,7 @@ private:
     int maxDepth
   ) {
     std::vector<CFGBlock*> predecessors;
-    if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block)) {
+    if (block == nullptr || block->pred_empty() || llvm::is_contained(analyzed, block) || maxDepth < 1) {
       return predecessors;
     }
     analyzed.push_back(block);
@@ -69,23 +70,20 @@ private:
     block->dump();
     llvm::outs() << "\n";
 
-    if(maxDepth < 0) {
-      // Recursively build the graph for the block's predecessors
-      for (const clang::CFGBlock::AdjacentBlock predecessorBlock: block->preds()) {
-        auto indirectPredecessors = buildGraph(
-          false,
-          predecessorBlock.getReachableBlock(),
-          deps,
-          postdominatorAnalysis,
-          dominatorAnalysis,
-          analyzed,
-          controlDependencyGraphNodes,
-          astContext,
-          exprSymbolizer,
-          maxDepth-1
-        );
-        predecessors.insert(predecessors.end(), indirectPredecessors.begin(), indirectPredecessors.end()); //merge results
-      }
+    for (const clang::CFGBlock::AdjacentBlock predecessorBlock: block->preds()) {
+      auto indirectPredecessors = buildGraph(
+        false,
+        predecessorBlock.getReachableBlock(),
+        deps,
+        postdominatorAnalysis,
+        dominatorAnalysis,
+        analyzed,
+        controlDependencyGraphNodes,
+        astContext,
+        exprSymbolizer,
+        maxDepth-1
+      );
+      predecessors.insert(predecessors.end(), indirectPredecessors.begin(), indirectPredecessors.end()); //merge results
     }
 
     // Create a node for control dependencies and the first block
