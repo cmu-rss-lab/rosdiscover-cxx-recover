@@ -1372,7 +1372,7 @@ private:
   /* 
   Recursively adds the given statement to the control flow nodes of its parents and returns the highest level control flow parent.
   */
-  RawStatement* constructParentControlFlow(clang::DynTypedNode node, RawStatement* raw, bool add) {
+  RawStatement* constructParentControlFlow(clang::DynTypedNode node, RawStatement* raw) {
 
     // Stop the recursion if the function level has been reached.
     clang::FunctionDecl const *functionDecl = node.get<clang::FunctionDecl>();
@@ -1392,14 +1392,10 @@ private:
       }
       if (whileMap.at(whileID)->getBody()->contains(raw)) {
           llvm::outs() << "ERROR: RAW IS DUPLICATE";
-          add = false;
-      }
-
-      //Add to Body
-      if (add)
+      } else {
         whileMap.at(whileID)->getBody()->append(raw);
+      }
       raw = whileMap[whileID]; // continue recursion with the parents of the while statement.
-      add = true;
     }
 
     clang::IfStmt const *ifStmt = node.get<clang::IfStmt>();
@@ -1417,9 +1413,8 @@ private:
         llvm::outs() << "Debug: Add to then";
         if (ifMap.at(ifID)->getTrueBody()->contains(raw)) {
           llvm::outs() << "ERROR: RAW IS DUPLICATE";
-          add = false;
         }
-        if (add) {
+        else {
           ifMap.at(ifID)->getTrueBody()->append(raw);
           if (!ifMap.at(ifID)->getTrueBody()->contains(raw)) {
             llvm::outs() << "ERROR: RAW IS INCONSITSTNT";
@@ -1430,9 +1425,8 @@ private:
         llvm::outs() << "Debug: Add to else";
         if (ifMap.at(ifID)->getFalseBody()->contains(raw)) {
           llvm::outs() << "ERROR: RAW IS DUPLICATE";
-          add = false;
         }
-        if (add) {
+        else {
           ifMap.at(ifID)->getFalseBody()->append(raw);
           if (!ifMap.at(ifID)->getFalseBody()->contains(raw)) {
             llvm::outs() << "ERROR: RAW IS INCONSITSTNT";
@@ -1451,11 +1445,10 @@ private:
         abort();
       }
       raw = ifMap[ifID];
-      add = true;
     }
     RawStatement* result = raw;
     for (clang::DynTypedNode const parent : astContext.getParents(node)) {
-      result = constructParentControlFlow(parent, raw, true);
+      result = constructParentControlFlow(parent, raw);
       return result;
     }
 
@@ -1464,7 +1457,7 @@ private:
 
   RawStatement* constructParentControlFlow(RawStatement* raw) {
     auto node = clang::DynTypedNode::create(*(raw->getUnderlyingStmt()));
-    return constructParentControlFlow(node, raw, true);
+    return constructParentControlFlow(node, raw);
   }
 
   std::vector<RawStatement*> computeStatementOrder() {
