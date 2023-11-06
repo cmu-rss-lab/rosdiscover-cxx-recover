@@ -1442,7 +1442,7 @@ private:
         llvm::outs() << "\n IfStmt: ";
         ifStmt->dump();
         llvm::outs() << "\n";
-        abort();
+        //abort();
       }
       raw = ifMap[ifID];
     }
