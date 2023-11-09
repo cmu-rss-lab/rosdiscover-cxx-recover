@@ -125,7 +125,7 @@ private:
   FloatSymbolizer floatSymbolizer;
   BoolSymbolizer boolSymbolizer;
   ExprSymbolizer exprSymbolizer;
-  std::vector<const clang::BinaryOperator*> assignments;
+  std::vector<const clang::Expr*> assignments;
   std::unordered_map<long, RawIfStatement*> ifMap; //keys are the IDs of the corresponding clang stmts.
   std::unordered_map<long, RawWhileStatement*> whileMap; //keys are the IDs of the corresponding clang stmts.
   std::unordered_map<long, RawCompound*> compoundMap; //keys are the IDs of the corresponding clang stmts.
@@ -1321,6 +1321,25 @@ private:
     assign->dump();
     llvm::outs() << "\n";
 
+    if (auto *binaryOperator = clang::dyn_cast<clang::BinaryOperator>(assign)) {
+      return symbolizeBinaryOperatorAssignment(binaryOperator->getLHS(), binaryOperator->getRHS(), binaryOperator->getOpcodeStr(), assign);
+    }
+    else if (auto *operatorCall = clang::dyn_cast<clang::CXXOperatorCallExpr >(assign)) {
+      llvm::outs() << "DEBUG: symbolizing CXXOperatorCallExpr assignment: \n";
+      llvm::outs() << "CALLEE: \n";
+      operatorCall->getArg(0)->dump();
+      llvm::outs() << "\nFirst Arg: ";
+      operatorCall->getArg(1)->dump();
+      llvm::outs() << "\n";
+      return symbolizeBinaryOperatorAssignment(operatorCall->getArg(0), operatorCall->getArg(1), "=", assign);
+    }
+    else {
+      llvm::outs() << "ERROR: unsupported assignment type.\n";
+      abort();
+    }
+  }
+
+  std::unique_ptr<SymbolicAssignment> symbolizeBinaryOperatorAssignment(const clang::Expr* LHS, const clang::Expr* RHS, const clang::StringRef opcodeStr, const clang::Expr* expr) {
     std::string varName;
     std::unique_ptr<SymbolicVariableReference> var;
 
@@ -1329,7 +1348,7 @@ private:
     // that are potentially owned by a different object.
     std::unique_ptr<SymbolicVariableReference> compountOperatorLHS;
 
-    if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(assign->getLHS()->IgnoreCasts()->IgnoreImpCasts())) {
+    if (auto *declRefExpr = clang::dyn_cast<clang::DeclRefExpr>(LHS->IgnoreCasts()->IgnoreImpCasts())) {
       varName = declRefExpr->getDecl()->getQualifiedNameAsString();
       llvm::outs() << "declRefExpr assign: " << varName;
       auto *varDecl = clang::dyn_cast<clang::VarDecl>(declRefExpr->getDecl());
@@ -1340,28 +1359,28 @@ private:
       }
       var = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl, exprSymbolizer.symbolizeConstant(varDecl->getInit()));
       compountOperatorLHS = std::make_unique<SymbolicVariableReference>(declRefExpr, varDecl, exprSymbolizer.symbolizeConstant(varDecl->getInit()));
-    } else if (auto *memberExpr = clang::dyn_cast<clang::MemberExpr>(assign->getLHS()->IgnoreCasts()->IgnoreImpCasts())) {
+    } else if (auto *memberExpr = clang::dyn_cast<clang::MemberExpr>(LHS->IgnoreCasts()->IgnoreImpCasts())) {
       varName = memberExpr->getMemberDecl()->getQualifiedNameAsString();
       llvm::outs() << "memberExpr assign: " << varName;
       var = exprSymbolizer.symbolizeMemberExpr(memberExpr);
       compountOperatorLHS = exprSymbolizer.symbolizeMemberExpr(memberExpr);
     } else {
       llvm::outs() << "[ERROR] Unsupported LHS of Assignment: ";
-      assign->dump();
+      LHS->dump();
       return nullptr;
     }
 
-    std::unique_ptr<SymbolicExpr> assignRHS = exprSymbolizer.symbolize(assign->getRHS());
-    if (assign->getOpcodeStr() == "+=") {
+    std::unique_ptr<SymbolicExpr> assignRHS = exprSymbolizer.symbolize(RHS);
+    if (opcodeStr == "+=") {
       assignRHS = std::make_unique<BinaryMathExpr>(std::move(compountOperatorLHS), std::move(assignRHS), BinaryMathOperator::Add);
-    } else if (assign->getOpcodeStr() == "-=") {
+    } else if (opcodeStr == "-=") {
       assignRHS = std::make_unique<BinaryMathExpr>(std::move(compountOperatorLHS), std::move(assignRHS), BinaryMathOperator::Sub);
-    } else if (assign->getOpcodeStr() == "*=") {
+    } else if (opcodeStr == "*=") {
       assignRHS = std::make_unique<BinaryMathExpr>(std::move(compountOperatorLHS), std::move(assignRHS), BinaryMathOperator::Mul);
-    } else if (assign->getOpcodeStr() == "/=") {
+    } else if (opcodeStr == "/=") {
       assignRHS = std::make_unique<BinaryMathExpr>(std::move(compountOperatorLHS), std::move(assignRHS), BinaryMathOperator::Div);
     }
-    auto symbolicAssignment = std::make_unique<SymbolicAssignment>(std::move(var), std::move(assignRHS), getControlDependenciesObjects(assign));
+    auto symbolicAssignment = std::make_unique<SymbolicAssignment>(std::move(var), std::move(assignRHS), getControlDependenciesObjects(expr));
     
     llvm::outs() << "Symbolized Assignment: ";
     symbolicAssignment->print(llvm::outs());

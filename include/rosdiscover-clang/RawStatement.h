@@ -208,19 +208,19 @@ private:
   clang::Expr *expr;
 };
 
-class RawAssignment : public RawStatement {
+class RawAssignment : public RawStatement { 
 public:
   RawAssignment(RawAssignment *other) : assign(other->assign) {}
   
-  RawAssignment(const clang::BinaryOperator *assign) : assign(assign) {}
+  RawAssignment(const clang::Expr *assign) : assign(assign) {}
   ~RawAssignment(){}
   
-  const clang::BinaryOperator* getBinaryOperator() {
+  const clang::Expr* getBinaryOperator() {
     return assign;
   }
 
   clang::Stmt* getUnderlyingStmt() override {
-    return const_cast<clang::BinaryOperator *>(assign);
+    return const_cast<clang::Expr *>(assign);
   }
 
   RawStatementKind getKind() override {
@@ -228,7 +228,7 @@ public:
   }
 
 private:
-  const clang::BinaryOperator *assign;
+  const clang::Expr *assign;
 };
 
 class RawCallbackStatement : public RawStatement {
