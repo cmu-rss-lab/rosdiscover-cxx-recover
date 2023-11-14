@@ -1371,6 +1371,23 @@ private:
     }
 
     std::unique_ptr<SymbolicExpr> assignRHS = exprSymbolizer.symbolize(RHS);
+
+    for (auto *call: getTransitiveChildenByType(RHS, false, true)) {
+      if (auto *memberCallExpr = clang::dyn_cast<clang::CXXMemberCallExpr>(call)) {
+        if (auto *memberExpr = clang::dyn_cast<clang::MemberExpr>(memberCallExpr->getCallee()->IgnoreCasts()->IgnoreImpCasts())) {
+          auto callName = memberExpr->getMemberNameInfo().getAsString();
+          llvm::outs() << "[DEBUG] memberExpr->getMemberNameInfo(): '" << callName << "'\n";
+          if (callName == "advertise") {
+            auto *topicArg = memberCallExpr->getArg(0);
+            llvm::outs() << "advertise arg: ";
+            topicArg->dump();
+            llvm::outs() << "\n";
+            assignRHS = exprSymbolizer.symbolize(topicArg);
+          }
+        }
+      }
+    }
+
     if (opcodeStr == "+=") {
       assignRHS = std::make_unique<BinaryMathExpr>(std::move(compountOperatorLHS), std::move(assignRHS), BinaryMathOperator::Add);
     } else if (opcodeStr == "-=") {
