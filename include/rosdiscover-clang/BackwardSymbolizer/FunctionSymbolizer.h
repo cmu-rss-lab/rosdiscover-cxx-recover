@@ -1478,6 +1478,7 @@ private:
         llvm::outs() << "\n IfStmt: ";
         ifStmt->dump();
         llvm::outs() << "\n";
+        llvm::outs() << "ERROR: raw is neither in then nor else!";
         //abort();
       }
       raw = ifMap[ifID];
